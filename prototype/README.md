@@ -17,14 +17,42 @@ Ga dan naar http://localhost:8080.
 
 ## Wat zit erin
 
-- Rolselector: Student, Stagecommissie, Docent, Stagementor, Administratie.
-- Simpele state machine voor stageflow met transitieregels.
-- Validatieregel: overgang naar "Lopend" kan alleen als overeenkomst_getekend=true.
-- Schermsimulaties per rol gebaseerd op wireframes.
-- Competentiebeheer met gewichten en controle op totaal = 100%.
-- Finale score simulator met gewogen berekening: sum(score * gewicht) / 100.
+### Rollen
+- **Student**: Dashboard, Stagevoorstel, Logboek, Evaluaties
+- **Stagecommissie**: Voorstellen beoordelen
+- **Docent**: Opvolging, Evaluatie
+- **Stagementor**: Validatie
+- **Administratie**: Competentiebeheer
+
+### Functionaliteiten
+- **State Machine**: Simpele state machine voor stageflow met transitieregels.
+- **Validatieregel**: Overgang naar "Lopend" kan alleen als overeenkomst_getekend=true.
+- **Stagevoorstel**: Formulier voor studenten om stagevoorstel in te dienen (met validatie).
+- **Logboek**: Wekelijks logboek invullen met taken, reflectie en problemen.
+- **Evaluatie**: Docent kan tussentijdse en finale evaluaties invullen met scores per competentie.
+- **Competentiebeheer**: Gewichten en controle op totaal = 100%.
+- **Finale score**: Gewogen berekening: sum(score * gewicht) / 100.
+
+### Screens per rol
+
+| Rol | Schermen |
+|-----|----------|
+| Student | Dashboard, Stagevoorstel indienen, Logboek invullen, Evaluaties bekijken |
+| Stagecommissie | Voorstellen overzicht + feedback |
+| Docent | Missing Logs, Tussentijdse evaluatie, Evaluatie formulier |
+| Stagementor | Wekelijkse validatie |
+| Administratie | Competentiebeheer + Finale score simulator |
 
 ## Focus
 
 Dit prototype is bedoeld voor validatie van UX-flow, rollen en kernlogica.
 Het bevat geen backend, authenticatie of persistente opslag.
+
+## Gebaseerd op
+
+- analyse-juan-extended.md (Hoofddocument)
+- analyse-juan.md
+- analyse-samy.md
+- analyse-baraa.md
+- analyse-leila.md
+- analyse-yorick.md

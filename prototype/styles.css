@@ -258,6 +258,68 @@ td {
   animation: rise 420ms ease both;
 }
 
+/* New form styles */
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-range input {
+  flex: 1;
+}
+
+.date-range span {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.btn-group {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-group .btn {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Evaluation form */
+.eval-type {
+  margin-bottom: 1rem;
+}
+
+.eval-type label {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.eval-type select {
+  max-width: 250px;
+}
+
+#eval-competencies h3,
+#eval-competencies h4 {
+  margin: 0.5rem 0;
+}
+
+.score-inputs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.score-inputs select {
+  max-width: 180px;
+}
+
+/* Status colors */
+.status-submitted { background: rgba(0, 121, 140, 0.15); color: #005564; }
+.status-approved { background: rgba(60, 157, 120, 0.18); color: #1d6650; }
+.status-rejected { background: rgba(214, 40, 57, 0.15); color: #8b0000; }
+.status-pending { background: rgba(224, 159, 62, 0.18); color: #8a6100; }
+
 @keyframes rise {
   from {
     transform: translateY(10px);

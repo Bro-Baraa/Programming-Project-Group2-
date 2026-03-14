@@ -1,7 +1,7 @@
 const roleViews = {
-  student: ["dashboard"],
+  student: ["dashboard", "voorstel", "logboek", "evaluaties"],
   commissie: ["voorstellen"],
-  docent: ["opvolging"],
+  docent: ["opvolging", "evaluatie"],
   mentor: ["validatie"],
   admin: ["competenties"],
 };
@@ -19,8 +19,12 @@ const stateGraph = {
 
 const templates = {
   student: "student-dashboard-template",
+  "student-voorstel": "student-voorstel-template",
+  "student-logboek": "student-logboek-template",
+  "student-evaluaties": "student-evaluatie-template",
   commissie: "commissie-template",
   docent: "docent-template",
+  "docent-evaluatie": "docent-evaluatie-template",
   mentor: "mentor-template",
   admin: "admin-template",
 };
@@ -53,9 +57,16 @@ function renderView() {
   });
 
   content.innerHTML = "";
-  const templateId = templates[role];
+  
+  // Map role+view to template
+  const view = viewSelect.value;
+  const key = `${role}-${view}` || role;
+  const templateId = templates[key] || templates[role];
+  
   const tpl = document.getElementById(templateId);
-  content.appendChild(tpl.content.cloneNode(true));
+  if (tpl) {
+    content.appendChild(tpl.content.cloneNode(true));
+  }
 
   wireRoleInteractions(role);
 }
@@ -167,19 +178,153 @@ function renderCompetencies() {
 }
 
 function wireRoleInteractions(role) {
+  const view = viewSelect.value;
+  
+  // Student views
+  if (role === "student") {
+    // Stagevoorstel form
+    if (view === "voorstel") {
+      const form = document.getElementById("proposal-form");
+      const result = document.getElementById("proposal-result");
+      
+      form?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const company = document.getElementById("company-name")?.value;
+        const contact = document.getElementById("contact-person")?.value;
+        const email = document.getElementById("contact-email")?.value;
+        const start = document.getElementById("start-date")?.value;
+        const end = document.getElementById("end-date")?.value;
+        const desc = document.getElementById("assignment-desc")?.value;
+        
+        if (!company || !contact || !email || !start || !end || !desc) {
+          if (result) {
+            result.textContent = "Alle velden zijn verplicht.";
+            result.style.color = "#8b0000";
+          }
+          return;
+        }
+        
+        if (result) {
+          result.textContent = `Stagevoorstel ingediend voor ${company}! Status: Ingediend`;
+          result.style.color = "#0b6a4f";
+        }
+        currentStatus = "Ingediend";
+        updateStatusColor(currentStatus);
+        renderStatusActions();
+      });
+    }
+    
+    // Logboek form
+    if (view === "logboek") {
+      const form = document.getElementById("logbook-form");
+      const result = document.getElementById("logbook-result");
+      const submitBtn = document.getElementById("submit-logbook");
+      
+      submitBtn?.addEventListener("click", () => {
+        const week = document.getElementById("log-week")?.value;
+        const tasks = document.getElementById("log-tasks")?.value;
+        
+        if (!week || !tasks) {
+          if (result) {
+            result.textContent = "Weeknummer en taken zijn verplicht.";
+            result.style.color = "#8b0000";
+          }
+          return;
+        }
+        
+        if (result) {
+          result.textContent = `Logboek week ${week} definitief ingediend!`;
+          result.style.color = "#0b6a4f";
+        }
+      });
+      
+      form?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const week = document.getElementById("log-week")?.value;
+        if (result) {
+          result.textContent = `Logboek week ${week} opgeslagen als concept.`;
+          result.style.color = "#005564";
+        }
+      });
+    }
+  }
+
+  // Commissie views
   if (role === "commissie") {
     const feedbackBox = document.getElementById("feedback-box");
     const saveBtn = document.getElementById("save-feedback");
     const feedbackResult = document.getElementById("feedback-result");
 
     saveBtn?.addEventListener("click", () => {
-      feedback = feedbackBox.value.trim();
-      feedbackResult.textContent = feedback
-        ? `Feedback opgeslagen: \"${feedback}\"`
-        : "Geen feedback ingegeven.";
+      feedback = feedbackBox?.value.trim() || "";
+      if (feedbackResult) {
+        feedbackResult.textContent = feedback
+          ? `Feedback opgeslagen: "${feedback}"`
+          : "Geen feedback ingegeven.";
+      }
     });
   }
 
+  // Docent views
+  if (role === "docent" && view === "evaluatie") {
+    const evalForm = document.getElementById("eval-form");
+    const evalResult = document.getElementById("eval-result");
+    const finalizeBtn = document.getElementById("finalize-eval");
+    const evalCompetencies = document.getElementById("eval-competencies");
+    
+    // Render competencies for evaluation
+    if (evalCompetencies) {
+      evalCompetencies.innerHTML = "";
+      competencies.forEach((comp) => {
+        const row = document.createElement("div");
+        row.className = "eval-row";
+        row.style.marginBottom = "1rem";
+        row.style.padding = "0.5rem";
+        row.style.background = "rgba(255,255,255,0.5)";
+        row.style.borderRadius = "8px";
+        
+        row.innerHTML = `
+          <label style="margin-bottom: 0.3rem; display: block;">${comp.name} (${comp.weight}%)</label>
+          <div class="score-inputs" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <select class="score-select" data-comp="${comp.name}" style="flex: 1; min-width: 150px;">
+              <option value="1">1 - Onvoldoende</option>
+              <option value="2">2 - Matig</option>
+              <option value="3" selected>3 - Voldoende</option>
+              <option value="4">4 - Goed</option>
+              <option value="5">5 - Uitstekend</option>
+            </select>
+            <input type="text" class="feedback-input" placeholder="Feedback..." style="flex: 2; min-width: 200px;" />
+          </div>
+        `;
+        evalCompetencies.appendChild(row);
+      });
+    }
+    
+    finalizeBtn?.addEventListener("click", () => {
+      if (sumWeights() !== 100) {
+        if (evalResult) {
+          evalResult.textContent = "Kan niet afsluiten: gewichten moeten 100% zijn.";
+          evalResult.style.color = "#8b0000";
+        }
+        return;
+      }
+      
+      if (evalResult) {
+        evalResult.textContent = "Evaluatie definitief afgesloten!";
+        evalResult.style.color = "#0b6a4f";
+      }
+    });
+    
+    evalForm?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (evalResult) {
+        evalResult.textContent = "Evaluatie opgeslagen als concept.";
+        evalResult.style.color = "#005564";
+      }
+    });
+  }
+
+  // Admin views
   if (role === "admin") {
     const form = document.getElementById("competency-form");
     const nameInput = document.getElementById("comp-name");
@@ -191,34 +336,41 @@ function wireRoleInteractions(role) {
 
     form?.addEventListener("submit", (e) => {
       e.preventDefault();
-      const name = nameInput.value.trim();
-      const weight = Number(weightInput.value);
+      const name = nameInput?.value.trim();
+      const weight = Number(weightInput?.value);
 
       if (!name || Number.isNaN(weight)) {
         return;
       }
 
       competencies.push({ name, weight, score: 3 });
-      nameInput.value = "";
-      weightInput.value = "";
+      if (nameInput) nameInput.value = "";
+      if (weightInput) weightInput.value = "";
       renderCompetencies();
     });
 
     calcBtn?.addEventListener("click", () => {
       if (sumWeights() !== 100) {
-        scoreResult.textContent = "Kan niet berekenen: gewichten moeten exact 100% zijn.";
-        scoreResult.style.color = "#8b0000";
+        if (scoreResult) {
+          scoreResult.textContent = "Kan niet berekenen: gewichten moeten exact 100% zijn.";
+          scoreResult.style.color = "#8b0000";
+        }
         return;
       }
 
       const result = weightedScore();
-      scoreResult.textContent = `Gewogen eindscore: ${result.toFixed(2)} / 5`;
-      scoreResult.style.color = "#053b2d";
+      if (scoreResult) {
+        scoreResult.textContent = `Gewogen eindscore: ${result.toFixed(2)} / 5`;
+        scoreResult.style.color = "#053b2d";
+      }
     });
   }
 }
 
 roleSelect.addEventListener("change", renderView);
+viewSelect.addEventListener("change", () => {
+  renderView();
+});
 agreementToggle.addEventListener("change", () => {
   if (currentStatus === "Overeenkomst Ingediend") {
     renderStatusActions();

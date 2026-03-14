@@ -102,6 +102,91 @@
       </div>
     </template>
 
+    <template id="student-voorstel-template">
+      <div class="panel card reveal">
+        <h2>Stagevoorstel Indienen</h2>
+        <form id="proposal-form">
+          <div class="row">
+            <label>Bedrijfsnaam</label>
+            <input type="text" id="company-name" placeholder="Naam van het bedrijf" required />
+          </div>
+          <div class="row">
+            <label>Contactpersoon</label>
+            <input type="text" id="contact-person" placeholder="Naam contactpersoon" required />
+          </div>
+          <div class="row">
+            <label>E-mail contactpersoon</label>
+            <input type="email" id="contact-email" placeholder="email@bedrijf.be" required />
+          </div>
+          <div class="row">
+            <label>Stageperiode</label>
+            <div class="date-range">
+              <input type="date" id="start-date" required />
+              <span>tot</span>
+              <input type="date" id="end-date" required />
+            </div>
+          </div>
+          <div class="row">
+            <label>Omschrijving opdracht</label>
+            <textarea id="assignment-desc" rows="4" placeholder="Beschrijf de stageopdracht..." required></textarea>
+          </div>
+          <button type="submit" class="btn">Voorstel Indienen</button>
+        </form>
+        <p id="proposal-result" class="hint"></p>
+      </div>
+    </template>
+
+    <template id="student-logboek-template">
+      <div class="panel card reveal">
+        <h2>Logboek Week <span id="current-week">12</span></h2>
+        <form id="logbook-form">
+          <div class="row">
+            <label>Weeknummer</label>
+            <input type="number" id="log-week" min="1" max="52" value="12" required />
+          </div>
+          <div class="row">
+            <label>Taken deze week</label>
+            <textarea id="log-tasks" rows="3" placeholder="Wat heb je deze week gedaan?"></textarea>
+          </div>
+          <div class="row">
+            <label>Reflectie</label>
+            <textarea id="log-reflection" rows="3" placeholder="Hoe verliep de week? Wat leerde je?"></textarea>
+          </div>
+          <div class="row">
+            <label>Problemen / Leerpunten</label>
+            <textarea id="log-issues" rows="2" placeholder="Eventuele problemen of leerpunten"></textarea>
+          </div>
+          <div class="btn-group">
+            <button type="submit" class="btn">Opslaan als Concept</button>
+            <button type="button" id="submit-logbook" class="btn alt">Definitief Indienen</button>
+          </div>
+        </form>
+        <p id="logbook-result" class="hint"></p>
+      </div>
+    </template>
+
+    <template id="student-evaluatie-template">
+      <div class="panel card reveal">
+        <h2>Mijn Evaluaties</h2>
+        <table>
+          <thead>
+            <tr><th>Type</th><th>Datum</th><th>Status</th><th>Acties</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Tussentijds</td><td>15/11/2026</td><td>Afgerond</td><td><button class="btn small">Bekijken</button></td></tr>
+            <tr><td>Final</td><td>-</td><td>Nog niet</td><td>-</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="panel card reveal">
+        <h2>Eindoverzicht</h2>
+        <div id="final-summary">
+          <p><strong>Status:</strong> Afwachten</p>
+          <p>De finale evaluatie is nog niet ingediend.</p>
+        </div>
+      </div>
+    </template>
+
     <template id="commissie-template">
       <div class="panel card reveal">
         <h2>Nieuwe Stagevoorstellen</h2>
@@ -142,6 +227,37 @@
           <p>Registratiepunt: Datum + opmerkingen + optionele score per competentie.</p>
           <button class="btn">Nieuwe tussentijdse evaluatie</button>
         </article>
+      </div>
+    </template>
+
+    <template id="docent-evaluatie-template">
+      <div class="panel card reveal">
+        <h2>Evaluatie: Jan B. - TechCorp</h2>
+        <form id="eval-form">
+          <div class="eval-type">
+            <label>Type evaluatie</label>
+            <select id="eval-type">
+              <option value="tussentijds">Tussentijds</option>
+              <option value="final">Final</option>
+            </select>
+          </div>
+          
+          <h3>Competentie Scores</h3>
+          <div id="eval-competencies">
+            <!-- Competencies will be rendered here -->
+          </div>
+          
+          <div class="row">
+            <label>Algemene opmerkingen</label>
+            <textarea id="eval-comments" rows="3" placeholder="Algemene feedback voor de student..."></textarea>
+          </div>
+          
+          <div class="btn-group">
+            <button type="submit" class="btn">Opslaan als Concept</button>
+            <button type="button" id="finalize-eval" class="btn alt">Definitief Afsluiten</button>
+          </div>
+        </form>
+        <p id="eval-result" class="hint"></p>
       </div>
     </template>
 
