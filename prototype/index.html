@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stage Monitoring Tool Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient"></div>
+    <header class="topbar">
+      <div class="brand">
+        <p class="eyebrow">Prototype</p>
+        <h1>Stage Monitoring Tool</h1>
+      </div>
+      <div class="meta">
+        <span class="chip">Analyse gebaseerd op Juan (Extended)</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="panel nav-panel">
+        <h2>Navigatie</h2>
+
+        <label for="role-select">Actieve rol</label>
+        <select id="role-select" aria-label="Kies rol">
+          <option value="student">Student</option>
+          <option value="commissie">Stagecommissie</option>
+          <option value="docent">Docent</option>
+          <option value="mentor">Stagementor</option>
+          <option value="admin">Administratie</option>
+        </select>
+
+        <label for="view-select">Scherm</label>
+        <select id="view-select" aria-label="Kies scherm"></select>
+
+        <section class="status-block">
+          <h3>Stage Status Machine</h3>
+          <p id="current-status" class="status-pill">Ingediend</p>
+          <div class="status-actions" id="status-actions"></div>
+          <p class="hint">
+            Regel: status Lopend kan enkel als overeenkomst_getekend = true.
+          </p>
+          <label class="toggle">
+            <input type="checkbox" id="agreement-toggle" />
+            overeenkomst_getekend = true
+          </label>
+        </section>
+      </aside>
+
+      <section class="content" id="content"></section>
+    </main>
+
+    <template id="student-dashboard-template">
+      <div class="grid two-col reveal">
+        <article class="panel card hero">
+          <h2>Mijn Stage</h2>
+          <p><strong>Bedrijf:</strong> TechCorp NV</p>
+          <p><strong>Periode:</strong> 01/09/2026 - 31/01/2027</p>
+          <p><strong>Docent:</strong> Dhr. Peeters</p>
+          <p><strong>Mentor:</strong> Mevr. Janssens</p>
+        </article>
+
+        <article class="panel card task-card">
+          <h2>Openstaande Taken</h2>
+          <ul>
+            <li>Week 12 logboek nog niet ingevuld</li>
+            <li>Competentie reflectie week 12 toevoegen</li>
+            <li>Eindpresentatie template downloaden</li>
+          </ul>
+        </article>
+      </div>
+
+      <div class="grid two-col reveal">
+        <article class="panel card">
+          <h2>Logboeken Overzicht</h2>
+          <table>
+            <thead>
+              <tr><th>Week</th><th>Status</th><th>Mentor</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>10</td><td>Ingediend</td><td>Goedgekeurd</td></tr>
+              <tr><td>11</td><td>Ingediend</td><td>Goedgekeurd</td></tr>
+              <tr><td>12</td><td>Ontbrekend</td><td>-</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <article class="panel card">
+          <h2>Competentie Progressie</h2>
+          <div class="meter"><span style="width: 80%">Analyseren 80%</span></div>
+          <div class="meter"><span style="width: 60%">Ontwerpen 60%</span></div>
+          <div class="meter"><span style="width: 40%">Realiseren 40%</span></div>
+          <div class="meter"><span style="width: 50%">Testen 50%</span></div>
+        </article>
+      </div>
+    </template>
+
+    <template id="commissie-template">
+      <div class="panel card reveal">
+        <h2>Nieuwe Stagevoorstellen</h2>
+        <table>
+          <thead>
+            <tr><th>Student</th><th>Bedrijf</th><th>Datum</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Jan B.</td><td>TechCorp</td><td>14/03</td><td>Ingediend</td></tr>
+            <tr><td>Marie V.</td><td>InnovateIT</td><td>13/03</td><td>In Beoordeling</td></tr>
+            <tr><td>Pieter L.</td><td>DataFlow</td><td>12/03</td><td>Aanpassingen vereist</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel card reveal">
+        <h2>Beslissing Simulatie</h2>
+        <p>Gebruik de statusknoppen links om de flow te doorlopen.</p>
+        <textarea id="feedback-box" rows="4" placeholder="Feedback bij aanpassingen/afkeuring"></textarea>
+        <button id="save-feedback" class="btn">Feedback opslaan</button>
+        <p id="feedback-result" class="hint"></p>
+      </div>
+    </template>
+
+    <template id="docent-template">
+      <div class="grid two-col reveal">
+        <article class="panel card">
+          <h2>Missing Logs</h2>
+          <ul>
+            <li>Jan Peeters - Week 12 <button class="btn small">Remind</button></li>
+            <li>Sarah Claessens - Week 11 <button class="btn small">Remind</button></li>
+            <li>Bram Van Damme - Week 12 <button class="btn small">Remind</button></li>
+          </ul>
+        </article>
+
+        <article class="panel card">
+          <h2>Tussentijdse Evaluaties</h2>
+          <p>Registratiepunt: Datum + opmerkingen + optionele score per competentie.</p>
+          <button class="btn">Nieuwe tussentijdse evaluatie</button>
+        </article>
+      </div>
+    </template>
+
+    <template id="mentor-template">
+      <div class="panel card reveal">
+        <h2>Wekelijkse Validatie</h2>
+        <table>
+          <thead>
+            <tr><th>Student</th><th>Week</th><th>Logboek</th><th>Actie</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Jan B.</td><td>11</td><td>Ingediend</td><td><button class="btn small">Aftekenen</button></td></tr>
+            <tr><td>Jan B.</td><td>12</td><td>Ontbrekend</td><td><button class="btn small alt">Herinnering</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </template>
+
+    <template id="admin-template">
+      <div class="grid two-col reveal">
+        <article class="panel card">
+          <h2>Competentiebeheer</h2>
+          <p>Som gewichten moet 100% zijn.</p>
+          <form id="competency-form">
+            <div class="row">
+              <input type="text" id="comp-name" placeholder="Competentie naam" required />
+              <input type="number" id="comp-weight" min="0" max="100" step="1" placeholder="Gewicht %" required />
+            </div>
+            <button class="btn" type="submit">Competentie toevoegen</button>
+          </form>
+          <ul id="competency-list" class="list"></ul>
+          <p id="weight-check" class="hint"></p>
+        </article>
+
+        <article class="panel card">
+          <h2>Finale Score Simulator</h2>
+          <p>Gewogen formule: Σ(score × gewicht)/100</p>
+          <div id="score-inputs"></div>
+          <button id="calc-score" class="btn">Bereken eindscore</button>
+          <p id="score-result" class="result"></p>
+        </article>
+      </div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
