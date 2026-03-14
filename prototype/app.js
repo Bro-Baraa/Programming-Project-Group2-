@@ -1,6 +1,6 @@
 const roleViews = {
-  student: ["dashboard", "voorstel", "logboek", "evaluaties"],
-  commissie: ["voorstellen"],
+  student: ["dashboard", "voorstel", "logboek", "overeenkomst", "evaluaties"],
+  commissie: ["voorstellen", "overzicht"],
   docent: ["opvolging", "evaluatie"],
   mentor: ["validatie"],
   admin: ["competenties"],
@@ -21,8 +21,10 @@ const templates = {
   student: "student-dashboard-template",
   "student-voorstel": "student-voorstel-template",
   "student-logboek": "student-logboek-template",
+  "student-overeenkomst": "student-overeenkomst-template",
   "student-evaluaties": "student-evaluatie-template",
   commissie: "commissie-template",
+  "commissie-overzicht": "commissie-overzicht-template",
   docent: "docent-template",
   "docent-evaluatie": "docent-evaluatie-template",
   mentor: "mentor-template",
@@ -253,6 +255,46 @@ function wireRoleInteractions(role) {
           result.textContent = `Logboek week ${week} opgeslagen als concept.`;
           result.style.color = "#005564";
         }
+      });
+    }
+    
+    // Overeenkomst upload
+    if (view === "overeenkomst") {
+      const form = document.getElementById("agreement-form");
+      const result = document.getElementById("agreement-result");
+      const statusText = document.getElementById("agreement-status-text");
+      
+      form?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById("agreement-file");
+        const file = fileInput?.files[0];
+        
+        if (!file) {
+          if (result) {
+            result.textContent = "Selecteer een PDF bestand.";
+            result.style.color = "#8b0000";
+          }
+          return;
+        }
+        
+        if (file.type !== "application/pdf") {
+          if (result) {
+            result.textContent = "Alleen PDF bestanden zijn toegestaan.";
+            result.style.color = "#8b0000";
+          }
+          return;
+        }
+        
+        if (result) {
+          result.textContent = `Overeenkomst '${file.name}' succesvol geüpload!`;
+          result.style.color = "#0b6a4f";
+        }
+        if (statusText) {
+          statusText.innerHTML = '<span class="status-approved">Ontvangen</span>';
+        }
+        
+        // Update agreement toggle
+        agreementToggle.checked = true;
       });
     }
   }

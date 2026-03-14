@@ -320,6 +320,25 @@ td {
 .status-rejected { background: rgba(214, 40, 57, 0.15); color: #8b0000; }
 .status-pending { background: rgba(224, 159, 62, 0.18); color: #8a6100; }
 
+/* Agreement form */
+.agreement-status {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.agreement-status h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.agreement-status span {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
 @keyframes rise {
   from {
     transform: translateY(10px);

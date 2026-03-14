@@ -100,6 +100,14 @@
           <div class="meter"><span style="width: 50%">Testen 50%</span></div>
         </article>
       </div>
+
+      <div class="panel card reveal">
+        <h2>Feedback</h2>
+        <div id="student-feedback">
+          <p><strong>Laatste feedback:</strong></p>
+          <p class="hint">Je hebt nog geen feedback ontvangen.</p>
+        </div>
+      </div>
     </template>
 
     <template id="student-voorstel-template">
@@ -187,6 +195,28 @@
       </div>
     </template>
 
+    <template id="student-overeenkomst-template">
+      <div class="panel card reveal">
+        <h2>Stageovereenkomst</h2>
+        <p>Upload hier je getekende stageovereenkomst (PDF).</p>
+        <p class="hint">Let op: Je kan pas een overeenkomst uploaden als je stagevoorstel is goedgekeurd.</p>
+        
+        <form id="agreement-form">
+          <div class="row">
+            <label>Selecteer bestand (PDF)</label>
+            <input type="file" id="agreement-file" accept=".pdf" />
+          </div>
+          <button type="submit" class="btn">Uploaden</button>
+        </form>
+        <p id="agreement-result" class="hint"></p>
+        
+        <div class="agreement-status">
+          <h3>Huidige status</h3>
+          <p id="agreement-status-text"><span class="status-pending">Nog niet geüpload</span></p>
+        </div>
+      </div>
+    </template>
+
     <template id="commissie-template">
       <div class="panel card reveal">
         <h2>Nieuwe Stagevoorstellen</h2>
@@ -208,6 +238,43 @@
         <textarea id="feedback-box" rows="4" placeholder="Feedback bij aanpassingen/afkeuring"></textarea>
         <button id="save-feedback" class="btn">Feedback opslaan</button>
         <p id="feedback-result" class="hint"></p>
+      </div>
+    </template>
+
+    <template id="commissie-overzicht-template">
+      <div class="panel card reveal">
+        <h2>Alle Stages - Overzicht</h2>
+        <table>
+          <thead>
+            <tr><th>Student</th><th>Bedrijf</th><th>Periode</th><th>Status</th><th>Overeenkomst</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Jan B.</td><td>TechCorp</td><td>01/09 - 31/01</td><td><span class="status-approved">Goedgekeurd</span></td><td><span class="status-approved">Ontvangen</span></td></tr>
+            <tr><td>Marie V.</td><td>InnovateIT</td><td>01/09 - 31/01</td><td><span class="status-approved">Goedgekeurd</span></td><td><span class="status-pending">Nog niet</span></td></tr>
+            <tr><td>Pieter L.</td><td>DataFlow</td><td>01/09 - 31/01</td><td><span class="status-rejected">Afgekeurd</span></td><td>-</td></tr>
+            <tr><td>Sarah C.</td><td>WebSolutions</td><td>15/09 - 15/02</td><td><span class="status-submitted">Ingediend</span></td><td>-</td></tr>
+            <tr><td>Bram V.</td><td>AppDev BV</td><td>01/10 - 28/02</td><td><span class="status-pending">Aanpassingen</span></td><td>-</td></tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div class="grid two-col">
+        <div class="panel card reveal">
+          <h2>Statistieken</h2>
+          <ul>
+            <li>Totaal voorstellen: 12</li>
+            <li>Goedgekeurd: 8</li>
+            <li>In behandeling: 2</li>
+            <li>Afgekeurd: 2</li>
+          </ul>
+        </div>
+        <div class="panel card reveal">
+          <h2>Overeenkomsten</h2>
+          <ul>
+            <li>Ontvangen: 6</li>
+            <li>Nog uitstaand: 2</li>
+          </ul>
+        </div>
       </div>
     </template>
 
