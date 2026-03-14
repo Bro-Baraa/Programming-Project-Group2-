@@ -47,15 +47,19 @@ const competencies = [
 
 function renderView() {
   const role = roleSelect.value;
+  const currentView = viewSelect.value;
 
-  viewSelect.innerHTML = "";
-  roleViews[role].forEach((view) => {
-    const option = document.createElement("option");
-    option.value = view;
-    option.textContent = view.charAt(0).toUpperCase() + view.slice(1);
-    viewSelect.appendChild(option);
-  });
-
+  // Only populate dropdown if it's empty or role changed
+  if (viewSelect.options.length === 0 || !roleViews[role].includes(currentView)) {
+    viewSelect.innerHTML = "";
+    roleViews[role].forEach((view) => {
+      const option = document.createElement("option");
+      option.value = view;
+      option.textContent = view.charAt(0).toUpperCase() + view.slice(1);
+      viewSelect.appendChild(option);
+    });
+  }
+  
   content.innerHTML = "";
   
   // Map role+view to template
@@ -63,9 +67,13 @@ function renderView() {
   const key = `${role}-${view}` || role;
   const templateId = templates[key] || templates[role];
   
+  console.log('Rendering:', role, view, 'key:', key, 'template:', templateId);
+  
   const tpl = document.getElementById(templateId);
   if (tpl) {
     content.appendChild(tpl.content.cloneNode(true));
+  } else {
+    console.error('Template not found:', templateId);
   }
 
   wireRoleInteractions(role);
