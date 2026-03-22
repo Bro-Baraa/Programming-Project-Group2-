@@ -76,6 +76,18 @@ Deze functie is klaar wanneer:
 ## 4. Schema's
 
 1. **ER-diagram** – toont de structuur van de database
+   ```mermaid
+erDiagram
+    STUDENT ||--o{ INTERNSHIP : submits
+    INTERNSHIP ||--|{ LOGBOOK : contains
+    STUDENT ||--o{ LOGBOOK : writes
+    TEACHER ||--o{ LOGBOOK : reviews
+    MENTOR ||--o{ LOGBOOK : checks
+    INTERNSHIP ||--o{ EVALUATION : has
+    TEACHER ||--o{ EVALUATION : gives
+    MENTOR ||--o{ EVALUATION : gives
+    ADMIN ||--o{ COMPETENCY : manages
+    
 2. **Use Case diagram** – toont wat gebruikers in het systeem kunnen doen
 3. **Activity diagram** – toont het verloop van het stageproces
 4. **Architectuur diagram** – toont hoe het systeem technisch opgebouwd is
