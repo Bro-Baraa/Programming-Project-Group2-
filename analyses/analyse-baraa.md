@@ -76,41 +76,9 @@ Deze functie is klaar wanneer:
 ## 4. Schema's
 
 1. **ER-diagram** – toont de structuur van de database
-
-```mermaid
-erDiagram
-    STUDENT {
-        int id
-        string name
-        string email
-    }
-
-    INTERNSHIP {
-        int id
-        string company
-        string period
-    }
-
-    LOGBOOK {
-        int id
-        string content
-        date week
-    }
-
-    EVALUATION {
-        int id
-        int score
-        string feedback
-    }
-
-    STUDENT ||--o{ INTERNSHIP : submits
-    INTERNSHIP ||--o{ LOGBOOK : contains
-    STUDENT ||--o{ LOGBOOK : writes
-    INTERNSHIP ||--o{ EVALUATION : has
-   
-3. **Use Case diagram** – toont wat gebruikers in het systeem kunnen doen
-4. **Activity diagram** – toont het verloop van het stageproces
-5. **Architectuur diagram** – toont hoe het systeem technisch opgebouwd is
+2. **Use Case diagram** – toont wat gebruikers in het systeem kunnen doen
+3. **Activity diagram** – toont het verloop van het stageproces
+4. **Architectuur diagram** – toont hoe het systeem technisch opgebouwd is
 
 ---
 
