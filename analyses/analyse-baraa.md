@@ -1,10 +1,13 @@
 # Stage Monitoring Tool Probleemanalyse
 
-Studenten moeten tijdens hun opleiding stage doen. Het stageproces verloopt vandaag deels manueel en deels via verschillende systemen.
+Het stageproces speelt een belangrijke rol binnen de opleiding, omdat studenten via hun stage praktijkervaring opdoen en begeleid worden door verschillende partijen zoals docenten en bedrijven.
 
-Daardoor is het niet altijd duidelijk waar informatie terug te vinden is of wat de status van een stage is. Dit kan zorgen voor verwarring bij studenten, docenten en bedrijven.
+In de huidige situatie verloopt dit proces niet op een uniforme manier. Verschillende onderdelen, zoals communicatie, documenten en opvolging, zijn verspreid over meerdere tools of worden manueel uitgevoerd. Hierdoor ontstaat er geen duidelijk totaaloverzicht van de stage.
 
-Daarom is er nood aan een centrale applicatie die het stageproces duidelijker en overzichtelijker maakt.
+Dit maakt het voor alle betrokken partijen moeilijk om het proces efficiënt te volgen en tijdig in te grijpen wanneer nodig.
+
+Om dit probleem op te lossen, is er nood aan een centrale applicatie die het volledige stageproces bundelt en een duidelijk overzicht biedt van alle stappen, documenten en evaluaties.
+
 
 ---
 
