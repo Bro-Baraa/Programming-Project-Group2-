@@ -213,7 +213,113 @@ De flow voor het beoordelen van een stagevoorstel:
 
 # **3\. Datamodel**
 
-![][image4]
+```mermaid
+erDiagram
+  USERS ||--o{ STAGES : "student"
+  USERS ||--o{ STAGES : "docent"
+  USERS ||--o{ STAGES : "mentor"
+  USERS ||--o{ EVALUATIES : "evalueert"
+  BEDRIJVEN ||--o{ STAGES : "heeft"
+  STAGES ||--|| STAGEVOORSTELLEN : "heeft"
+  STAGES ||--o| OVEREENKOMST : "heeft"
+  STAGES ||--o{ DOCUMENTEN : "heeft"
+  STAGES ||--o{ LOGBOEKEN : "heeft"
+  STAGES ||--o{ EVALUATIES : "heeft"
+  COMPETENTIEPROFIELEN ||--o{ COMPETENTIES : "definieert"
+  EVALUATIES ||--o{ EVALUATIE_REGELS : "bevat"
+  COMPETENTIES ||--o{ EVALUATIE_REGELS : "gebruikt"
+
+  USERS {
+    int id PK
+    string naam
+    string email
+    string password
+    enum rol
+    datetime created_at
+  }
+  BEDRIJVEN {
+    int id PK
+    string naam
+    string adres
+    string sector
+  }
+  STAGES {
+    int id PK
+    int student_id FK
+    int docent_id FK
+    int mentor_id FK
+    int bedrijf_id FK
+    date start_date
+    date end_date
+    enum status
+    datetime created_at
+  }
+  STAGEVOORSTELLEN {
+    int id PK
+    int stage_id FK
+    text omschrijving
+    enum status
+    text feedback
+    datetime ingediend_op
+  }
+  OVEREENKOMST {
+    int id PK
+    int stage_id FK
+    string bestandspad
+    boolean verzekering
+    enum status
+    datetime geupload_op
+  }
+  DOCUMENTEN {
+    int id PK
+    int stage_id FK
+    enum type
+    string bestandspad
+    datetime geupload_op
+  }
+  LOGBOEKEN {
+    int id PK
+    int stage_id FK
+    int week_nr
+    text taken
+    text reflectie
+    text problemen
+    datetime ingediend_op
+    enum status
+    boolean mentor_akkoord
+  }
+  COMPETENTIEPROFIELEN {
+    int id PK
+    string naam
+    string versie
+    boolean actief
+  }
+  COMPETENTIES {
+    int id PK
+    int profiel_id FK
+    string naam
+    text beschrijving
+    float gewicht
+    string academisch_jaar
+    boolean actief
+  }
+  EVALUATIES {
+    int id PK
+    int stage_id FK
+    enum type
+    date datum
+    int evaluator_id FK
+    enum status
+  }
+  EVALUATIE_REGELS {
+    int id PK
+    int evaluatie_id FK
+    int competentie_id FK
+    int score
+    text student_beschrijving
+    text evaluator_feedback
+  }
+```
 
 | Tabel | Sleutelvelden | Relaties |
 | ----- | ----- | ----- |
