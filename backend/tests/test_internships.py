@@ -21,11 +21,13 @@ class TestInternshipCreation:
             json=internship_data,
             headers=auth_headers_student
         )
-        assert response.status_code == 200
+        assert response.status_code == 201  # Created status
         data = response.json()
-        assert data["company_name"] == "Test Company"
         assert data["status"] == "Ingediend"
         assert data["student_id"] == test_student.id
+        # Company name is in the nested company object, not directly on internship
+        assert data["company"] is not None
+        assert data["company"]["name"] == "Test Company"
 
     def test_teacher_cannot_create_internship(self, client, auth_headers_teacher):
         """Test only students can create internships."""
@@ -63,31 +65,47 @@ class TestInternshipListing:
 
     @pytest.fixture
     def sample_internships(self, db, test_student):
-        """Create sample internships."""
-        internships = [
-            Internship(
-                student_id=test_student.id,
-                company_name="Company A",
-                contact_person="Person A",
-                contact_email="a@test.com",
-                start_date=date.today(),
-                end_date=date.today() + timedelta(days=90),
-                description="Description A",
-                status="Ingediend"
-            ),
-            Internship(
-                student_id=test_student.id,
-                company_name="Company B",
-                contact_person="Person B",
-                contact_email="b@test.com",
-                start_date=date.today(),
-                end_date=date.today() + timedelta(days=90),
-                description="Description B",
-                status="Goedgekeurd"
-            ),
+        """Create sample internships with proper company relationships."""
+        from app.models import Company, Proposal
+
+        internships_data = [
+            {"company_name": "Company A", "contact_person": "Person A", "contact_email": "a@test.com",
+             "description": "Description A", "status": "Ingediend"},
+            {"company_name": "Company B", "contact_person": "Person B", "contact_email": "b@test.com",
+             "description": "Description B", "status": "Goedgekeurd"},
         ]
-        for internship in internships:
+
+        internships = []
+        for data in internships_data:
+            # Create company
+            company = Company(
+                name=data["company_name"],
+                contact_person=data["contact_person"],
+                contact_email=data["contact_email"]
+            )
+            db.add(company)
+            db.flush()
+
+            # Create internship
+            internship = Internship(
+                student_id=test_student.id,
+                company_id=company.id,
+                start_date=date.today(),
+                end_date=date.today() + timedelta(days=90),
+                status=data["status"]
+            )
             db.add(internship)
+            db.flush()
+
+            # Create proposal
+            proposal = Proposal(
+                internship_id=internship.id,
+                description=data["description"],
+                status=data["status"]
+            )
+            db.add(proposal)
+            internships.append(internship)
+
         db.commit()
         return internships
 
@@ -123,7 +141,7 @@ class TestInternshipWorkflow:
 
     @pytest.fixture
     def created_internship(self, client, auth_headers_student, db):
-        """Create and return an internship."""
+        """Create and return an internship via API."""
         internship_data = {
             "company_name": "Test Company",
             "contact_person": "John Contact",
@@ -139,85 +157,95 @@ class TestInternshipWorkflow:
         )
         return response.json()
 
-    def test_status_transition_valid(self, client, auth_headers_committee, created_internship):
-        """Test valid status transition."""
+    def test_status_transition_via_proposal(self, client, auth_headers_committee, created_internship):
+        """Test valid status transition via proposal approval workflow."""
         internship_id = created_internship["id"]
-        
-        # First transition: Ingediend -> In Beoordeling
-        response = client.patch(
-            f"/internships/{internship_id}/status",
-            json={"status": "In Beoordeling"},
-            headers=auth_headers_committee
-        )
-        assert response.status_code == 200
-        assert response.json()["status"] == "In Beoordeling"
 
-        # Then: In Beoordeling -> Goedgekeurd
+        # Approve proposal: This updates both proposal and internship status to "Goedgekeurd"
         response = client.patch(
-            f"/internships/{internship_id}/status",
-            json={"status": "Goedgekeurd"},
+            f"/internships/{internship_id}/proposal",
+            json={"status": "Goedgekeurd", "feedback": ""},
             headers=auth_headers_committee
         )
         assert response.status_code == 200
         assert response.json()["status"] == "Goedgekeurd"
 
-    def test_status_transition_invalid(self, client, auth_headers_committee, created_internship):
-        """Test invalid status transition."""
+        # Verify internship status was also updated
+        internship_response = client.get(
+            f"/internships/{internship_id}",
+            headers=auth_headers_committee
+        )
+        assert internship_response.status_code == 200
+        assert internship_response.json()["status"] == "Goedgekeurd"
+
+    def test_proposal_requires_feedback_for_changes(self, client, auth_headers_committee, created_internship):
+        """Test that requesting changes requires feedback."""
         internship_id = created_internship["id"]
-        
-        # Can't go directly from Ingediend to Goedgekeurd
+
+        # Cannot set status to "Aanpassingen Vereist" without providing feedback
         response = client.patch(
-            f"/internships/{internship_id}/status",
-            json={"status": "Goedgekeurd"},
+            f"/internships/{internship_id}/proposal",
+            json={"status": "Aanpassingen Vereist"},  # Missing feedback
             headers=auth_headers_committee
         )
         assert response.status_code == 400
-        assert "Invalid status transition" in response.json()["detail"]
+        assert "Feedback is required" in response.json()["detail"]
 
-    def test_student_cannot_change_status(self, client, auth_headers_student, created_internship):
-        """Test students cannot change status."""
+    def test_student_cannot_approve_proposal(self, client, auth_headers_student, created_internship):
+        """Test students cannot approve/reject proposals (committee only)."""
         internship_id = created_internship["id"]
-        
+
+        # Students cannot use the proposal approval endpoint
         response = client.patch(
-            f"/internships/{internship_id}/status",
-            json={"status": "In Beoordeling"},
+            f"/internships/{internship_id}/proposal",
+            json={"status": "Goedgekeurd"},
             headers=auth_headers_student
         )
         assert response.status_code == 403
 
-    def test_cannot_go_lopend_without_agreement(self, client, auth_headers_committee, created_internship):
-        """Test cannot transition to Lopend without agreement."""
+    def test_agreement_workflow_transitions_status(self, client, auth_headers_student, auth_headers_committee, created_internship):
+        """Test that agreement upload and validation transitions internship status properly."""
+        import io
+
         internship_id = created_internship["id"]
-        
-        # First do proper flow: Ingediend -> In Beoordeling -> Goedgekeurd -> Overeenkomst Ingediend
-        # Check what transitions are actually allowed from Goedgekeurd
-        client.patch(
-            f"/internships/{internship_id}/status",
-            json={"status": "In Beoordeling"},
-            headers=auth_headers_committee
-        )
-        client.patch(
-            f"/internships/{internship_id}/status",
-            json={"status": "Goedgekeurd"},
-            headers=auth_headers_committee
-        )
-        
-        # Check status flow - according to STATUS_FLOW, from Goedgekeurd we can go to "Overeenkomst Ingediend"
-        # but not directly to "Lopend"
+
+        # Step 1: Approve the proposal first
         response = client.patch(
-            f"/internships/{internship_id}/status",
-            json={"status": "Lopend"},
+            f"/internships/{internship_id}/proposal",
+            json={"status": "Goedgekeurd", "feedback": ""},
             headers=auth_headers_committee
         )
-        # The API should reject this as invalid transition OR require agreement
-        assert response.status_code in [400, 403]  # Either invalid transition or agreement required
-        if response.status_code == 400:
-            assert "Invalid" in response.json()["detail"] or "agreement" in response.json()["detail"]
+        assert response.status_code == 200
+
+        # Step 2: Student uploads agreement
+        pdf_content = b"%PDF-1.4 fake pdf content"
+        response = client.post(
+            f"/internships/{internship_id}/agreement",
+            files={"file": ("agreement.pdf", io.BytesIO(pdf_content), "application/pdf")},
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+
+        # Verify internship status changed to "Overeenkomst Ingediend"
+        internship = client.get(f"/internships/{internship_id}", headers=auth_headers_committee).json()
+        assert internship["status"] == "Overeenkomst Ingediend"
+
+        # Step 3: Committee validates agreement
+        response = client.patch(
+            f"/internships/{internship_id}/agreement",
+            json={"status": "Gevalideerd", "insurance_verified": True},
+            headers=auth_headers_committee
+        )
+        assert response.status_code == 200
+
+        # Verify internship status changed to "Lopend"
+        internship = client.get(f"/internships/{internship_id}", headers=auth_headers_committee).json()
+        assert internship["status"] == "Lopend"
 
     def test_get_internship_detail(self, client, auth_headers_student, created_internship):
         """Test getting single internship details."""
         internship_id = created_internship["id"]
-        
+
         response = client.get(
             f"/internships/{internship_id}",
             headers=auth_headers_student
@@ -225,7 +253,8 @@ class TestInternshipWorkflow:
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == internship_id
-        assert data["company_name"] == "Test Company"
+        # Company name is in the nested company object
+        assert data["company"]["name"] == "Test Company"
 
 
 class TestLogbooks:
@@ -309,23 +338,42 @@ class TestDashboardStats:
 
     def test_dashboard_stats(self, client, auth_headers_admin, db, test_student):
         """Test dashboard stats calculation."""
-        # Create some internships with different statuses
-        internships = [
-            Internship(student_id=test_student.id, company_name="A", contact_person="A", 
-                      contact_email="a@test.com", start_date=date.today(), 
-                      end_date=date.today() + timedelta(days=30), description="A", status="Ingediend"),
-            Internship(student_id=test_student.id, company_name="B", contact_person="B", 
-                      contact_email="b@test.com", start_date=date.today(), 
-                      end_date=date.today() + timedelta(days=30), description="B", status="In Beoordeling"),
-            Internship(student_id=test_student.id, company_name="C", contact_person="C", 
-                      contact_email="c@test.com", start_date=date.today(), 
-                      end_date=date.today() + timedelta(days=30), description="C", status="Goedgekeurd"),
-            Internship(student_id=test_student.id, company_name="D", contact_person="D", 
-                      contact_email="d@test.com", start_date=date.today(), 
-                      end_date=date.today() + timedelta(days=30), description="D", status="Lopend", agreement_uploaded=True),
+        from app.models import Company, Proposal
+
+        # Create internships with different statuses
+        internship_configs = [
+            {"company_name": "A", "status": "Ingediend"},
+            {"company_name": "B", "status": "In Beoordeling"},
+            {"company_name": "C", "status": "Goedgekeurd"},
+            {"company_name": "D", "status": "Lopend"},
         ]
-        for internship in internships:
+
+        for config in internship_configs:
+            company = Company(
+                name=config["company_name"],
+                contact_person=f"Person {config['company_name']}",
+                contact_email=f"{config['company_name'].lower()}@test.com"
+            )
+            db.add(company)
+            db.flush()
+
+            internship = Internship(
+                student_id=test_student.id,
+                company_id=company.id,
+                start_date=date.today(),
+                end_date=date.today() + timedelta(days=30),
+                status=config["status"]
+            )
             db.add(internship)
+            db.flush()
+
+            proposal = Proposal(
+                internship_id=internship.id,
+                description=f"Description {config['company_name']}",
+                status=config["status"]
+            )
+            db.add(proposal)
+
         db.commit()
         
         response = client.get(
@@ -385,52 +433,80 @@ class TestEvaluations:
         )
         return response.json()
 
-    def test_update_evaluation(self, client, auth_headers_teacher, created_evaluation):
-        """Test teacher can update their evaluation."""
+    def test_update_evaluation_rule(self, client, auth_headers_teacher, created_evaluation, db):
+        """Test teacher can update an evaluation rule with score and feedback."""
+        from app.models import EvaluationRule
+
         evaluation_id = created_evaluation["id"]
-        
+
+        # Get the first rule for this evaluation
+        rule = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).first()
+        assert rule is not None, "Evaluation should have rules created automatically"
+
         update_data = {
-            "scores": {"1": 4, "2": 3},
-            "comments": "Updated comment"
+            "score": 4,
+            "evaluator_feedback": "Good work on this competency"
         }
-        
+
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}",
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
             json=update_data,
             headers=auth_headers_teacher
         )
         assert response.status_code == 200
         data = response.json()
-        assert data["comments"] == "Updated comment"
+        assert data["score"] == 4
+        assert data["evaluator_feedback"] == "Good work on this competency"
 
-    def test_cannot_update_finalized_evaluation(self, client, auth_headers_teacher, created_evaluation):
-        """Test cannot update after finalization."""
+    def test_cannot_update_finalized_evaluation(self, client, auth_headers_teacher, created_evaluation, db):
+        """Test cannot update rule after evaluation is finalized."""
+        from app.models import EvaluationRule
+
         evaluation_id = created_evaluation["id"]
-        
-        # First finalize
-        client.post(
-            f"/internships/evaluations/{evaluation_id}/finalize",
-            json={"scores": {"1": 4, "2": 3}},
+
+        # Get the first rule for this evaluation
+        rule = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).first()
+        assert rule is not None
+
+        # First score all rules and finalize
+        client.patch(
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            json={"score": 4},
             headers=auth_headers_teacher
         )
-        
-        # Try to update
+
+        client.post(
+            f"/internships/evaluations/{evaluation_id}/finalize",
+            json={},
+            headers=auth_headers_teacher
+        )
+
+        # Try to update the rule after finalization
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}",
-            json={"comments": "Should fail"},
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            json={"score": 5, "evaluator_feedback": "Should fail"},
             headers=auth_headers_teacher
         )
         assert response.status_code == 400
 
-    def test_finalize_evaluation(self, client, auth_headers_teacher, created_evaluation, test_teacher):
-        """Test teacher can finalize evaluation."""
+    def test_finalize_evaluation(self, client, auth_headers_teacher, created_evaluation, test_teacher, db):
+        """Test teacher can finalize evaluation after scoring all rules."""
+        from app.models import EvaluationRule
+
         evaluation_id = created_evaluation["id"]
-        
-        scores = {"1": 4, "2": 3, "3": 5}
-        
+
+        # Score all rules first (required before finalization)
+        rules = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).all()
+        for rule in rules:
+            client.patch(
+                f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+                json={"score": 4},
+                headers=auth_headers_teacher
+            )
+
         response = client.post(
             f"/internships/evaluations/{evaluation_id}/finalize",
-            json={"scores": scores},
+            json={},  # Finalize doesn't take scores - uses existing rule scores
             headers=auth_headers_teacher
         )
         assert response.status_code == 200
@@ -439,21 +515,32 @@ class TestEvaluations:
         assert data["finalized_at"] is not None
         assert data["evaluator_id"] == test_teacher.id
 
-    def test_cannot_finalize_twice(self, client, auth_headers_teacher, created_evaluation):
+    def test_cannot_finalize_twice(self, client, auth_headers_teacher, created_evaluation, db):
         """Test cannot finalize already finalized evaluation."""
+        from app.models import EvaluationRule
+
         evaluation_id = created_evaluation["id"]
-        
+
+        # Score all rules first
+        rules = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).all()
+        for rule in rules:
+            client.patch(
+                f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+                json={"score": 4},
+                headers=auth_headers_teacher
+            )
+
         # First finalize
         client.post(
             f"/internships/evaluations/{evaluation_id}/finalize",
-            json={"scores": {"1": 4}},
+            json={},
             headers=auth_headers_teacher
         )
-        
+
         # Try to finalize again
         response = client.post(
             f"/internships/evaluations/{evaluation_id}/finalize",
-            json={"scores": {"1": 5}},
+            json={},
             headers=auth_headers_teacher
         )
         assert response.status_code == 400
@@ -461,10 +548,10 @@ class TestEvaluations:
     def test_student_cannot_finalize(self, client, auth_headers_student, created_evaluation):
         """Test students cannot finalize evaluations."""
         evaluation_id = created_evaluation["id"]
-        
+
         response = client.post(
             f"/internships/evaluations/{evaluation_id}/finalize",
-            json={"scores": {"1": 4}},
+            json={},  # Students rejected by role regardless of body
             headers=auth_headers_student
         )
         assert response.status_code == 403

@@ -185,12 +185,24 @@ def mentor_token(client, test_mentor):
 
 @pytest.fixture
 def sample_competencies(db):
-    """Create sample competencies that sum to 100%."""
+    """Create sample competencies that sum to 100% under a profile."""
+    from app.models import CompetencyProfile
+
+    # Create a competency profile first
+    profile = CompetencyProfile(
+        name="Test Profile",
+        version="1.0",
+        academic_year="2024-2025",
+        active=True
+    )
+    db.add(profile)
+    db.flush()
+
     competencies = [
-        Competency(name="Technical Skills", weight=25.0, active=True),
-        Competency(name="Communication", weight=25.0, active=True),
-        Competency(name="Teamwork", weight=25.0, active=True),
-        Competency(name="Problem Solving", weight=25.0, active=True),
+        Competency(name="Technical Skills", weight=25.0, active=True, profile_id=profile.id),
+        Competency(name="Communication", weight=25.0, active=True, profile_id=profile.id),
+        Competency(name="Teamwork", weight=25.0, active=True, profile_id=profile.id),
+        Competency(name="Problem Solving", weight=25.0, active=True, profile_id=profile.id),
     ]
     for comp in competencies:
         db.add(comp)
@@ -230,21 +242,39 @@ def auth_headers_mentor(mentor_token):
 
 @pytest.fixture
 def sample_internship(db, test_student):
-    """Create a sample internship for testing."""
+    """Create a sample internship for testing with proper company and proposal."""
     from datetime import date, timedelta
-    from app.models import Internship
+    from app.models import Internship, Company, Proposal
     
+    # Create company first
+    company = Company(
+        name="Test Company",
+        address="123 Test Street",
+        sector="IT",
+        contact_person="John Contact",
+        contact_email="john@test.com"
+    )
+    db.add(company)
+    db.flush()
+    
+    # Create internship
     internship = Internship(
         student_id=test_student.id,
-        company_name="Test Company",
-        contact_person="John Contact",
-        contact_email="john@test.com",
+        company_id=company.id,
         start_date=date.today() + timedelta(days=30),
         end_date=date.today() + timedelta(days=120),
-        description="Test internship description",
         status="Lopend"
     )
     db.add(internship)
+    db.flush()
+    
+    # Create proposal
+    proposal = Proposal(
+        internship_id=internship.id,
+        description="Test internship description",
+        status="Goedgekeurd"
+    )
+    db.add(proposal)
     db.commit()
     db.refresh(internship)
     return internship
@@ -254,19 +284,35 @@ def sample_internship(db, test_student):
 def internship_with_logbook(db, test_student):
     """Create internship with Lopend status for logbook testing."""
     from datetime import date, timedelta
-    from app.models import Internship
+    from app.models import Internship, Company, Proposal
     
+    # Create company
+    company = Company(
+        name="Test Company",
+        contact_person="John",
+        contact_email="john@test.com"
+    )
+    db.add(company)
+    db.flush()
+    
+    # Create internship
     internship = Internship(
         student_id=test_student.id,
-        company_name="Test Company",
-        contact_person="John",
-        contact_email="john@test.com",
+        company_id=company.id,
         start_date=date.today(),
         end_date=date.today() + timedelta(days=90),
-        description="Test",
         status="Lopend"
     )
     db.add(internship)
+    db.flush()
+    
+    # Create proposal
+    proposal = Proposal(
+        internship_id=internship.id,
+        description="Test",
+        status="Goedgekeurd"
+    )
+    db.add(proposal)
     db.commit()
     db.refresh(internship)
     

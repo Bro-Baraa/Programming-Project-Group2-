@@ -15,11 +15,12 @@ class TestCompetencyListing:
     def test_list_all_competencies(self, client, auth_headers_student, sample_competencies, db):
         """Test listing all competencies including inactive."""
         from app.models import Competency
+        profile_id = sample_competencies[0].profile_id
         # Add inactive competency
-        inactive = Competency(name="Inactive", weight=10.0, active=False)
+        inactive = Competency(name="Inactive", weight=10.0, active=False, profile_id=profile_id)
         db.add(inactive)
         db.commit()
-        
+
         response = client.get("/competencies?active_only=false", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
@@ -29,11 +30,13 @@ class TestCompetencyListing:
 class TestCompetencyCreation:
     """Test competency creation (admin only)."""
 
-    def test_admin_create_competency(self, client, auth_headers_admin):
+    def test_admin_create_competency(self, client, auth_headers_admin, sample_competencies):
         """Test admin can create competency."""
+        profile_id = sample_competencies[0].profile_id
         competency_data = {
             "name": "Leadership",
-            "weight": 20.0
+            "weight": 20.0,
+            "profile_id": profile_id
         }
         response = client.post(
             "/competencies",
@@ -74,9 +77,11 @@ class TestCompetencyCreation:
 
     def test_duplicate_name_rejected(self, client, auth_headers_admin, sample_competencies):
         """Test cannot create competency with duplicate name."""
+        profile_id = sample_competencies[0].profile_id
         competency_data = {
             "name": "Technical Skills",  # Already exists
-            "weight": 10.0
+            "weight": 10.0,
+            "profile_id": profile_id
         }
         response = client.post(
             "/competencies",
@@ -156,15 +161,15 @@ class TestCompetencyDeletion:
     def test_admin_delete_competency(self, client, auth_headers_admin, sample_competencies):
         """Test admin can soft-delete (deactivate) competency."""
         competency_id = sample_competencies[0].id
-        
+
+        # The endpoint returns 204 No Content on successful deletion
         response = client.delete(
             f"/competencies/{competency_id}",
             headers=auth_headers_admin
         )
-        assert response.status_code == 200
-        assert "deactivated" in response.json()["message"]
-        
-        # Verify it's marked inactive
+        assert response.status_code == 204
+
+        # Verify it's marked inactive by listing all competencies
         response = client.get(
             "/competencies?active_only=false",
             headers=auth_headers_admin
@@ -199,12 +204,15 @@ class TestWeightValidation:
     def test_invalid_weights_sum(self, client, auth_headers_admin, sample_competencies, db):
         """Test weight check with invalid sum."""
         from app.models import Competency
-        
+
+        # Get the profile_id from existing competencies
+        profile_id = sample_competencies[0].profile_id
+
         # Add another competency making total > 100
-        extra = Competency(name="Extra", weight=10.0, active=True)
+        extra = Competency(name="Extra", weight=10.0, active=True, profile_id=profile_id)
         db.add(extra)
         db.commit()
-        
+
         response = client.get("/competencies/check-weights", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
@@ -222,11 +230,13 @@ class TestWeightValidation:
 class TestCompetencyEdgeCases:
     """Test edge cases and error handling."""
 
-    def test_create_competency_negative_weight_rejected(self, client, auth_headers_admin):
+    def test_create_competency_negative_weight_rejected(self, client, auth_headers_admin, sample_competencies):
         """Test creating competency with negative weight is rejected."""
+        profile_id = sample_competencies[0].profile_id
         competency_data = {
             "name": "Negative",
-            "weight": -10.0
+            "weight": -10.0,
+            "profile_id": profile_id
         }
         response = client.post(
             "/competencies",
@@ -235,11 +245,13 @@ class TestCompetencyEdgeCases:
         )
         assert response.status_code == 422  # Validation error for negative weight
 
-    def test_create_competency_zero_weight_rejected(self, client, auth_headers_admin):
+    def test_create_competency_zero_weight_rejected(self, client, auth_headers_admin, sample_competencies):
         """Test creating competency with zero weight is rejected."""
+        profile_id = sample_competencies[0].profile_id
         competency_data = {
             "name": "Zero Weight",
-            "weight": 0.0
+            "weight": 0.0,
+            "profile_id": profile_id
         }
         response = client.post(
             "/competencies",
