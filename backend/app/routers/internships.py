@@ -8,7 +8,7 @@ from app.models import (
     Logbook, Evaluation, EvaluationRule, Competency, CompetencyProfile, Feedback
 )
 from app.schemas import (
-    InternshipCreate, InternshipResponse, InternshipUpdate, InternshipUpdateStatus,
+    InternshipCreate, InternshipResponse, InternshipUpdate,
     InternshipListResponse, ProposalResponse, AgreementResponse,
     LogbookCreate, LogbookResponse, LogbookUpdate, LogbookWeekStatus,
     EvaluationCreate, EvaluationResponse, EvaluationUpdate,
@@ -20,7 +20,7 @@ from app.schemas import (
 from app.auth import (
     get_current_active_user,
     require_student, require_committee, require_committee_or_admin,
-    require_teacher, require_mentor, require_any_staff, require_admin
+    require_teacher, require_mentor, require_any_staff
 )
 import os
 import shutil
@@ -198,6 +198,8 @@ def update_internship(
         internship.start_date = update.start_date
     if update.end_date is not None:
         internship.end_date = update.end_date
+    if update.status is not None:
+        internship.status = update.status
     
     db.commit()
     db.refresh(internship)
@@ -223,13 +225,14 @@ def get_proposal(
     if not internship.proposal:
         raise HTTPException(status_code=404, detail="Proposal not found")
     
-    # Check permissions
+    # Check permissions - committee and admin can view all proposals
     if current_user.role == "student" and internship.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "mentor" and internship.mentor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "teacher" and internship.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    # Committee and admin have implicit access
     
     return internship.proposal
 
@@ -392,13 +395,14 @@ def get_agreement(
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
     
-    # Check permissions
+    # Check permissions - committee and admin can view all agreements
     if current_user.role == "student" and internship.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "mentor" and internship.mentor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "teacher" and internship.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    # Committee and admin have implicit access
     
     if not internship.agreement:
         raise HTTPException(status_code=404, detail="Agreement not found")
@@ -458,13 +462,14 @@ def list_logbooks(
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
     
-    # Check permissions
+    # Check permissions - committee and admin can view all logbooks
     if current_user.role == "student" and internship.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "mentor" and internship.mentor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "teacher" and internship.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    # Committee and admin have implicit access
     
     logbooks = db.query(Logbook).filter(Logbook.internship_id == internship_id).all()
     return logbooks
@@ -481,13 +486,14 @@ def get_week_overview(
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
     
-    # Check permissions
+    # Check permissions - committee and admin can view all week overviews
     if current_user.role == "student" and internship.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "mentor" and internship.mentor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "teacher" and internship.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    # Committee and admin have implicit access
     
     if not internship.start_date or not internship.end_date:
         raise HTTPException(status_code=400, detail="Internship dates not set")
@@ -855,13 +861,14 @@ def list_feedback(
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
     
-    # Check permissions
+    # Check permissions - committee and admin can view all feedback
     if current_user.role == "student" and internship.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "mentor" and internship.mentor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "teacher" and internship.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    # Committee and admin have implicit access
     
     feedbacks = db.query(Feedback).filter(Feedback.internship_id == internship_id).all()
     return feedbacks
@@ -957,9 +964,19 @@ def get_agreement_status_report(
     current_user: User = Depends(require_any_staff)
 ):
     """US-26: Admin view of agreement status for all students"""
-    internships = db.query(Internship).filter(
+    # Build query with role-based filtering
+    query = db.query(Internship).filter(
         Internship.status.in_(["Goedgekeurd", "Overeenkomst Ingediend", "Lopend", "Afgerond"])
-    ).all()
+    )
+    
+    # Apply role-based filtering
+    if current_user.role == "mentor":
+        query = query.filter(Internship.mentor_id == current_user.id)
+    elif current_user.role == "teacher":
+        query = query.filter(Internship.teacher_id == current_user.id)
+    # Committee and admin see all
+    
+    internships = query.all()
     
     result = []
     for internship in internships:
