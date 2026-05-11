@@ -1,7 +1,21 @@
+"""Stage Monitoring Tool API - FastAPI application."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import auth, internships, competencies, companies
+
+# Import all routers (they're already APIRouter instances)
+from app.routers import (
+    auth,
+    companies,
+    internships,
+    proposals,
+    agreements,
+    logbooks,
+    evaluations,
+    feedback,
+    reports,
+    competencies,
+)
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -9,7 +23,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="Stage Monitoring Tool API",
     description="Backend API for the internship/stage monitoring system for Erasmus Hogeschool Brussel",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # CORS for frontend communication
@@ -21,11 +35,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(companies.router)
-app.include_router(internships.router)
-app.include_router(competencies.router)
+# Include routers (they're already APIRouter instances)
+app.include_router(auth)
+app.include_router(companies)
+app.include_router(internships)
+app.include_router(proposals)
+app.include_router(agreements)
+app.include_router(logbooks)
+app.include_router(evaluations)
+app.include_router(feedback)
+app.include_router(reports)
+app.include_router(competencies)
 
 
 @app.get("/")
@@ -38,8 +58,14 @@ def root():
             "auth": "/auth",
             "companies": "/companies",
             "internships": "/internships",
-            "competencies": "/competencies"
-        }
+            "proposals": "/internships/{id}/proposal",
+            "agreements": "/internships/{id}/agreement",
+            "logbooks": "/internships/{id}/logbooks",
+            "evaluations": "/internships/{id}/evaluations",
+            "feedback": "/internships/{id}/feedback",
+            "reports": "/internships/stats/*, /internships/reports/*",
+            "competencies": "/competencies",
+        },
     }
 
 
