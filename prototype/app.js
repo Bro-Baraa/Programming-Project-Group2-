@@ -66,10 +66,10 @@ function renderView() {
   
   // Map role+view to template
   const view = viewSelect.value;
-  const key = `${role}-${view}` || role;
+  const key = view ? `${role}-${view}` : role;
   const templateId = templates[key] || templates[role];
   
-  console.log('Rendering:', role, view, 'key:', key, 'template:', templateId);
+
   
   const tpl = document.getElementById(templateId);
   if (tpl) {

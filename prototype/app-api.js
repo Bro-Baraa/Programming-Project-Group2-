@@ -88,7 +88,10 @@ function showLoading(element, message = "Laden...") {
 
 function hideLoading(element) {
   if (!element) return;
-  element.innerHTML = element.dataset.originalContent || element.textContent;
+  const original = element.dataset.originalContent;
+  if (original !== undefined) {
+    element.innerHTML = original;
+  }
   element.disabled = false;
 }
 
@@ -735,19 +738,17 @@ function renderCompetencyManager() {
 }
 
 // Competency deletion handler - attached to window for onclick handlers in templates
-// This is necessary for the inline onclick attributes in the HTML templates
-function handleDeleteCompetency(id) {
+async function handleDeleteCompetency(id) {
   if (!confirm('Competentie verwijderen?')) return;
 
-  CompetenciesAPI.delete(id)
-    .then(() => {
-      currentCompetencies = currentCompetencies.filter(c => c.id !== id);
-      renderCompetencyManager();
-      showToast('Competentie verwijderd', 'info');
-    })
-    .catch(error => {
-      showToast(error.message, 'error');
-    });
+  try {
+    await CompetenciesAPI.delete(id);
+    currentCompetencies = currentCompetencies.filter(c => c.id !== id);
+    renderCompetencyManager();
+    showToast('Competentie verwijderd', 'info');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
 }
 
 // Expose to window for template onclick handlers

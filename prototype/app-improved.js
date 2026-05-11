@@ -201,10 +201,10 @@ function renderView() {
   content.innerHTML = "";
   
   const view = viewSelect.value;
-  const key = `${role}-${view}` || role;
+  const key = view ? `${role}-${view}` : role;
   const templateId = templates[key] || templates[role];
   
-  console.log('Rendering:', role, view, 'key:', key, 'template:', templateId);
+
   
   const tpl = document.getElementById(templateId);
   if (tpl) {
@@ -403,12 +403,12 @@ function wireRoleInteractions(role) {
         e.preventDefault();
         const submitBtn = form.querySelector('button[type="submit"]');
         
-        const company = document.getElementById("company-name")?.value.trim();
-        const contact = document.getElementById("contact-person")?.value.trim();
-        const email = document.getElementById("contact-email")?.value.trim();
-        const start = document.getElementById("start-date")?.value;
-        const end = document.getElementById("end-date")?.value;
-        const desc = document.getElementById("assignment-desc")?.value.trim();
+        const company = document.getElementById("company-name").value.trim();
+        const contact = document.getElementById("contact-person").value.trim();
+        const email = document.getElementById("contact-email").value.trim();
+        const start = document.getElementById("start-date").value;
+        const end = document.getElementById("end-date").value;
+        const desc = document.getElementById("assignment-desc").value.trim();
         
         // Validation
         const errors = [];
@@ -417,7 +417,7 @@ function wireRoleInteractions(role) {
         if (!email || !email.includes('@')) errors.push("Geldig e-mailadres is verplicht");
         if (!start) errors.push("Startdatum is verplicht");
         if (!end) errors.push("Einddatum is verplicht");
-        if (start && end && new Date(start) > new Date(end)) errors.push("Einddatum moet na startdatum liggen");
+        if (start && end && new Date(start) > new Date(end)) errors.push("Einddatum moet na startdatum zijn");
         if (!desc || desc.length < 20) errors.push("Omschrijving moet minimaal 20 karakters bevatten");
         
         if (errors.length > 0) {
@@ -766,8 +766,7 @@ function init() {
   renderStatusActions();
   renderView();
   
-  console.log("🚀 Stage Monitoring Tool initialized");
-  console.log("📦 Data loaded from localStorage:", appState);
+
 }
 
 // Start the app

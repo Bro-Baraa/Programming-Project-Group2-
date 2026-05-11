@@ -20,7 +20,13 @@ function setToken(token) {
 
 function getCurrentUser() {
   const userJson = localStorage.getItem('stageMonitoringUser');
-  return userJson ? JSON.parse(userJson) : null;
+  if (!userJson) return null;
+  try {
+    return JSON.parse(userJson);
+  } catch {
+    localStorage.removeItem('stageMonitoringUser');
+    return null;
+  }
 }
 
 function setCurrentUser(user) {
