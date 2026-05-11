@@ -1,0 +1,273 @@
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.database import Base, get_db
+from app.main import app
+from app.auth import get_password_hash
+from app.models import User, Competency
+
+# Create test database in memory
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def override_get_db():
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
+
+
+app.dependency_overrides[get_db] = override_get_db
+
+
+@pytest.fixture(scope="function")
+def db():
+    """Create a fresh database for each test."""
+    Base.metadata.create_all(bind=engine)
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+        Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture(scope="function")
+def client(db):
+    """Create a test client with fresh database."""
+    yield TestClient(app)
+
+
+@pytest.fixture
+def test_admin(db):
+    """Create a test admin user."""
+    user = User(
+        email="admin@test.com",
+        password_hash=get_password_hash("admin123"),
+        first_name="Admin",
+        last_name="User",
+        role="admin",
+        is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def test_student(db):
+    """Create a test student user."""
+    user = User(
+        email="student@test.com",
+        password_hash=get_password_hash("student123"),
+        first_name="Student",
+        last_name="User",
+        role="student",
+        is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def test_teacher(db):
+    """Create a test teacher user."""
+    user = User(
+        email="teacher@test.com",
+        password_hash=get_password_hash("teacher123"),
+        first_name="Teacher",
+        last_name="User",
+        role="teacher",
+        is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def test_committee(db):
+    """Create a test committee user."""
+    user = User(
+        email="committee@test.com",
+        password_hash=get_password_hash("committee123"),
+        first_name="Committee",
+        last_name="User",
+        role="committee",
+        is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def test_mentor(db):
+    """Create a test mentor user."""
+    user = User(
+        email="mentor@test.com",
+        password_hash=get_password_hash("mentor123"),
+        first_name="Mentor",
+        last_name="User",
+        role="mentor",
+        is_active=True
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture
+def admin_token(client, test_admin):
+    """Get admin access token."""
+    response = client.post(
+        "/auth/login",
+        data={"username": "admin@test.com", "password": "admin123"}
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def student_token(client, test_student):
+    """Get student access token."""
+    response = client.post(
+        "/auth/login",
+        data={"username": "student@test.com", "password": "student123"}
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def teacher_token(client, test_teacher):
+    """Get teacher access token."""
+    response = client.post(
+        "/auth/login",
+        data={"username": "teacher@test.com", "password": "teacher123"}
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def committee_token(client, test_committee):
+    """Get committee access token."""
+    response = client.post(
+        "/auth/login",
+        data={"username": "committee@test.com", "password": "committee123"}
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def mentor_token(client, test_mentor):
+    """Get mentor access token."""
+    response = client.post(
+        "/auth/login",
+        data={"username": "mentor@test.com", "password": "mentor123"}
+    )
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def sample_competencies(db):
+    """Create sample competencies that sum to 100%."""
+    competencies = [
+        Competency(name="Technical Skills", weight=25.0, active=True),
+        Competency(name="Communication", weight=25.0, active=True),
+        Competency(name="Teamwork", weight=25.0, active=True),
+        Competency(name="Problem Solving", weight=25.0, active=True),
+    ]
+    for comp in competencies:
+        db.add(comp)
+    db.commit()
+    return competencies
+
+
+@pytest.fixture
+def auth_headers_admin(admin_token):
+    """Authorization headers for admin."""
+    return {"Authorization": f"Bearer {admin_token}"}
+
+
+@pytest.fixture
+def auth_headers_student(student_token):
+    """Authorization headers for student."""
+    return {"Authorization": f"Bearer {student_token}"}
+
+
+@pytest.fixture
+def auth_headers_teacher(teacher_token):
+    """Authorization headers for teacher."""
+    return {"Authorization": f"Bearer {teacher_token}"}
+
+
+@pytest.fixture
+def auth_headers_committee(committee_token):
+    """Authorization headers for committee."""
+    return {"Authorization": f"Bearer {committee_token}"}
+
+
+@pytest.fixture
+def auth_headers_mentor(mentor_token):
+    """Authorization headers for mentor."""
+    return {"Authorization": f"Bearer {mentor_token}"}
+
+
+@pytest.fixture
+def sample_internship(db, test_student):
+    """Create a sample internship for testing."""
+    from datetime import date, timedelta
+    from app.models import Internship
+    
+    internship = Internship(
+        student_id=test_student.id,
+        company_name="Test Company",
+        contact_person="John Contact",
+        contact_email="john@test.com",
+        start_date=date.today() + timedelta(days=30),
+        end_date=date.today() + timedelta(days=120),
+        description="Test internship description",
+        status="Lopend"
+    )
+    db.add(internship)
+    db.commit()
+    db.refresh(internship)
+    return internship
+
+
+@pytest.fixture
+def internship_with_logbook(db, test_student):
+    """Create internship with Lopend status for logbook testing."""
+    from datetime import date, timedelta
+    from app.models import Internship
+    
+    internship = Internship(
+        student_id=test_student.id,
+        company_name="Test Company",
+        contact_person="John",
+        contact_email="john@test.com",
+        start_date=date.today(),
+        end_date=date.today() + timedelta(days=90),
+        description="Test",
+        status="Lopend"
+    )
+    db.add(internship)
+    db.commit()
+    db.refresh(internship)
+    
+    return internship
