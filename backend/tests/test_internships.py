@@ -338,7 +338,8 @@ class TestDashboardStats:
 
     def test_dashboard_stats(self, client, auth_headers_admin, db, test_student):
         """Test dashboard stats calculation."""
-        from app.models import Company, Proposal
+        from datetime import datetime
+        from app.models import Company, Proposal, Agreement
 
         # Create internships with different statuses
         internship_configs = [
@@ -348,6 +349,7 @@ class TestDashboardStats:
             {"company_name": "D", "status": "Lopend"},
         ]
 
+        created_internships = []
         for config in internship_configs:
             company = Company(
                 name=config["company_name"],
@@ -366,6 +368,7 @@ class TestDashboardStats:
             )
             db.add(internship)
             db.flush()
+            created_internships.append((internship, config["status"]))
 
             proposal = Proposal(
                 internship_id=internship.id,
@@ -373,6 +376,16 @@ class TestDashboardStats:
                 status=config["status"]
             )
             db.add(proposal)
+
+        # Add agreement for the Lopend internship
+        lopend_internship = next(i for i, s in created_internships if s == "Lopend")
+        agreement = Agreement(
+            internship_id=lopend_internship.id,
+            file_path="/uploads/agreement_D.pdf",
+            status="Gevalideerd",
+            uploaded_at=datetime.now()
+        )
+        db.add(agreement)
 
         db.commit()
         
@@ -424,13 +437,14 @@ class TestEvaluations:
     """Test evaluation CRUD and finalization."""
 
     @pytest.fixture
-    def created_evaluation(self, client, auth_headers_teacher, sample_internship):
+    def created_evaluation(self, client, auth_headers_teacher, sample_internship, sample_competencies):
         """Create and return an evaluation."""
         response = client.post(
             f"/internships/{sample_internship.id}/evaluations",
-            json={"type": "tussentijds", "comments": "Initial comment"},
+            json={"eval_type": "tussentijds", "comments": "Initial comment"},
             headers=auth_headers_teacher
         )
+        assert response.status_code == 200, f"Failed to create evaluation: {response.text}"
         return response.json()
 
     def test_update_evaluation_rule(self, client, auth_headers_teacher, created_evaluation, db):
@@ -464,26 +478,30 @@ class TestEvaluations:
 
         evaluation_id = created_evaluation["id"]
 
-        # Get the first rule for this evaluation
-        rule = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).first()
-        assert rule is not None
+        # Get all rules for this evaluation
+        rules = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).all()
+        assert len(rules) > 0, "Evaluation should have rules"
 
-        # First score all rules and finalize
-        client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
-            json={"score": 4},
-            headers=auth_headers_teacher
-        )
+        # Score ALL rules (required before finalization)
+        for rule in rules:
+            response = client.patch(
+                f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+                json={"score": 4},
+                headers=auth_headers_teacher
+            )
+            assert response.status_code == 200
 
-        client.post(
+        # Finalize the evaluation
+        response = client.post(
             f"/internships/evaluations/{evaluation_id}/finalize",
             json={},
             headers=auth_headers_teacher
         )
+        assert response.status_code == 200
 
-        # Try to update the rule after finalization
+        # Try to update the first rule after finalization
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            f"/internships/evaluations/{evaluation_id}/rules/{rules[0].id}",
             json={"score": 5, "evaluator_feedback": "Should fail"},
             headers=auth_headers_teacher
         )

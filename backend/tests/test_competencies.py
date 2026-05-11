@@ -43,7 +43,7 @@ class TestCompetencyCreation:
             json=competency_data,
             headers=auth_headers_admin
         )
-        assert response.status_code == 200
+        assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Leadership"
         assert data["weight"] == 20.0
@@ -169,14 +169,12 @@ class TestCompetencyDeletion:
         )
         assert response.status_code == 204
 
-        # Verify it's marked inactive by listing all competencies
+        # Verify it's actually deleted (hard delete when not in use)
         response = client.get(
-            "/competencies?active_only=false",
+            f"/competencies/{competency_id}",
             headers=auth_headers_admin
         )
-        data = response.json()
-        inactive = next((c for c in data if c["id"] == competency_id), None)
-        assert inactive["active"] is False
+        assert response.status_code == 404
 
     def test_non_admin_cannot_delete(self, client, auth_headers_student, sample_competencies):
         """Test non-admin cannot delete competencies."""

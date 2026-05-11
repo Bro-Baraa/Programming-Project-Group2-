@@ -241,7 +241,7 @@ def auth_headers_mentor(mentor_token):
 
 
 @pytest.fixture
-def sample_internship(db, test_student):
+def sample_internship(db, test_student, test_teacher):
     """Create a sample internship for testing with proper company and proposal."""
     from datetime import date, timedelta
     from app.models import Internship, Company, Proposal
@@ -257,9 +257,10 @@ def sample_internship(db, test_student):
     db.add(company)
     db.flush()
     
-    # Create internship
+    # Create internship with teacher assigned
     internship = Internship(
         student_id=test_student.id,
+        teacher_id=test_teacher.id,
         company_id=company.id,
         start_date=date.today() + timedelta(days=30),
         end_date=date.today() + timedelta(days=120),
@@ -281,7 +282,7 @@ def sample_internship(db, test_student):
 
 
 @pytest.fixture
-def internship_with_logbook(db, test_student):
+def internship_with_logbook(db, test_student, test_mentor):
     """Create internship with Lopend status for logbook testing."""
     from datetime import date, timedelta
     from app.models import Internship, Company, Proposal
@@ -295,9 +296,10 @@ def internship_with_logbook(db, test_student):
     db.add(company)
     db.flush()
     
-    # Create internship
+    # Create internship with mentor assigned
     internship = Internship(
         student_id=test_student.id,
+        mentor_id=test_mentor.id,
         company_id=company.id,
         start_date=date.today(),
         end_date=date.today() + timedelta(days=90),
