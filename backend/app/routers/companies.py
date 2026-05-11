@@ -37,6 +37,8 @@ def create_company(
         name=data.name,
         address=data.address,
         sector=data.sector,
+        contact_person=data.contact_person,
+        contact_email=data.contact_email,
         mentor_id=data.mentor_id
     )
     
@@ -87,6 +89,10 @@ def update_company(
         company.address = update.address
     if update.sector is not None:
         company.sector = update.sector
+    if update.contact_person is not None:
+        company.contact_person = update.contact_person
+    if update.contact_email is not None:
+        company.contact_email = update.contact_email
     if update.mentor_id is not None:
         company.mentor_id = update.mentor_id
     
