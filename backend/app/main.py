@@ -1,14 +1,14 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import auth, internships, competencies
+from app.routers import auth, internships, competencies, companies
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Stage Monitoring Tool API",
-    description="Backend API for the internship/stage monitoring system",
+    description="Backend API for the internship/stage monitoring system for Erasmus Hogeschool Brussel",
     version="1.0.0"
 )
 
@@ -23,6 +23,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth.router)
+app.include_router(companies.router)
 app.include_router(internships.router)
 app.include_router(competencies.router)
 
@@ -32,7 +33,13 @@ def root():
     return {
         "message": "Stage Monitoring Tool API",
         "docs": "/docs",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "endpoints": {
+            "auth": "/auth",
+            "companies": "/companies",
+            "internships": "/internships",
+            "competencies": "/competencies"
+        }
     }
 
 

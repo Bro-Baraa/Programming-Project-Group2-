@@ -11,7 +11,7 @@ from app.schemas import (
     InternshipCreate, InternshipResponse, InternshipUpdate, InternshipUpdateStatus,
     InternshipListResponse, ProposalResponse, AgreementResponse,
     LogbookCreate, LogbookResponse, LogbookUpdate, LogbookWeekStatus,
-    EvaluationCreate, EvaluationResponse, EvaluationUpdate, EvaluationFinalizeRequest,
+    EvaluationCreate, EvaluationResponse, EvaluationUpdate,
     EvaluationWithScoreResponse, EvaluationRuleResponse, EvaluationRuleUpdate,
     FeedbackCreate, FeedbackResponse,
     DashboardStats, AgreementStatusItem, FinalReportItem,
@@ -639,6 +639,8 @@ def list_evaluations(
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "mentor" and internship.mentor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
+    if current_user.role == "teacher" and internship.teacher_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
     
     evaluations = db.query(Evaluation).filter(Evaluation.internship_id == internship_id).all()
     return evaluations
@@ -724,6 +726,8 @@ def get_evaluation(
     if current_user.role == "student" and internship.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     if current_user.role == "mentor" and internship.mentor_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    if current_user.role == "teacher" and internship.teacher_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
     
     # Calculate score
@@ -875,6 +879,14 @@ def create_feedback(
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
     
+    # Validate that to_user_id is a participant in this internship
+    valid_recipients = [internship.student_id, internship.teacher_id, internship.mentor_id]
+    if data.to_user_id not in valid_recipients:
+        raise HTTPException(
+            status_code=400,
+            detail="Recipient must be a participant in this internship (student, teacher, or mentor)"
+        )
+    
     feedback = Feedback(
         internship_id=internship_id,
         from_user_id=current_user.id,
@@ -898,15 +910,35 @@ def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Get dashboard statistics"""
-    total = db.query(Internship).count()
-    pending = db.query(Internship).filter(Internship.status.in_(["Ingediend", "In Beoordeling"])).count()
-    approved = db.query(Internship).filter(Internship.status == "Goedgekeurd").count()
-    rejected = db.query(Internship).filter(Internship.status == "Afgekeurd").count()
-    ongoing = db.query(Internship).filter(Internship.status.in_(["Lopend", "Overeenkomst Ingediend"])).count()
+    """Get dashboard statistics - filtered by role"""
+    # Build base query based on role
+    base_query = db.query(Internship)
     
-    agreements_received = db.query(Agreement).count()
-    agreements_validated = db.query(Agreement).filter(Agreement.status == "Gevalideerd").count()
+    if current_user.role == "student":
+        base_query = base_query.filter(Internship.student_id == current_user.id)
+    elif current_user.role == "mentor":
+        base_query = base_query.filter(Internship.mentor_id == current_user.id)
+    elif current_user.role == "teacher":
+        base_query = base_query.filter(Internship.teacher_id == current_user.id)
+    # Committee and admin see all
+    
+    total = base_query.count()
+    pending = base_query.filter(Internship.status.in_(["Ingediend", "In Beoordeling"])).count()
+    approved = base_query.filter(Internship.status == "Goedgekeurd").count()
+    rejected = base_query.filter(Internship.status == "Afgekeurd").count()
+    ongoing = base_query.filter(Internship.status.in_(["Lopend", "Overeenkomst Ingediend"])).count()
+    
+    # Agreement counts for filtered internships
+    internship_ids = [i.id for i in base_query.all()]
+    if internship_ids:
+        agreements_received = db.query(Agreement).filter(Agreement.internship_id.in_(internship_ids)).count()
+        agreements_validated = db.query(Agreement).filter(
+            Agreement.internship_id.in_(internship_ids),
+            Agreement.status == "Gevalideerd"
+        ).count()
+    else:
+        agreements_received = 0
+        agreements_validated = 0
     
     return DashboardStats(
         total_internships=total,
