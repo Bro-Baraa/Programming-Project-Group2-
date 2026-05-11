@@ -17,11 +17,17 @@ USERS = [
     {"email": "mentor1@school.be", "password": "mentor123", "first_name": "Bram", "last_name": "Janssens", "role": "mentor"},
 ]
 
+COMPETENCY_PROFILE = {
+    "name": "Toegepaste Informatica 2024-2025",
+    "version": "1.0",
+    "academic_year": "2024-2025"
+}
+
 COMPETENCIES = [
-    {"name": "Analyseren", "weight": 30},
-    {"name": "Ontwerpen", "weight": 25},
-    {"name": "Realiseren", "weight": 25},
-    {"name": "Testen", "weight": 20},
+    {"name": "Analyseren", "description": "Probleemanalyse en requirements bepalen", "weight": 30},
+    {"name": "Ontwerpen", "description": "Technisch ontwerp en architectuur", "weight": 25},
+    {"name": "Realiseren", "description": "Implementatie en coding", "weight": 25},
+    {"name": "Testen", "description": "Kwaliteitsborging en testing", "weight": 20},
 ]
 
 
@@ -78,23 +84,53 @@ def seed():
         except Exception as e:
             print(f"   ❌ Error creating {user['email']}: {e}")
     
-    # Create competencies
-    print("\n2. Creating competencies...")
-    for comp in COMPETENCIES:
-        try:
-            response = requests.post(
-                f"{BASE_URL}/competencies",
-                headers=headers,
-                json=comp
-            )
-            if response.status_code == 200:
-                print(f"   ✅ Created competency: {comp['name']}")
-            elif response.status_code == 400:
-                print(f"   ℹ️  Competency already exists: {comp['name']}")
-            else:
-                print(f"   ❌ Failed to create {comp['name']}: {response.text}")
-        except Exception as e:
-            print(f"   ❌ Error creating {comp['name']}: {e}")
+    # Create competency profile first
+    print("\n2. Creating competency profile...")
+    profile_id = None
+    try:
+        response = requests.post(
+            f"{BASE_URL}/competencies/profiles",
+            headers=headers,
+            json=COMPETENCY_PROFILE
+        )
+        if response.status_code == 200:
+            profile_data = response.json()
+            profile_id = profile_data["id"]
+            print(f"   ✅ Created profile: {COMPETENCY_PROFILE['name']} (ID: {profile_id})")
+        elif response.status_code == 400:
+            # Profile might already exist, try to get active one
+            list_response = requests.get(f"{BASE_URL}/competencies/profiles?active_only=true", headers=headers)
+            if list_response.status_code == 200:
+                profiles = list_response.json()
+                if profiles:
+                    profile_id = profiles[0]["id"]
+                    print(f"   ℹ️  Using existing profile (ID: {profile_id})")
+        else:
+            print(f"   ❌ Failed to create profile: {response.text}")
+    except Exception as e:
+        print(f"   ❌ Error creating profile: {e}")
+
+    # Create competencies with profile_id
+    if profile_id:
+        print("\n3. Creating competencies...")
+        for comp in COMPETENCIES:
+            try:
+                comp_data = {**comp, "profile_id": profile_id}
+                response = requests.post(
+                    f"{BASE_URL}/competencies",
+                    headers=headers,
+                    json=comp_data
+                )
+                if response.status_code == 200:
+                    print(f"   ✅ Created competency: {comp['name']}")
+                elif response.status_code == 400 and "already exists" in response.text:
+                    print(f"   ℹ️  Competency already exists: {comp['name']}")
+                else:
+                    print(f"   ❌ Failed to create {comp['name']}: {response.text}")
+            except Exception as e:
+                print(f"   ❌ Error creating {comp['name']}: {e}")
+    else:
+        print("   ⚠️ Skipping competency creation - no profile available")
     
     print("\n✅ Seeding complete!")
     print("\nTest credentials:")
