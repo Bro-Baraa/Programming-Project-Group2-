@@ -41,48 +41,10 @@ let currentCompetencies = [];
 let currentLogbooks = [];
 let currentEvaluations = [];
 
-// localStorage persistence keys
-const STORAGE_KEYS = {
-  internships: 'stageMock_internships',
-  logbooks: 'stageMock_logbooks',
-  competencies: 'stageMock_competencies',
-  lastSaved: 'stageMock_lastSaved'
-};
 
-// Mock data persistence functions
-function saveMockData(key, data) {
-  try {
-    localStorage.setItem(STORAGE_KEYS[key], JSON.stringify(data));
-    localStorage.setItem(STORAGE_KEYS.lastSaved, new Date().toISOString());
-    updateLastSavedTimestamp();
-  } catch (e) {
-    console.warn('Failed to save to localStorage:', e);
-  }
-}
 
-function loadMockData(key, defaultValue = null) {
-  try {
-    const data = localStorage.getItem(STORAGE_KEYS[key]);
-    return data ? JSON.parse(data) : defaultValue;
-  } catch (e) {
-    console.warn('Failed to load from localStorage:', e);
-    return defaultValue;
-  }
-}
-
-function updateLastSavedTimestamp() {
-  const lastSaved = localStorage.getItem(STORAGE_KEYS.lastSaved);
-  const elements = document.querySelectorAll('.last-saved');
-  elements.forEach(el => {
-    if (lastSaved) {
-      const date = new Date(lastSaved);
-      el.textContent = `Laatst opgeslagen: ${date.toLocaleString('nl-BE')}`;
-      el.style.display = 'block';
-    } else {
-      el.style.display = 'none';
-    }
-  });
-}
+// Note: localStorage persistence removed - this is the API-connected version
+// All data is persisted through the backend API
 
 // DOM elements
 const app = document.getElementById("app");
@@ -702,7 +664,7 @@ function renderCompetencyManager() {
       <li>
         <span class="comp-name">${comp.name}</span>
         <span class="comp-weight">${comp.weight}%</span>
-        <button class="btn small alt" onclick="deleteCompetency(${comp.id})" style="margin-left: 0.6rem;">Verwijder</button>
+        <button class="btn small alt" onclick="handleDeleteCompetency(${comp.id})" style="margin-left: 0.6rem;">Verwijder</button>
       </li>
     `).join('');
     
@@ -772,19 +734,24 @@ function renderCompetencyManager() {
   render();
 }
 
-// Global function for delete button
-window.deleteCompetency = async function(id) {
+// Competency deletion handler - attached to window for onclick handlers in templates
+// This is necessary for the inline onclick attributes in the HTML templates
+function handleDeleteCompetency(id) {
   if (!confirm('Competentie verwijderen?')) return;
-  
-  try {
-    await CompetenciesAPI.delete(id);
-    currentCompetencies = currentCompetencies.filter(c => c.id !== id);
-    renderCompetencyManager();
-    showToast('Competentie verwijderd', 'info');
-  } catch (error) {
-    showToast(error.message, 'error');
-  }
-};
+
+  CompetenciesAPI.delete(id)
+    .then(() => {
+      currentCompetencies = currentCompetencies.filter(c => c.id !== id);
+      renderCompetencyManager();
+      showToast('Competentie verwijderd', 'info');
+    })
+    .catch(error => {
+      showToast(error.message, 'error');
+    });
+}
+
+// Expose to window for template onclick handlers
+window.handleDeleteCompetency = handleDeleteCompetency;
 
 // ============================================
 // Initialization

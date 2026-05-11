@@ -162,13 +162,6 @@ const InternshipsAPI = {
     });
   },
   
-  async updateStatus(id, status, feedback = null) {
-    return apiRequest(`/internships/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status, feedback })
-    });
-  },
-  
   async uploadAgreement(id, file) {
     const formData = new FormData();
     formData.append('file', file);
@@ -208,20 +201,6 @@ const InternshipsAPI = {
     });
   },
 
-  async updateEvaluation(evaluationId, data) {
-    return apiRequest(`/internships/evaluations/${evaluationId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data)
-    });
-  },
-
-  async finalizeEvaluation(evaluationId, scores) {
-    return apiRequest(`/internships/evaluations/${evaluationId}/finalize`, {
-      method: 'POST',
-      body: JSON.stringify({ scores })
-    });
-  },
-  
   async getFeedback(internshipId) {
     return apiRequest(`/internships/${internshipId}/feedback`);
   },
@@ -287,7 +266,5 @@ const HealthAPI = {
   }
 };
 
-// Export for use in other scripts
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { AuthAPI, InternshipsAPI, CompetenciesAPI, HealthAPI };
-}
+// API clients are available globally for browser use
+// No module.exports needed - this is browser-only code
