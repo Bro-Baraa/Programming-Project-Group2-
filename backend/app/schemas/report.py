@@ -1,5 +1,5 @@
 """Dashboard and reporting schemas."""
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, date
 from .user import UserResponse

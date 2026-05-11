@@ -3,7 +3,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 
-# Import all routers (they're already APIRouter instances)
 from app.routers import (
     auth,
     companies,
@@ -35,7 +34,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers (they're already APIRouter instances)
 app.include_router(auth)
 app.include_router(companies)
 app.include_router(internships)
