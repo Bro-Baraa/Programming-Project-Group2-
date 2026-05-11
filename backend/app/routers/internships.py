@@ -21,6 +21,9 @@ from app.services.common import ensure_internship_access
 router = APIRouter(prefix="/internships", tags=["internships"])
 
 
+VALID_STATUSES = {"Ingediend", "In Beoordeling", "Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist", "Overeenkomst Ingediend", "Lopend", "Afgerond"}
+
+
 @router.get("", response_model=List[InternshipListResponse])
 def list_internships(
     status: Optional[str] = None,
@@ -28,6 +31,9 @@ def list_internships(
     current_user: User = Depends(get_current_active_user),
 ):
     """List internships - filtered by role"""
+    if status and status not in VALID_STATUSES:
+        raise HTTPException(status_code=400, detail=f"Invalid status: {status}. Must be one of: {', '.join(VALID_STATUSES)}")
+    
     query = db.query(Internship)
 
     # Filter based on role

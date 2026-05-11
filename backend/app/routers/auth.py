@@ -5,7 +5,7 @@ from datetime import timedelta
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserResponse, Token
-from app.auth import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, get_current_active_user
+from app.auth import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, get_current_active_user, require_admin
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -39,14 +39,8 @@ def login(
 def register(
     user_data: UserCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(require_admin)
 ):
-    # Only admins can register new users
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can register new users"
-        )
     
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
