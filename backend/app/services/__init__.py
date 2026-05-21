@@ -5,13 +5,12 @@ from .common import (
     ensure_internship_access,
     get_active_competency_profile,
 )
-from .proposals import (
-    update_proposal,
-    resubmit_proposal,
-)
-from .agreements import (
-    upload_agreement,
-    validate_agreement,
+from .lifecycle import (
+    InternshipLifecycle,
+    LifecycleConfig,
+    NewInternship,
+    ReviewDecision,
+    AgreementUpload,
 )
 from .logbooks import (
     create_logbook,
@@ -40,12 +39,12 @@ __all__ = [
     "can_access_internship",
     "ensure_internship_access",
     "get_active_competency_profile",
-    # Proposals
-    "update_proposal",
-    "resubmit_proposal",
-    # Agreements
-    "upload_agreement",
-    "validate_agreement",
+    # Lifecycle
+    "InternshipLifecycle",
+    "LifecycleConfig",
+    "NewInternship",
+    "ReviewDecision",
+    "AgreementUpload",
     # Logbooks
     "create_logbook",
     "update_logbook",

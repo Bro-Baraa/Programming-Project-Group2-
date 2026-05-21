@@ -2,9 +2,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from pathlib import Path
 
 from app.database import get_db
-from app.models import User, Internship, Company, Proposal
+from app.models import User, Internship
 from app.schemas import (
     InternshipCreate,
     InternshipResponse,
@@ -17,8 +18,11 @@ from app.auth import (
     require_any_staff,
 )
 from app.services.common import ensure_internship_access
+from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 
 router = APIRouter(prefix="/internships", tags=["internships"])
+
+_CONFIG = LifecycleConfig(agreements_dir=Path("uploads/agreements"))
 
 
 VALID_STATUSES = {"Ingediend", "In Beoordeling", "Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist", "Overeenkomst Ingediend", "Lopend", "Afgerond"}
@@ -58,47 +62,20 @@ def create_internship(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_student),
 ):
-    """US-01: Student submits a new internship proposal
-
-    Creates:
-    1. A Company
-    2. An Internship record
-    3. A Proposal record with the description
-    """
-    # Create company
-    company = Company(
-        name=data.company_name,
-        address=data.company_address,
-        sector=data.company_sector,
+    """US-01: Student submits a new internship proposal."""
+    lifecycle = InternshipLifecycle(db, _CONFIG)
+    result = lifecycle.submit_internship(
+        actor=current_user,
+        company_name=data.company_name,
+        company_address=data.company_address,
+        company_sector=data.company_sector,
         contact_person=data.contact_person,
         contact_email=data.contact_email,
-    )
-    db.add(company)
-    db.flush()  # Get company ID
-
-    # Create internship
-    internship = Internship(
-        student_id=current_user.id,
-        company_id=company.id,
         start_date=data.start_date,
         end_date=data.end_date,
-        status="Ingediend",
-    )
-    db.add(internship)
-    db.flush()  # Get internship ID
-
-    # Create proposal
-    proposal = Proposal(
-        internship_id=internship.id,
         description=data.description,
-        status="Ingediend",
     )
-    db.add(proposal)
-
-    db.commit()
-    db.refresh(internship)
-
-    return internship
+    return result.internship
 
 
 @router.get("/{internship_id}", response_model=InternshipResponse)
@@ -126,7 +103,8 @@ def update_internship(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_staff),
 ):
-    """Update internship details - staff only (teacher, committee, admin)"""
+    """Update internship meta details - staff only (teacher, committee, admin).
+    Status changes must go through the dedicated lifecycle endpoints."""
     internship = db.query(Internship).filter(Internship.id == internship_id).first()
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
@@ -141,8 +119,8 @@ def update_internship(
         internship.start_date = update.start_date
     if update.end_date is not None:
         internship.end_date = update.end_date
-    if update.status is not None:
-        internship.status = update.status
+    # Note: status updates are intentionally ignored here;
+    # use review_proposal, validate_agreement, etc. instead.
 
     db.commit()
     db.refresh(internship)

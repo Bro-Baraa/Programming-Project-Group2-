@@ -1,4 +1,5 @@
 """Proposal (Stagevoorstel) endpoints."""
+from pathlib import Path
 from fastapi import APIRouter, Body, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -6,8 +7,8 @@ from app.database import get_db
 from app.models import Internship, User
 from app.schemas import ProposalResponse, ProposalUpdate
 from app.auth import get_current_active_user, require_committee, require_student
-from app.services.proposals import update_proposal, resubmit_proposal
 from app.services.common import ensure_internship_access
+from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 
 router = APIRouter(prefix="/internships", tags=["proposals"])
 
@@ -38,22 +39,21 @@ def update_proposal_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_committee)
 ):
-    """US-11, US-12: Committee evaluates proposal
-    
+    """US-11, US-12: Committee evaluates proposal.
+
     Status transitions:
     - Goedgekeurd: Proposal approved, student can upload agreement
     - Afgekeurd: Proposal rejected
     - Aanpassingen Vereist: Feedback required, student must revise
     """
-    internship = db.query(Internship).filter(Internship.id == internship_id).first()
-    if not internship:
-        raise HTTPException(status_code=404, detail="Internship not found")
-    
-    if not internship.proposal:
-        raise HTTPException(status_code=404, detail="Proposal not found")
-
-    update_proposal(db, internship, update_data)
-    return internship.proposal
+    lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+    result = lifecycle.review_proposal(
+        internship_id=internship_id,
+        actor=current_user,
+        decision=update_data.status,
+        feedback=update_data.feedback,
+    )
+    return result.internship.proposal
 
 
 @router.post("/{internship_id}/resubmit", response_model=ProposalResponse)
@@ -63,12 +63,11 @@ def resubmit_proposal_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_student)
 ):
-    """Student resubmits proposal after changes requested"""
-    internship = db.query(Internship).filter(Internship.id == internship_id).first()
-    if not internship:
-        raise HTTPException(status_code=404, detail="Internship not found")
-    
-    ensure_internship_access(current_user, internship)
-
-    resubmit_proposal(db, internship, current_user, new_description)
-    return internship.proposal
+    """Student resubmits proposal after changes requested."""
+    lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+    result = lifecycle.resubmit_proposal(
+        internship_id=internship_id,
+        actor=current_user,
+        new_description=new_description,
+    )
+    return result.internship.proposal
