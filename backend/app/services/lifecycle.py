@@ -270,6 +270,45 @@ class InternshipLifecycle:
     # Secondary operations
     # ------------------------------------------------------------------
 
+    def create_proposal(
+        self,
+        *,
+        internship_id: int,
+        actor: User,
+        description: str,
+    ) -> ReviewDecision:
+        """Student creates a proposal for an existing internship."""
+        self._assert_role(actor, {"student"})
+
+        internship = self._get_internship_or_404(internship_id)
+        self._assert_access(actor, internship)
+
+        if internship.student_id != actor.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized",
+            )
+
+        if internship.proposal:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Proposal already exists for this internship",
+            )
+
+        proposal = Proposal(
+            internship_id=internship.id,
+            description=description,
+            status="Ingediend",
+            submitted_at=self._now(),
+        )
+        self.db.add(proposal)
+
+        internship.status = "Ingediend"
+
+        self.db.commit()
+        self.db.refresh(internship)
+        return ReviewDecision(internship=internship)
+
     def resubmit_proposal(
         self,
         *,

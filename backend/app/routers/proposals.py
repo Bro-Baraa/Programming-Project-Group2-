@@ -1,16 +1,37 @@
 """Proposal (Stagevoorstel) endpoints."""
 from pathlib import Path
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Internship, User
-from app.schemas import ProposalResponse, ProposalUpdate
+from app.schemas import ProposalResponse, ProposalUpdate, ProposalCreate
 from app.auth import get_current_active_user, require_committee, require_student
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 
 router = APIRouter(prefix="/internships", tags=["proposals"])
+
+
+@router.post("/{internship_id}/proposal", response_model=ProposalResponse, status_code=status.HTTP_201_CREATED)
+def create_proposal_endpoint(
+    internship_id: int,
+    data: ProposalCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_student),
+):
+    """US-01: Student submits a proposal for an existing internship.
+
+    Use this when an internship was created by staff/admin and the student
+    still needs to submit the actual proposal description.
+    """
+    lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+    result = lifecycle.create_proposal(
+        internship_id=internship_id,
+        actor=current_user,
+        description=data.description,
+    )
+    return result.internship.proposal
 
 
 @router.get("/{internship_id}/proposal", response_model=ProposalResponse)

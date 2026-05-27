@@ -536,15 +536,16 @@ function renderStudentDashboard() {
 function wireProposalForm() {
   const form = document.getElementById('proposal-form');
 
-  // If already has internship, show message
+  // If student already has an internship, show a note but keep the form
+  // (student can submit multiple proposals; backend supports multiple internships)
   if (currentInternship) {
-    form.innerHTML = `
-      <div class="info-message">
-        <p>Je hebt al een stage ingediend.</p>
-        <a href="?view=dashboard" class="btn">Naar dashboard</a>
-      </div>
+    const note = document.createElement('div');
+    note.className = 'info-message';
+    note.innerHTML = `
+      <p>Je hebt al een stage ingediend. Je kunt hieronder een <strong>nieuw</strong> stagevoorstel indienen.</p>
+      <a href="?view=dashboard" class="btn">Naar dashboard</a>
     `;
-    return;
+    form.parentElement.insertBefore(note, form);
   }
 
   form?.addEventListener('submit', async (e) => {
