@@ -98,10 +98,21 @@ if ! $PYTHON_RUNNER -c "import uvicorn, fastapi, sqlalchemy" 2>/dev/null; then
     echo -e "${GREEN}Afhangelijkheden geïnstalleerd.${NC}"
 fi
 
-# Check if database exists, suggest init
-if [ ! -f "$PROJECT_DIR/backend/stage_monitoring.db" ]; then
-    echo -e "${RED}Database niet gevonden. Eerste keer setup nodig:${NC}"
-    echo "  cd backend && $INIT_RUNNER init_admin.py"
+# Check if database is empty and seed if needed
+DB_FILE="$PROJECT_DIR/backend/stage_monitoring.db"
+if [ ! -f "$DB_FILE" ] || ! $INIT_RUNNER -c "
+import sqlite3, sys
+conn = sqlite3.connect('$DB_FILE')
+cursor = conn.cursor()
+cursor.execute('SELECT COUNT(*) FROM users;')
+count = cursor.fetchone()[0]
+conn.close()
+sys.exit(0 if count > 0 else 1)
+" 2>/dev/null; then
+    echo -e "${YELLOW}Database leeg of niet gevonden. Seeding met demo-data...${NC}"
+    cd "$PROJECT_DIR/backend"
+    $INIT_RUNNER seed_complete.py
+    echo -e "${GREEN}Database gevuld!${NC}"
     echo ""
 fi
 

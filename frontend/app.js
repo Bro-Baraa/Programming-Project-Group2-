@@ -1227,6 +1227,7 @@ function init() {
   if (view === 'login' || !AuthAPI.isLoggedIn()) {
     renderLogin();
   } else {
+    updateUIForUser(AuthAPI.getUser());
     renderMainApp();
   }
   
