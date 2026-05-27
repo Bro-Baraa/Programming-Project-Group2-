@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stage_monitoring_backend
+    volumes:
+      - sqlite_data:/data
+      - uploads_data:/app/uploads
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-docker-secret-key-change-me-in-production}
+      - DATABASE_PATH=/data/stage_monitoring.db
+      - API_PORT=8001
+    expose:
+      - "8001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    container_name: stage_monitoring_frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+  uploads_data:

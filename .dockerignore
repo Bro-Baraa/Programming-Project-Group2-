@@ -1,0 +1,29 @@
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+README.md
+
+# Scripts
+start.sh
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (if any)
+node_modules/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
