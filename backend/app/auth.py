@@ -1,6 +1,7 @@
 import os
 from datetime import datetime, timedelta, UTC
 from typing import Optional
+from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
@@ -9,10 +10,15 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 
+# Load .env if present (development convenience)
+load_dotenv()
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
-    raise RuntimeError("SECRET_KEY environment variable must be set")
+    raise RuntimeError(
+        "SECRET_KEY environment variable must be set. "
+        "Create backend/.env from .env.example or set it manually."
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
