@@ -67,6 +67,40 @@
       .test-credentials li {
         margin-bottom: 0.25rem;
       }
+
+      .quick-login {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+      }
+
+      .quick-login p {
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+        color: var(--ink-soft);
+      }
+
+      .quick-login-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+
+      .quick-login-btn {
+        padding: 0.4rem 0.7rem;
+        font-size: 0.8rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: rgba(0, 121, 140, 0.08);
+        color: var(--accent-2);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .quick-login-btn:hover {
+        background: rgba(0, 121, 140, 0.2);
+        transform: translateY(-1px);
+      }
       
       .user-info {
         display: none;
@@ -276,6 +310,9 @@
           
           <div class="test-credentials" id="test-credentials">
             <!-- Filled by JS -->
+          </div>
+          <div class="quick-login" id="quick-login">
+            <!-- Quick login buttons filled by JS -->
           </div>
         </div>
       </div>

@@ -209,18 +209,29 @@ function renderLogin() {
     const form = document.getElementById('login-form');
     form?.addEventListener('submit', handleLogin);
     
-    // Fill test credentials for demo
-    const testCreds = document.getElementById('test-credentials');
-    if (testCreds) {
-      testCreds.innerHTML = `
-        <p><strong>Test accounts:</strong></p>
-        <ul>
-          <li>admin@school.be / admin123</li>
-          <li>student1@school.be / student123</li>
-          <li>commissie1@school.be / commissie123</li>
-          <li>docent1@school.be / docent123</li>
-        </ul>
+    // Fill quick-login buttons for demo
+    const quickLogin = document.getElementById('quick-login');
+    if (quickLogin) {
+      const accounts = [
+        { email: 'admin@school.be', password: 'admin123', label: 'Admin' },
+        { email: 'student1@school.be', password: 'student123', label: 'Student' },
+        { email: 'commissie1@school.be', password: 'commissie123', label: 'Commissie' },
+        { email: 'docent1@school.be', password: 'docent123', label: 'Docent' },
+        { email: 'mentor1@school.be', password: 'mentor123', label: 'Mentor' },
+      ];
+      quickLogin.innerHTML = `
+        <p><strong>Snel inloggen (demo):</strong></p>
+        <div class="quick-login-buttons">
+          ${accounts.map(a => `<button class="quick-login-btn" data-email="${a.email}" data-password="${a.password}">${a.label}</button>`).join('')}
+        </div>
       `;
+      quickLogin.querySelectorAll('.quick-login-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('login-email').value = btn.dataset.email;
+          document.getElementById('login-password').value = btn.dataset.password;
+          form.dispatchEvent(new Event('submit'));
+        });
+      });
     }
   }
 }
