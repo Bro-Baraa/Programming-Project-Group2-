@@ -17,14 +17,20 @@ echo -e "${BLUE}Stage Monitoring Tool — Startscript${NC}"
 echo "===================================="
 echo ""
 
-# Check if .env exists, warn if not
+# Check if .env exists, auto-create from example with random SECRET_KEY if not
 if [ ! -f "$PROJECT_DIR/backend/.env" ]; then
-    echo -e "${RED}Waarschuwing: backend/.env niet gevonden.${NC}"
-    echo "Kopieer backend/.env.example naar backend/.env en pas SECRET_KEY aan."
-    echo ""
-    echo "Voorbeeld:"
-    echo "  cp backend/.env.example backend/.env"
-    echo ""
+    if [ -f "$PROJECT_DIR/backend/.env.example" ]; then
+        echo -e "${YELLOW}backend/.env niet gevonden. Auto-aanmaken uit .env.example...${NC}"
+        # Generate a random 32-char SECRET_KEY and replace the placeholder
+        RANDOM_KEY=$(openssl rand -hex 16 2>/dev/null || python3 -c "import secrets; print(secrets.token_hex(16))")
+        sed "s/^SECRET_KEY=.*/SECRET_KEY=${RANDOM_KEY}/" "$PROJECT_DIR/backend/.env.example" > "$PROJECT_DIR/backend/.env"
+        echo -e "${GREEN}backend/.env aangemaakt met een willekeurige SECRET_KEY.${NC}"
+        echo ""
+    else
+        echo -e "${RED}Waarschuwing: backend/.env noch backend/.env.example gevonden.${NC}"
+        echo "SECRET_KEY moet handmatig worden ingesteld."
+        echo ""
+    fi
 fi
 
 
