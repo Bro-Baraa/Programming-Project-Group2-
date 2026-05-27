@@ -1,6 +1,7 @@
 """Agreement (Overeenkomst) endpoints."""
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -56,6 +57,36 @@ def get_agreement(
         raise HTTPException(status_code=404, detail="Agreement not found")
 
     return internship.agreement
+
+
+@router.get("/{internship_id}/agreement/download")
+def download_agreement(
+    internship_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Download the uploaded agreement PDF.
+
+    Returns the raw PDF file with appropriate Content-Type and filename header.
+    """
+    internship = db.query(Internship).filter(Internship.id == internship_id).first()
+    if not internship:
+        raise HTTPException(status_code=404, detail="Internship not found")
+
+    ensure_internship_access(current_user, internship)
+
+    if not internship.agreement:
+        raise HTTPException(status_code=404, detail="Agreement not found")
+
+    file_path = Path(internship.agreement.file_path)
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Agreement file not found on disk")
+
+    return FileResponse(
+        path=str(file_path),
+        media_type="application/pdf",
+        filename=f"stage_overeenkomst_{internship_id}.pdf",
+    )
 
 
 @router.patch("/{internship_id}/agreement", response_model=AgreementResponse)
