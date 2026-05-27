@@ -10,6 +10,7 @@ FRONTEND_PORT=8080
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 RED='\033[0;31m'
+YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}Stage Monitoring Tool — Startscript${NC}"
@@ -26,12 +27,7 @@ if [ ! -f "$PROJECT_DIR/backend/.env" ]; then
     echo ""
 fi
 
-# Check if database exists, suggest init
-if [ ! -f "$PROJECT_DIR/backend/stage_monitoring.db" ]; then
-    echo -e "${RED}Database niet gevonden. Eerste keer setup nodig:${NC}"
-    echo "  cd backend && $INIT_RUNNER init_admin.py"
-    echo ""
-fi
+
 
 # Function to cleanup on exit
 cleanup() {
@@ -44,10 +40,22 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Determine Python runner: prefer uv, fall back to .venv/bin/python
+USE_UV=false
 if command -v uv >/dev/null 2>&1; then
+    USE_UV=true
+    echo -e "${BLUE}uv gedetecteerd${NC}"
+else
+    echo -e "${BLUE}uv niet gevonden${NC}"
+fi
+
+if [ "$USE_UV" = true ]; then
+    if [ ! -d "$PROJECT_DIR/backend/.venv" ]; then
+        echo -e "${YELLOW}Virtuele omgeving niet gevonden. Aanmaken met uv...${NC}"
+        cd "$PROJECT_DIR/backend"
+        uv venv
+    fi
     PYTHON_RUNNER="uv run -- python"
     INIT_RUNNER="uv run -- python"
-    echo -e "${BLUE}uv gedetecteerd — gebruik uv run${NC}"
 else
     if [ -f "$PROJECT_DIR/backend/.venv/bin/python" ]; then
         PYTHON_RUNNER="$PROJECT_DIR/backend/.venv/bin/python"
@@ -56,7 +64,39 @@ else
         PYTHON_RUNNER="python3"
         INIT_RUNNER="python3"
     fi
-    echo -e "${BLUE}uv niet gevonden — gebruik: $PYTHON_RUNNER${NC}"
+    echo -e "${BLUE}Gebruik: $PYTHON_RUNNER${NC}"
+fi
+
+# Check and install dependencies if missing
+echo -e "${BLUE}Controleren of afhankelijkheden geïnstalleerd zijn...${NC}"
+cd "$PROJECT_DIR/backend"
+if ! $PYTHON_RUNNER -c "import uvicorn, fastapi, sqlalchemy" 2>/dev/null; then
+    echo -e "${YELLOW}Afhangelijkheden ontbreken. Installeren uit requirements.txt...${NC}"
+    if [ "$USE_UV" = true ]; then
+        uv pip install -r requirements.txt
+    else
+        if [ ! -d "$PROJECT_DIR/backend/.venv" ]; then
+            echo -e "${YELLOW}Virtuele omgeving aanmaken...${NC}"
+            python3 -m venv .venv
+            PYTHON_RUNNER="$PROJECT_DIR/backend/.venv/bin/python"
+            INIT_RUNNER="$PROJECT_DIR/backend/.venv/bin/python"
+        fi
+        if [ -f "$PROJECT_DIR/backend/.venv/bin/pip" ]; then
+            "$PROJECT_DIR/backend/.venv/bin/pip" install -r requirements.txt
+        else
+            echo -e "${RED}pip niet gevonden in virtuele omgeving. Probeer opnieuw:${NC}"
+            echo "  rm -rf backend/.venv && ./start.sh"
+            exit 1
+        fi
+    fi
+    echo -e "${GREEN}Afhangelijkheden geïnstalleerd.${NC}"
+fi
+
+# Check if database exists, suggest init
+if [ ! -f "$PROJECT_DIR/backend/stage_monitoring.db" ]; then
+    echo -e "${RED}Database niet gevonden. Eerste keer setup nodig:${NC}"
+    echo "  cd backend && $INIT_RUNNER init_admin.py"
+    echo ""
 fi
 
 # Start backend
@@ -72,7 +112,7 @@ sleep 2
 if ! kill -0 $BACKEND_PID 2>/dev/null; then
     echo -e "${RED}Backend kon niet starten. Controleer of uvicorn geïnstalleerd is:${NC}"
     if command -v uv >/dev/null 2>&1; then
-        echo "  cd backend && uv sync"
+        echo "  cd backend && uv pip install -r requirements.txt"
     else
         echo "  cd backend && pip install -r requirements.txt"
     fi
