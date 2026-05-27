@@ -179,6 +179,8 @@ def create_internship(
         start_date=data.start_date,
         end_date=data.end_date,
         description=data.description,
+        teacher_id=data.teacher_id,
+        mentor_id=data.mentor_id,
     )
     return result.internship
 

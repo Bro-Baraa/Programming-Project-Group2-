@@ -44,6 +44,104 @@ class TestSubmitInternship:
         assert internship.proposal is not None
         assert internship.proposal.status == "Ingediend"
         assert internship.proposal.description == "Test internship"
+        assert internship.teacher_id is None
+        assert internship.mentor_id is None
+
+    def test_student_creates_internship_with_supervisors(self, db, test_student, test_teacher, test_mentor, config):
+        lifecycle = InternshipLifecycle(db, config)
+        result = lifecycle.submit_internship(
+            actor=test_student,
+            company_name="TestCo",
+            company_address="123 Main St",
+            company_sector="IT",
+            contact_person="Alice",
+            contact_email="alice@testco.com",
+            start_date=date.today() + timedelta(days=30),
+            end_date=date.today() + timedelta(days=120),
+            description="Test internship",
+            teacher_id=test_teacher.id,
+            mentor_id=test_mentor.id,
+        )
+
+        internship = result.internship
+        assert internship.teacher_id == test_teacher.id
+        assert internship.mentor_id == test_mentor.id
+        assert internship.teacher == test_teacher
+        assert internship.mentor == test_mentor
+
+    def test_invalid_teacher_id_raises_400(self, db, test_student, config):
+        lifecycle = InternshipLifecycle(db, config)
+        with pytest.raises(HTTPException) as exc:
+            lifecycle.submit_internship(
+                actor=test_student,
+                company_name="TestCo",
+                company_address=None,
+                company_sector=None,
+                contact_person="Alice",
+                contact_email="alice@testco.com",
+                start_date=date.today(),
+                end_date=date.today(),
+                description="Test",
+                teacher_id=99999,
+            )
+        assert exc.value.status_code == 400
+        assert "Teacher with id 99999 not found" in exc.value.detail
+
+    def test_invalid_mentor_id_raises_400(self, db, test_student, config):
+        lifecycle = InternshipLifecycle(db, config)
+        with pytest.raises(HTTPException) as exc:
+            lifecycle.submit_internship(
+                actor=test_student,
+                company_name="TestCo",
+                company_address=None,
+                company_sector=None,
+                contact_person="Alice",
+                contact_email="alice@testco.com",
+                start_date=date.today(),
+                end_date=date.today(),
+                description="Test",
+                mentor_id=99999,
+            )
+        assert exc.value.status_code == 400
+        assert "Mentor with id 99999 not found" in exc.value.detail
+
+    def test_wrong_role_for_teacher_raises_400(self, db, test_student, test_committee, config):
+        # Using test_committee as a fake teacher ID should fail
+        lifecycle = InternshipLifecycle(db, config)
+        with pytest.raises(HTTPException) as exc:
+            lifecycle.submit_internship(
+                actor=test_student,
+                company_name="TestCo",
+                company_address=None,
+                company_sector=None,
+                contact_person="Alice",
+                contact_email="alice@testco.com",
+                start_date=date.today(),
+                end_date=date.today(),
+                description="Test",
+                teacher_id=test_committee.id,
+            )
+        assert exc.value.status_code == 400
+        assert "not a teacher" in exc.value.detail
+
+    def test_wrong_role_for_mentor_raises_400(self, db, test_student, test_teacher, config):
+        # Using test_teacher as a fake mentor ID should fail
+        lifecycle = InternshipLifecycle(db, config)
+        with pytest.raises(HTTPException) as exc:
+            lifecycle.submit_internship(
+                actor=test_student,
+                company_name="TestCo",
+                company_address=None,
+                company_sector=None,
+                contact_person="Alice",
+                contact_email="alice@testco.com",
+                start_date=date.today(),
+                end_date=date.today(),
+                description="Test",
+                mentor_id=test_teacher.id,
+            )
+        assert exc.value.status_code == 400
+        assert "not a mentor" in exc.value.detail
 
     def test_non_student_cannot_submit(self, db, test_committee, config):
         lifecycle = InternshipLifecycle(db, config)

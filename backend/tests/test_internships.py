@@ -28,6 +28,53 @@ class TestInternshipCreation:
         # Company name is in the nested company object, not directly on internship
         assert data["company"] is not None
         assert data["company"]["name"] == "Test Company"
+        assert data["teacher_id"] is None
+        assert data["mentor_id"] is None
+
+    def test_student_create_internship_with_supervisors(self, client, auth_headers_student, test_student, test_teacher, test_mentor):
+        """Test student can create internship with teacher and mentor assigned."""
+        internship_data = {
+            "company_name": "Test Company",
+            "contact_person": "John Contact",
+            "contact_email": "john@test.com",
+            "start_date": (date.today() + timedelta(days=30)).isoformat(),
+            "end_date": (date.today() + timedelta(days=120)).isoformat(),
+            "description": "Test internship description",
+            "teacher_id": test_teacher.id,
+            "mentor_id": test_mentor.id,
+        }
+        response = client.post(
+            "/internships",
+            json=internship_data,
+            headers=auth_headers_student
+        )
+        assert response.status_code == 201
+        data = response.json()
+        assert data["status"] == "Ingediend"
+        assert data["student_id"] == test_student.id
+        assert data["teacher_id"] == test_teacher.id
+        assert data["mentor_id"] == test_mentor.id
+        assert data["teacher"]["id"] == test_teacher.id
+        assert data["mentor"]["id"] == test_mentor.id
+
+    def test_student_create_internship_with_invalid_teacher(self, client, auth_headers_student):
+        """Test invalid teacher_id returns 400."""
+        internship_data = {
+            "company_name": "Test Company",
+            "contact_person": "John Contact",
+            "contact_email": "john@test.com",
+            "start_date": (date.today() + timedelta(days=30)).isoformat(),
+            "end_date": (date.today() + timedelta(days=120)).isoformat(),
+            "description": "Test internship description",
+            "teacher_id": 99999,
+        }
+        response = client.post(
+            "/internships",
+            json=internship_data,
+            headers=auth_headers_student
+        )
+        assert response.status_code == 400
+        assert "Teacher with id 99999 not found" in response.json()["detail"]
 
     def test_teacher_cannot_create_internship(self, client, auth_headers_teacher):
         """Test only students can create internships."""

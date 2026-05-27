@@ -122,6 +122,22 @@ class InternshipLifecycle:
     # Hot-path operations
     # ------------------------------------------------------------------
 
+    def _validate_supervisor(self, user_id: Optional[int], expected_role: str) -> None:
+        """Validate that the referenced user exists and has the expected role."""
+        if user_id is None:
+            return
+        user = self.db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"{expected_role.capitalize()} with id {user_id} not found",
+            )
+        if user.role != expected_role:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User {user_id} is not a {expected_role} (role: {user.role})",
+            )
+
     def submit_internship(
         self,
         *,
@@ -134,9 +150,14 @@ class InternshipLifecycle:
         start_date: date,
         end_date: date,
         description: str,
+        teacher_id: Optional[int] = None,
+        mentor_id: Optional[int] = None,
     ) -> NewInternship:
         """Student creates a new Internship + Company + Proposal."""
         self._assert_role(actor, {"student"})
+
+        self._validate_supervisor(teacher_id, "teacher")
+        self._validate_supervisor(mentor_id, "mentor")
 
         company = Company(
             name=company_name,
@@ -154,6 +175,8 @@ class InternshipLifecycle:
             start_date=start_date,
             end_date=end_date,
             status="Ingediend",
+            teacher_id=teacher_id,
+            mentor_id=mentor_id,
         )
         self.db.add(internship)
         self.db.flush()

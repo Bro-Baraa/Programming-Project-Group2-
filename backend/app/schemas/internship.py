@@ -23,6 +23,8 @@ class InternshipCreate(BaseModel):
     start_date: date
     end_date: date
     description: str
+    teacher_id: Optional[int] = None
+    mentor_id: Optional[int] = None
 
 
 class InternshipUpdate(BaseModel):
