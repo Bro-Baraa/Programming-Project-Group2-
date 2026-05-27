@@ -6,7 +6,8 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 ### 1. Audit Logging
 **Status:** Niet geïmplementeerd  
-**Requirement:** *"Alle statuswijzigingen, evaluaties en documentacties worden geaudit (tijdstip + actor)"*
+**Requirement:** *"Alle statuswijzigingen, evaluaties en documentacties worden geaudit (tijdstip + actor)"*  
+**Gerelateerde user stories:** [US-29](#user-stories-overzicht)
 
 **Wat moet er gebeuren:**
 - Nieuwe database tabel `AuditLog` aanmaken
@@ -38,9 +39,7 @@ AuditLog:
 
 ### 2. Notificatiesysteem
 **Status:** Niet geïmplementeerd  
-**Requirements:** 
-- *US-20: "notificatie ontvangen bij nieuwe logboeken"*
-- *US-29: "melding krijgen als er iets verandert dat mij aangaat"*
+**Requirements:** [US-20](#user-stories-overzicht), [US-29](#user-stories-overzicht)
 
 **Wat moet er gebeuren:**
 - Nieuwe database tabel `Notification` aanmaken
@@ -82,7 +81,8 @@ Notification:
 
 ### 3. Competentieprofiel Koppelen aan Stage
 **Status:** Gedeeltelijk (profiel wordt opgehaald, maar niet opgeslagen bij stage)  
-**Requirement:** *"Wijzigingen gelden enkel voor nieuwe stageperiodes; historische evaluaties blijven ongewijzigd"*
+**Requirement:** *"Wijzigingen gelden enkel voor nieuwe stageperiodes; historische evaluaties blijven ongewijzigd"*  
+**Gerelateerde user stories:** [US-25](#user-stories-overzicht)
 
 **Probleem:** Als een admin het competentieprofiel wijzigt, gebruiken lopende stages plotseling het nieuwe profiel. Dit mag niet.
 
@@ -106,7 +106,8 @@ Notification:
 
 ### 4. Versiegeschiedenis voor Proposals
 **Status:** Niet geïmplementeerd  
-**Requirement:** *"Student kan aanpassen en opnieuw indienen"* bij status "Aanpassingen vereist"
+**Requirement:** *"Student kan aanpassen en opnieuw indienen"* bij status "Aanpassingen vereist"  
+**Gerelateerde user stories:** [US-01](#user-stories-overzicht), [US-11](#user-stories-overzicht)
 
 **Vraag:** Willen we oude versies bewaren of alleen de laatste?
 
@@ -139,7 +140,8 @@ Notification:
 
 ### 5. Export Functionaliteit (Rapporten)
 **Status:** Niet geïmplementeerd  
-**Requirement:** *US-28: "rapportages exporteren zodat data bruikbaar is voor rapportering"*
+**Requirement:** *"rapportages exporteren zodat data bruikbaar is voor rapportering"*  
+**Gerelateerde user stories:** [US-28](#user-stories-overzicht)
 
 **Wat moet er gebeuren:**
 - Excel export voor admin/dashboard data
@@ -159,7 +161,8 @@ Notification:
 
 ### 6. "Ontbrekend" Status voor Logboeken
 **Status:**  Gedeeltelijk (kan met query, geen model wijziging nodig)  
-**Requirement:** *"Niet-ingevulde weken gemarkeerd als 'Ontbrekend'"*
+**Requirement:** *"Niet-ingevulde weken gemarkeerd als 'Ontbrekend'"*  
+**Gerelateerde user stories:** [US-08](#user-stories-overzicht)
 
 **Opmerking:** Dit is geen database wijziging, maar frontend logica.
 
