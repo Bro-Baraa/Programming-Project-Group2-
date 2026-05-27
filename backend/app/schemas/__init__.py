@@ -86,6 +86,12 @@ from .report import (
     AgreementStatusItem,
     FinalReportItem,
 )
+from .dashboard import (
+    InternshipDashboardItem,
+    UserDashboardStats,
+    DashboardAlert,
+    MeDashboardResponse,
+)
 
 __all__ = [
     # User
@@ -150,4 +156,9 @@ __all__ = [
     "DashboardStats",
     "AgreementStatusItem",
     "FinalReportItem",
+    # Dashboard
+    "InternshipDashboardItem",
+    "UserDashboardStats",
+    "DashboardAlert",
+    "MeDashboardResponse",
 ]

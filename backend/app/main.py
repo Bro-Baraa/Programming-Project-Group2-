@@ -15,6 +15,7 @@ from app.routers import (
     reports,
     competencies,
     users,
+    me,
 )
 
 # Create database tables
@@ -46,6 +47,7 @@ app.include_router(feedback)
 app.include_router(reports)
 app.include_router(competencies)
 app.include_router(users)
+app.include_router(me)
 
 
 @app.get("/")
@@ -66,6 +68,7 @@ def root():
             "reports": "/internships/stats/*, /internships/reports/*",
             "competencies": "/competencies",
             "users": "/users",
+            "me": "/me/dashboard",
         },
     }
 

@@ -11,6 +11,7 @@ from .feedback import router as feedback_router
 from .reports import router as reports_router
 from .competencies import router as competencies_router
 from .users import router as users_router
+from .me import router as me_router
 
 # Re-export for convenience
 auth = auth_router
@@ -24,3 +25,4 @@ feedback = feedback_router
 reports = reports_router
 competencies = competencies_router
 users = users_router
+me = me_router
