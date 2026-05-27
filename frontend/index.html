@@ -21,6 +21,12 @@
         <h1>Stage Monitoring Tool</h1>
       </div>
       <div class="user-info" id="user-info">
+        <div class="user-context" id="internship-selector-wrapper" style="display: none;">
+          <label for="internship-select">Stage</label>
+          <select id="internship-select" aria-label="Kies stage">
+            <option value="">Laden...</option>
+          </select>
+        </div>
         <div class="user-badge">
           <span class="user-name" id="user-name">Gebruiker</span>
           <span class="user-role" id="user-role">Rol</span>
@@ -29,30 +35,11 @@
       </div>
     </header>
 
+    <nav class="nav-bar" id="nav-panel" style="display: none;">
+      <ul class="nav-tabs" id="view-tabs"></ul>
+    </nav>
+
     <main id="app" class="layout">
-      <aside class="panel nav-panel" id="nav-panel" style="display: none;">
-        <h2>Navigatie</h2>
-
-        <label for="role-select">Actieve rol</label>
-        <select id="role-select" aria-label="Kies rol" disabled>
-          <option value="student">Student</option>
-          <option value="committee">Stagecommissie</option>
-          <option value="teacher">Docent</option>
-          <option value="mentor">Stagementor</option>
-          <option value="admin">Administratie</option>
-        </select>
-
-        <label for="view-select">Scherm</label>
-        <select id="view-select" aria-label="Kies scherm"></select>
-
-        <div id="internship-selector-wrapper" style="display: none;">
-          <label for="internship-select">Stage</label>
-          <select id="internship-select" aria-label="Kies stage">
-            <option value="">Laden...</option>
-          </select>
-        </div>
-      </aside>
-
       <section class="content" id="content"></section>
     </main>
 

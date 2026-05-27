@@ -78,7 +78,6 @@ label {
 
 .layout {
   display: grid;
-  grid-template-columns: 320px 1fr;
   gap: 1rem;
   padding: 0.8rem 1rem 1.2rem;
 }
@@ -103,14 +102,50 @@ label {
 
 .card { padding: 1rem; }
 
-.nav-panel {
-  padding: 1rem;
-  position: sticky;
-  top: 1rem;
-  align-self: start;
+.nav-bar {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  margin: 0 1rem 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
 }
 
-.nav-panel h2 { margin-bottom: 0.9rem; }
+.nav-tabs {
+  display: flex;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-tab {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  font: inherit;
+}
+
+.nav-tab:hover {
+  background: rgba(18, 38, 58, 0.06);
+  color: var(--ink);
+}
+
+.nav-tab.active {
+  background: var(--accent);
+  color: white;
+}
+
+
 
 .hero {
   border: 1px solid rgba(209, 73, 91, 0.22);
@@ -519,9 +554,28 @@ th {
 .agreement-status { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
 .agreement-status h3 { font-size: 1rem; margin-bottom: 0.5rem; }
 
-/* Internship selector */
-#internship-selector-wrapper { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
-#internship-select { width: 100%; padding: 0.5rem; border-radius: 6px; border: 1px solid var(--border); color: var(--ink); }
+.user-context {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.user-context label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.user-context select {
+  min-width: 200px;
+  max-width: 300px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
 
 /* Animation */
 .reveal { animation: rise 420ms ease both; }
@@ -533,8 +587,7 @@ th {
 
 /* Responsive */
 @media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
-  .nav-panel { position: static; }
+  .nav-bar { flex-wrap: wrap; gap: 1rem; }
   .two-col { grid-template-columns: 1fr; }
 
   .toast-notification {

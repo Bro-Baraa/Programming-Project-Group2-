@@ -174,13 +174,6 @@ function updateUIForUser(user) {
     userName.textContent = `${user.first_name} ${user.last_name}`;
     userRole.textContent = roleDisplayNames[user.role] || user.role;
   }
-  
-  // Set role in selector
-  const roleSelect = document.getElementById('role-select');
-  if (roleSelect) {
-    roleSelect.value = user.role;
-    roleSelect.disabled = true; // User can't change role manually
-  }
 }
 
 async function handleLogin(e) {
@@ -256,34 +249,47 @@ function renderLogin() {
 async function renderMainApp() {
   app.className = 'layout';
   navPanel.style.display = 'block';
-  
+
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
-  
-  // Populate view selector
-  const viewSelect = document.getElementById('view-select');
-  viewSelect.innerHTML = '';
+
+  // Populate view tabs
+  const viewTabs = document.getElementById('view-tabs');
+  viewTabs.innerHTML = '';
   views.forEach((view) => {
-    const option = document.createElement('option');
-    option.value = view;
-    option.textContent = view.charAt(0).toUpperCase() + view.slice(1);
-    viewSelect.appendChild(option);
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.className = 'nav-tab';
+    btn.dataset.view = view;
+    btn.textContent = view.charAt(0).toUpperCase() + view.slice(1);
+    btn.addEventListener('click', () => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', view);
+      window.history.replaceState({}, '', url);
+      renderView();
+    });
+    li.appendChild(btn);
+    viewTabs.appendChild(li);
   });
-  
-  // Get URL param or default to first view
-  const urlParams = new URLSearchParams(window.location.search);
-  const viewParam = urlParams.get('view');
-  if (viewParam && typeof viewParam === 'string' && views.includes(viewParam)) {
-    viewSelect.value = viewParam;
-  }
-  
+
   renderView();
 }
 
 async function renderView() {
   const role = AuthAPI.getRole();
-  const viewSelect = document.getElementById('view-select');
-  const view = viewSelect?.value || roleViews[role]?.[0];
+  const views = roleViews[role] || [];
+
+  // Resolve view from URL param or default to first
+  const urlParams = new URLSearchParams(window.location.search);
+  let view = urlParams.get('view');
+  if (!view || !views.includes(view)) {
+    view = views[0] || '';
+  }
+
+  // Highlight active tab
+  document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.classList.toggle('active', tab.dataset.view === view);
+  });
 
   content.innerHTML = '<div class="loading-overlay"><span class="loading-spinner"></span> Laden...</div>';
 
@@ -1260,9 +1266,8 @@ function init() {
   }
   
   // Event listeners
-  document.getElementById('view-select')?.addEventListener('change', () => {
-    renderView();
-  });
+  // (tab clicks are wired in renderMainApp)
+
   
   document.getElementById('internship-select')?.addEventListener('change', handleInternshipChange);
   
