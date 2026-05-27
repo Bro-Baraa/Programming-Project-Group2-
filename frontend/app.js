@@ -180,7 +180,7 @@ async function handleLogin(e) {
     showToast(`Welkom, ${data.user.first_name}!`, 'success');
     
     // Redirect to main app
-    window.location.href = 'index-api.html';
+    window.location.href = 'index.html';
   } catch (error) {
     hideLoading(submitBtn);
     showToast(error.message, 'error', 5000);
@@ -190,7 +190,7 @@ async function handleLogin(e) {
 function handleLogout() {
   AuthAPI.logout();
   showToast('Uitgelogd', 'info');
-  window.location.href = 'index-api.html?view=login';
+  window.location.href = 'index.html?view=login';
 }
 
 // ============================================

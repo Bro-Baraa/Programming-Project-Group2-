@@ -70,7 +70,7 @@ async function apiRequest(endpoint, options = {}) {
       if (response.status === 401) {
         setToken(null);
         setCurrentUser(null);
-        window.location.href = 'index-api.html?view=login';
+        window.location.href = 'index.html?view=login';
       }
       
       throw new Error(error.detail || `HTTP error! status: ${response.status}`);

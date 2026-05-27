@@ -593,5 +593,5 @@ print("  " + "-"*56)
 
 print("\n🚀 Next steps:")
 print("  1. Start backend: uvicorn app.main:app --reload")
-print("  2. Open frontend: http://localhost:8080/index-api.html")
+print("  2. Open frontend: http://localhost:8080/index.html")
 print("  3. Login with any account above\n")
