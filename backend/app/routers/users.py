@@ -30,17 +30,6 @@ def list_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """List users with optional role filter, search, and pagination.
-
-    Query params:
-    - role: filter by role (student, teacher, committee, mentor, admin)
-    - active_only: exclude deactivated users (default true)
-    - search: keyword search across first_name, last_name, email
-    - skip / limit: pagination (default limit=50, max=200)
-
-    Response headers:
-    - X-Total-Count: total matching items
-    """
     if role and role not in {"student", "teacher", "committee", "mentor", "admin"}:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -81,7 +70,6 @@ def get_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get a specific user by ID."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

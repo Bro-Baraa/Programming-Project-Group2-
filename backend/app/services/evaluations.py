@@ -32,7 +32,6 @@ from .evaluation_scoring import calculate_evaluation_score
 def list_evaluations(
     db: Session, current_user, internship_id: int
 ) -> List[Evaluation]:
-    """List evaluations for an internship."""
     internship = get_internship_or_404(db, internship_id)
     ensure_can_access_internship(current_user, internship)
     return (
@@ -43,7 +42,6 @@ def list_evaluations(
 def create_evaluation(
     db: Session, current_user, internship_id: int, data: EvaluationCreate
 ) -> Evaluation:
-    """Create a new evaluation for an internship."""
     internship = get_internship_or_404(db, internship_id)
     ensure_can_access_internship(current_user, internship)
     ensure_internship_is_evaluable(internship)
@@ -75,7 +73,6 @@ def create_evaluation(
 def get_evaluation_with_score(
     db: Session, current_user, evaluation_id: int
 ) -> EvaluationWithScoreResponse:
-    """Get an evaluation with its calculated score."""
     evaluation = get_evaluation_or_404(db, evaluation_id)
     ensure_can_access_internship(current_user, evaluation.internship)
     score_data = calculate_evaluation_score(db, evaluation)
@@ -93,7 +90,6 @@ def update_evaluation_rule(
     rule_id: int,
     update: EvaluationRuleUpdate,
 ) -> EvaluationRule:
-    """Update an evaluation rule with new scores or feedback."""
     evaluation = get_evaluation_or_404(db, evaluation_id)
 
     if evaluation.finalized:
@@ -128,7 +124,6 @@ def update_evaluation_rule(
 def finalize_evaluation(
     db: Session, evaluation: Evaluation, current_user
 ) -> tuple[Evaluation, dict]:
-    """Finalize an evaluation and return the updated evaluation plus score data."""
     ensure_can_finalize(evaluation, current_user)
     ensure_all_rules_scored(db, evaluation.id)
     mark_finalized(evaluation)

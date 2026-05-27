@@ -1,11 +1,11 @@
-# Stage Monitoring Tool — Frontend Prototype
+# Stage Monitoring Tool — Frontend
 
-Interactieve HTML/CSS/JS frontend met **volledige backend-integratie** via de FastAPI REST API.
+HTML/CSS/JS frontend met API-integratie naar de FastAPI backend.
 
-## 🚀 Snel Starten
+## Snel Starten
 
 ```bash
-cd prototype
+cd frontend
 python3 -m http.server 8080
 ```
 
@@ -22,11 +22,11 @@ De backend moet draaien op `http://localhost:8001`.
 | `api-client.js` | Herbruikbare API-client (Auth, Internships, Evaluations, ...) |
 | `styles.css` | Gedeelde stijlen |
 
-Oude versies staan in `archive/`:
+Oude versies staan in `prototype/`:
 - `index-original.html` + `app-original.js` — eerste prototype (geen backend)
 - `index-improved-localstorage.html` + `app-improved-localstorage.js` — localStorage-versie
 
-## 🔐 Authenticatie
+## Authenticatie
 
 Inloggen met JWT-token. Testaccounts:
 
@@ -38,7 +38,7 @@ Inloggen met JWT-token. Testaccounts:
 | Docent | docent1@school.be | docent123 |
 | Mentor | mentor1@school.be | mentor123 |
 
-## 👤 Rollen & Schermen
+## Rollen & Schermen
 
 | Rol | Schermen |
 |-----|----------|
@@ -48,7 +48,7 @@ Inloggen met JWT-token. Testaccounts:
 | **Stagementor** | Logboeken valideren (aftekenen) |
 | **Administratie** | Competentiebeheer + gewichten |
 
-## 🔌 API-Integratie
+## API-Integratie
 
 Alle data komt van de FastAPI-backend:
 - `GET /me/dashboard` — alles voor de dashboard-view
@@ -63,7 +63,7 @@ Alle data komt van de FastAPI-backend:
 
 Zie Swagger-docs op http://localhost:8001/docs
 
-## 🧪 Demo Happy Path
+## Demo Happy Path
 
 1. **Student** logt in → indient voorstel
 2. **Commissie** logt in → selecteert voorstel → klikt "Goedkeuren"

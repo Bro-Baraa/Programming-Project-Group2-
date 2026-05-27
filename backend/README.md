@@ -1,130 +1,93 @@
 # Stage Monitoring Tool - Backend
 
-Python/FastAPI backend for the internship monitoring system.
+FastAPI + SQLite backend.
 
 ## Quick Start
 
-### 1. Install dependencies
-
 ```bash
 cd backend
-pip install -r requirements.txt
-```
-
-Or using uv:
-```bash
-uv pip install -r requirements.txt
-```
-
-### 2. Run the server
-
-```bash
+pip install -r requirements.txt        # or: uv pip install -r requirements.txt
+cp .env.example .env
+python init_admin.py                   # maakt database + admin user
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://localhost:8000`
+API: `http://localhost:8001`  
+Docs: `http://localhost:8001/docs`
 
-Interactive docs: `http://localhost:8000/docs`
+### Testdata seeden
 
-### 3. Seed test data
-
-First, manually create an admin user (since registration requires authentication):
-
-```python
-from app.database import SessionLocal
-from app.models import User
-from app.auth import get_password_hash
-
-db = SessionLocal()
-admin = User(
-    email="admin@school.be",
-    password_hash=get_password_hash("admin123"),
-    first_name="Admin",
-    last_name="User",
-    role="admin"
-)
-db.add(admin)
-db.commit()
-```
-
-Then run the seed script:
 ```bash
-python seed.py
+python seed.py           # basis users + competenties
+# of
+python seed_complete.py  # uitgebreidere testdata
 ```
 
-## API Endpoints
+## Belangrijke Endpoints
 
-### Authentication
-- `POST /auth/login` - Login with email/password
-- `POST /auth/register` - Register new user (admin only)
-- `GET /auth/me` - Get current user
+| Domein | Endpoints |
+|--------|-----------|
+| Auth | `POST /auth/login`, `POST /auth/register`, `GET /auth/me` |
+| Internships | `GET /internships`, `POST /internships`, `GET /internships/{id}` |
+| Proposals | `PATCH /internships/{id}/proposal`, `POST /internships/{id}/resubmit` |
+| Agreements | `POST /internships/{id}/agreement`, `PATCH /internships/{id}/agreement` |
+| Logbooks | `GET /internships/{id}/logbooks`, `POST /internships/{id}/logbooks`, `PATCH /internships/logbooks/{id}` |
+| Evaluations | `GET /internships/{id}/evaluations`, `POST /internships/{id}/evaluations`, `POST /evaluations/{id}/finalize` |
+| Competencies | `GET /competencies`, `POST /competencies/profiles`, `POST /competencies` |
+| Feedback | `GET /internships/{id}/feedback`, `POST /internships/{id}/feedback` |
+| Dashboard | `GET /me/dashboard`, `GET /internships/stats/dashboard` |
+| Users | `GET /users`, `GET /users/{id}` |
 
-### Internships
-- `GET /internships` - List internships (role-filtered)
-- `POST /internships` - Create new internship (student)
-- `GET /internships/{id}` - Get internship details
-- `PATCH /internships/{id}/status` - Update status (committee)
-- `POST /internships/{id}/agreement` - Upload agreement PDF
+Zie `/docs` voor de volledige lijst.
 
-### Logbooks
-- `GET /internships/{id}/logbooks` - List logbooks
-- `POST /internships/{id}/logbooks` - Create logbook
-- `PATCH /logbooks/{id}` - Update logbook
-
-### Evaluations
-- `GET /internships/{id}/evaluations` - List evaluations
-- `POST /internships/{id}/evaluations` - Create evaluation
-
-### Competencies
-- `GET /competencies` - List competencies
-- `POST /competencies` - Create competency (admin)
-- `PATCH /competencies/{id}` - Update competency (admin)
-- `DELETE /competencies/{id}` - Deactivate competency (admin)
-
-### Feedback
-- `GET /internships/{id}/feedback` - List feedback
-- `POST /internships/{id}/feedback` - Create feedback
-
-### Dashboard
-- `GET /internships/stats/dashboard` - Get dashboard statistics
-
-## Project Structure
+## Projectstructuur
 
 ```
 backend/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py          # FastAPI app entry point
-│   ├── database.py      # SQLAlchemy setup
-│   ├── models.py        # Database models
-│   ├── schemas.py       # Pydantic schemas
-│   ├── auth.py          # Authentication utilities
-│   └── routers/
-│       ├── __init__.py
-│       ├── auth.py      # Auth endpoints
-│       ├── internships.py # Internship endpoints
-│       └── competencies.py # Competency endpoints
-├── tests/
-├── uploads/             # File uploads directory
+│   ├── main.py              # FastAPI entrypoint
+│   ├── database.py          # SQLAlchemy + SQLite
+│   ├── models.py            # ORM modellen
+│   ├── auth.py              # JWT + wachtwoord hashing
+│   ├── dependencies.py      # Gedeelde dependencies
+│   ├── routers/             # API endpoints per domein
+│   │   ├── auth.py
+│   │   ├── internships.py
+│   │   ├── proposals.py
+│   │   ├── agreements.py
+│   │   ├── logbooks.py
+│   │   ├── evaluations.py
+│   │   ├── competencies*.py
+│   │   ├── feedback.py
+│   │   ├── users.py
+│   │   ├── me.py
+│   │   └── reports.py
+│   ├── schemas/             # Pydantic schemas per domein
+│   └── services/            # Business logic
+├── tests/                   # pytest suite
+├── uploads/agreements/      # PDF uploads
+├── init_admin.py            # Eerste setup
+├── seed.py / seed_complete.py
 ├── requirements.txt
-├── seed.py              # Test data seeding
-└── README.md
+└── pytest.ini
 ```
 
 ## Database
 
-Uses SQLite by default (file-based, no setup needed). Change `SQLALCHEMY_DATABASE_URL` in `app/database.py` for PostgreSQL/MySQL.
+SQLite by default (geen setup nodig). Wil je PostgreSQL/MySQL: pas `SQLALCHEMY_DATABASE_URL` in `app/database.py` aan.
 
 ## Environment Variables
 
-Create a `.env` file for production:
-
-```
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///./stage_monitoring.db
+```bash
+cp .env.example .env
 ```
 
-## Testing
+Minimaal nodig:
+```
+SECRET_KEY=een-willekeurige-string-hier
+```
+
+## Testen
 
 ```bash
 pytest
@@ -132,7 +95,7 @@ pytest
 
 ## Notes
 
-- Status transitions are validated (see `STATUS_FLOW` in `internships.py`)
-- Special rule: internship can only go to "Lopend" status if agreement is uploaded
-- File uploads stored in `uploads/agreements/`
-- JWT tokens expire after 24 hours
+- Statusovergangen worden gevalideerd in `app/services/lifecycle.py` (`_TRANSITIONS`)
+- Een stage kan pas naar "Lopend" als de overeenkomst is gevalideerd
+- PDFs worden opgeslagen in `uploads/agreements/`
+- JWT tokens verlopen na 24 uur

@@ -11,7 +11,6 @@ from .common import ensure_internship_access
 def list_feedback(
     db: Session, current_user, internship_id: int
 ) -> List[Feedback]:
-    """List all feedback for an internship."""
     internship = (
         db.query(Internship).filter(Internship.id == internship_id).first()
     )
@@ -27,7 +26,6 @@ def list_feedback(
 def create_feedback(
     db: Session, current_user, internship_id: int, data: FeedbackCreate
 ) -> Feedback:
-    """Create new feedback for an internship."""
     internship = (
         db.query(Internship).filter(Internship.id == internship_id).first()
     )

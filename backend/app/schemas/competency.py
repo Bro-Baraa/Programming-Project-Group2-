@@ -4,6 +4,16 @@ from typing import Optional, List
 from datetime import datetime
 
 
+def _check_weight(v: float | None) -> float | None:
+    if v is None:
+        return v
+    if v <= 0:
+        raise ValueError("Weight must be greater than 0")
+    if v > 100:
+        raise ValueError("Weight cannot exceed 100")
+    return v
+
+
 class CompetencyProfileBase(BaseModel):
     name: str
     version: str
@@ -38,14 +48,10 @@ class CompetencyBase(BaseModel):
 class CompetencyCreate(CompetencyBase):
     profile_id: int
 
-    @field_validator('weight')
+    @field_validator("weight")
     @classmethod
     def validate_weight(cls, v):
-        if v <= 0:
-            raise ValueError('Weight must be greater than 0')
-        if v > 100:
-            raise ValueError('Weight cannot exceed 100')
-        return v
+        return _check_weight(v)
 
 
 class CompetencyUpdate(BaseModel):
@@ -54,15 +60,10 @@ class CompetencyUpdate(BaseModel):
     weight: Optional[float] = None
     active: Optional[bool] = None
 
-    @field_validator('weight')
+    @field_validator("weight")
     @classmethod
     def validate_weight(cls, v):
-        if v is not None:
-            if v <= 0:
-                raise ValueError('Weight must be greater than 0')
-            if v > 100:
-                raise ValueError('Weight cannot exceed 100')
-        return v
+        return _check_weight(v)
 
 
 class CompetencyResponse(CompetencyBase):

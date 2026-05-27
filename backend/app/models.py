@@ -27,7 +27,6 @@ class User(Base):
 
 
 class Company(Base):
-    """Bedrijven table - stores company information"""
     __tablename__ = "companies"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -44,7 +43,6 @@ class Company(Base):
 
 
 class Internship(Base):
-    """Stages table - the main internship record"""
     __tablename__ = "internships"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -69,9 +67,20 @@ class Internship(Base):
     evaluations = relationship("Evaluation", back_populates="internship", cascade="all, delete-orphan")
     feedbacks = relationship("Feedback", back_populates="internship", cascade="all, delete-orphan")
 
+    @property
+    def proposal_status(self) -> str | None:
+        return self.proposal.status if self.proposal else None
+
+    @property
+    def agreement_status(self) -> str | None:
+        return self.agreement.status if self.agreement else None
+
+    @property
+    def agreement_uploaded(self) -> bool:
+        return self.agreement is not None
+
 
 class Proposal(Base):
-    """Stagevoorstellen table - internship proposals"""
     __tablename__ = "proposals"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -85,7 +94,6 @@ class Proposal(Base):
 
 
 class Agreement(Base):
-    """Overeenkomst table - internship agreements"""
     __tablename__ = "agreements"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -100,7 +108,6 @@ class Agreement(Base):
 
 
 class Document(Base):
-    """Documenten table - additional documents"""
     __tablename__ = "documents"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -113,7 +120,6 @@ class Document(Base):
 
 
 class Logbook(Base):
-    """Logboeken table - weekly logbooks"""
     __tablename__ = "logbooks"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -131,7 +137,6 @@ class Logbook(Base):
 
 
 class CompetencyProfile(Base):
-    """CompetentieProfielen table - competency profiles"""
     __tablename__ = "competency_profiles"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -145,7 +150,6 @@ class CompetencyProfile(Base):
 
 
 class Competency(Base):
-    """Competenties table - individual competencies"""
     __tablename__ = "competencies"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -161,7 +165,6 @@ class Competency(Base):
 
 
 class Evaluation(Base):
-    """Evaluaties table - evaluations"""
     __tablename__ = "evaluations"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -180,7 +183,6 @@ class Evaluation(Base):
 
 
 class EvaluationRule(Base):
-    """Evaluatie_Regels table - per-competency evaluation scores"""
     __tablename__ = "evaluation_rules"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -195,7 +197,6 @@ class EvaluationRule(Base):
 
 
 class Feedback(Base):
-    """Feedback table - general feedback messages"""
     __tablename__ = "feedbacks"
 
     id = Column(Integer, primary_key=True, index=True)

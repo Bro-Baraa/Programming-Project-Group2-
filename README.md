@@ -6,7 +6,7 @@ Een compleet stagevolgsysteem voor de opleiding Toegepaste Informatica (Erasmus 
 - **Backend**: FastAPI + SQLite REST API (`backend/`)
 - **Authenticatie**: JWT-tokens met rolgebaseerde toegang
 
-## 🚀 Snelle Start
+## Snelle Start
 
 ### Optie 1: Alles tegelijk starten
 
@@ -25,6 +25,7 @@ Ga dan naar **http://localhost:8080**
 **Terminal 1 — Backend:**
 ```bash
 cd backend
+cp .env.example .env
 python init_admin.py        # Eerste keer: database + testgebruikers
 uvicorn app.main:app --reload
 ```
@@ -40,6 +41,7 @@ Bezoek http://localhost:8080
 ### Optie 3: Alleen backend (voor API-testen)
 ```bash
 cd backend
+cp .env.example .env
 python init_admin.py
 uvicorn app.main:app --reload
 ```
@@ -48,12 +50,12 @@ Swagger docs: http://localhost:8001/docs
 
 ---
 
-## 🔐 Eerste keer instellen
+## Eerste keer instellen
 
 ```bash
 cd backend
-cp .env.example .env          # Maak een lokale env aan
-python init_admin.py         # Maakt database en testgebruikers
+cp .env.example .env
+python init_admin.py
 ```
 
 ### Testaccounts
@@ -68,10 +70,10 @@ python init_admin.py         # Maakt database en testgebruikers
 
 ---
 
-## 📁 Projectstructuur
+## Projectstructuur
 
 ```
-prog-project-wt2/
+Programming-Project-Group2-/
 ├── frontend/                     # Frontend applicatie
 │   ├── index.html               # Hoofdpagina met alle UI-templates
 │   ├── app.js                   # Kernlogica: views, formulieren, API-calls
@@ -90,21 +92,24 @@ prog-project-wt2/
 │   │   ├── schemas/             # Pydantic request/response schema's
 │   │   └── services/            # Business logic
 │   ├── tests/                   # pytest testsuite
+│   ├── uploads/agreements/      # PDF uploads
 │   ├── init_admin.py            # Eerste keer setup
-│   ├── seed_complete.py         # Testdata seeding
+│   ├── seed.py                  # Testdata seeding (basis)
+│   ├── seed_complete.py         # Testdata seeding (uitgebreid)
 │   ├── requirements.txt         # Python dependencies
 │   ├── .env.example             # Template voor env-variabelen
 │   └── pytest.ini               # Testconfiguratie
 ├── docs/                         # Projectdocumentatie
-│   ├── architectuur.md            # Backend-architectuur
-│   ├── feature-todo.md            # Ontbrekende features
+│   ├── architectuur.md          # Backend-architectuur
+│   ├── feature-todo.md          # Ontbrekende features
 │   └── analyses/                # Groepsanalyses
+├── start.sh                     # Start backend + frontend tegelijk
 └── .gitignore
 ```
 
 ---
 
-## 🧪 Testen
+## Testen
 
 ### Backend tests
 ```bash
@@ -115,24 +120,6 @@ pytest
 ### Testdata seeden
 ```bash
 cd backend
-python seed_complete.py
+python seed.py          # basis users + competenties
+python seed_complete.py  # uitgebreidere testdata
 ```
-
----
-
-## 🔧 Veelvoorkomende problemen
-
-**`RuntimeError: SECRET_KEY environment variable must be set`**  
-→ Kopieer `backend/.env.example` naar `backend/.env` en pas `SECRET_KEY` aan.
-
-**CORS-fouten**  
-→ Zorg dat je de frontend benadert via `http://localhost:8080`, niet `file://`.
-
-**Database vergrendeld**  
-→ Stop de backend, verwijder `backend/stage_monitoring.db`, en voer opnieuw `init_admin.py` uit.
-
----
-
-## 📄 Licentie
-
-Schoolproject — Groep 2

@@ -56,20 +56,6 @@ def root():
         "message": "Stage Monitoring Tool API",
         "docs": "/docs",
         "version": "1.0.0",
-        "endpoints": {
-            "auth": "/auth",
-            "companies": "/companies",
-            "internships": "/internships",
-            "proposals": "/internships/{id}/proposal",
-            "agreements": "/internships/{id}/agreement",
-            "logbooks": "/internships/{id}/logbooks",
-            "evaluations": "/internships/{id}/evaluations",
-            "feedback": "/internships/{id}/feedback",
-            "reports": "/internships/stats/*, /internships/reports/*",
-            "competencies": "/competencies",
-            "users": "/users",
-            "me": "/me/dashboard",
-        },
     }
 
 

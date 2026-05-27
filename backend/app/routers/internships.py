@@ -139,26 +139,7 @@ def list_internships(
     # Set total count header for pagination UI
     response.headers["X-Total-Count"] = str(total_count)
 
-    # Build enriched response
-    return [
-        {
-            "id": i.id,
-            "student_id": i.student_id,
-            "company_id": i.company_id,
-            "start_date": i.start_date,
-            "end_date": i.end_date,
-            "status": i.status,
-            "created_at": i.created_at,
-            "student": i.student,
-            "company": i.company,
-            "teacher": i.teacher,
-            "mentor": i.mentor,
-            "proposal_status": i.proposal.status if i.proposal else None,
-            "agreement_status": i.agreement.status if i.agreement else None,
-            "agreement_uploaded": i.agreement is not None,
-        }
-        for i in internships
-    ]
+    return internships
 
 
 @router.post("", response_model=InternshipResponse, status_code=status.HTTP_201_CREATED)

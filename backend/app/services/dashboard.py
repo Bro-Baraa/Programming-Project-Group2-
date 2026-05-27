@@ -73,26 +73,8 @@ def _build_internship_dashboard_item(
         reverse=True,
     )[:3]
 
-    # Build the internship list response manually
-    internship_list = {
-        "id": internship.id,
-        "student_id": internship.student_id,
-        "company_id": internship.company_id,
-        "start_date": internship.start_date,
-        "end_date": internship.end_date,
-        "status": internship.status,
-        "created_at": internship.created_at,
-        "student": internship.student,
-        "company": internship.company,
-        "teacher": internship.teacher,
-        "mentor": internship.mentor,
-        "proposal_status": internship.proposal.status if internship.proposal else None,
-        "agreement_status": internship.agreement.status if internship.agreement else None,
-        "agreement_uploaded": internship.agreement is not None,
-    }
-
     return InternshipDashboardItem(
-        internship=InternshipListResponse.model_validate(internship_list),
+        internship=InternshipListResponse.model_validate(internship),
         proposal_status=internship.proposal.status if internship.proposal else None,
         agreement_status=internship.agreement.status if internship.agreement else None,
         agreement_uploaded=internship.agreement is not None,
@@ -178,20 +160,14 @@ def _build_alerts(
                 ))
 
         # Mentor-specific alerts
-        if user.role == "mentor":
-            unvalidated = sum(
-                1 for _ in range(item.logbooks_submitted)
-                # Simplified: we'd need actual logbook objects to check mentor_validated
-            )
-            # Placeholder alert for mentor
-            if item.logbooks_submitted > 0:
-                alerts.append(DashboardAlert(
-                    severity="info",
-                    message=f"Nieuwe logboeken ingediend door {i.student.first_name} {i.student.last_name}.",
-                    action_url="?view=validatie",
-                    entity_type="internship",
-                    entity_id=intern_id,
-                ))
+        if user.role == "mentor" and item.logbooks_submitted > 0:
+            alerts.append(DashboardAlert(
+                severity="info",
+                message=f"Nieuwe logboeken ingediend door {i.student.first_name} {i.student.last_name}.",
+                action_url="?view=validatie",
+                entity_type="internship",
+                entity_id=intern_id,
+            ))
 
     return sorted(alerts, key=lambda a: {"error": 0, "warning": 1, "info": 2}[a.severity])
 

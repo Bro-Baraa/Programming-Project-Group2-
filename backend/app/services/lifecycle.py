@@ -431,7 +431,7 @@ class InternshipLifecycle:
 
         internship = self._get_internship_or_404(internship_id)
 
-        # TODO: write audit log entry with reason
+        # Audit logging not yet implemented (see docs/feature-todo.md #1)
         internship.status = new_status
 
         self.db.commit()

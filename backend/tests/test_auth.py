@@ -5,7 +5,6 @@ class TestAuthEndpoints:
     """Test authentication endpoints."""
 
     def test_login_success(self, client, test_admin):
-        """Test successful login."""
         response = client.post(
             "/auth/login",
             data={"username": "admin@test.com", "password": "admin123"}
@@ -18,7 +17,6 @@ class TestAuthEndpoints:
         assert data["user"]["role"] == "admin"
 
     def test_login_invalid_password(self, client, test_admin):
-        """Test login with wrong password."""
         response = client.post(
             "/auth/login",
             data={"username": "admin@test.com", "password": "wrongpassword"}
@@ -27,7 +25,6 @@ class TestAuthEndpoints:
         assert "Incorrect email or password" in response.json()["detail"]
 
     def test_login_invalid_email(self, client):
-        """Test login with non-existent email."""
         response = client.post(
             "/auth/login",
             data={"username": "nonexistent@test.com", "password": "password123"}
@@ -36,7 +33,6 @@ class TestAuthEndpoints:
         assert "Incorrect email or password" in response.json()["detail"]
 
     def test_get_me_success(self, client, auth_headers_admin, test_admin):
-        """Test getting current user info."""
         response = client.get("/auth/me", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
@@ -46,12 +42,10 @@ class TestAuthEndpoints:
         assert data["last_name"] == "User"
 
     def test_get_me_no_token(self, client):
-        """Test getting current user without token."""
         response = client.get("/auth/me")
         assert response.status_code == 401
 
     def test_get_me_invalid_token(self, client):
-        """Test getting current user with invalid token."""
         response = client.get(
             "/auth/me",
             headers={"Authorization": "Bearer invalid_token"}
@@ -63,7 +57,6 @@ class TestUserRegistration:
     """Test user registration (admin only)."""
 
     def test_register_user_as_admin(self, client, auth_headers_admin):
-        """Test admin can register new user."""
         user_data = {
             "email": "newuser@test.com",
             "password": "newpass123",
@@ -83,7 +76,6 @@ class TestUserRegistration:
         assert data["first_name"] == "New"
 
     def test_register_user_as_student_fails(self, client, auth_headers_student):
-        """Test non-admin cannot register users."""
         user_data = {
             "email": "newuser@test.com",
             "password": "newpass123",
@@ -100,7 +92,6 @@ class TestUserRegistration:
         assert "Not enough permissions" in response.json()["detail"]
 
     def test_register_duplicate_email(self, client, auth_headers_admin, test_student):
-        """Test cannot register with existing email."""
         user_data = {
             "email": "student@test.com",  # Already exists
             "password": "newpass123",
@@ -117,7 +108,6 @@ class TestUserRegistration:
         assert "Email already registered" in response.json()["detail"]
 
     def test_register_missing_fields(self, client, auth_headers_admin):
-        """Test registration with missing required fields."""
         user_data = {
             "email": "new@test.com",
             "password": "pass123"
@@ -135,7 +125,6 @@ class TestRoleBasedAccess:
     """Test role-based access control."""
 
     def test_student_cannot_access_teacher_endpoint(self, client, auth_headers_student):
-        """Test students cannot access teacher-only endpoints."""
         # Try to create an evaluation (teacher only)
         response = client.post(
             "/internships/1/evaluations",
@@ -145,7 +134,6 @@ class TestRoleBasedAccess:
         assert response.status_code == 403
 
     def test_teacher_can_access_teacher_endpoint(self, client, auth_headers_teacher):
-        """Test teachers can access teacher endpoints (but need valid data)."""
         # The endpoint validates input before checking internship
         response = client.post(
             "/internships/999/evaluations",
