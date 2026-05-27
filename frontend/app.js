@@ -71,7 +71,24 @@ function formatDate(dateStr) {
   }
 }
 
-
+function getStatusClass(status) {
+  if (!status) return '';
+  const map = {
+    'ingediend': 'status-info',
+    'overeenkomst-ingediend': 'status-info',
+    'submitted': 'status-info',
+    'draft': '',
+    'in-beoordeling': 'status-warn',
+    'aanpassingen-vereist': 'status-warn',
+    'pending': 'status-warn',
+    'goedgekeurd': 'status-good',
+    'lopend': 'status-good',
+    'approved': 'status-good',
+    'afgekeurd': 'status-bad',
+    'rejected': 'status-bad',
+  };
+  return map[status.toLowerCase().replace(/\s+/g, '-')] || '';
+}
 
 // Note: localStorage persistence removed - this is the API-connected version
 // All data is persisted through the backend API
@@ -477,7 +494,7 @@ function renderStudentDashboard() {
       <h2>Mijn Stage</h2>
       <p><strong>Bedrijf:</strong> ${companyName}</p>
       <p><strong>Periode:</strong> ${startDate} - ${endDate}</p>
-      <p><strong>Status:</strong> <span class="status-pill status-${currentInternship.status.toLowerCase().replace(/\s+/g, '-')}">${currentInternship.status}</span></p>
+      <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(currentInternship.status)}">${currentInternship.status}</span></p>
       <p><strong>Overeenkomst:</strong> ${hasAgreement ? '✓ Ontvangen' : '✗ Nog niet'}</p>
     `;
   }
@@ -664,7 +681,7 @@ function wireAgreementUpload() {
   // Update status display
   const statusText = document.getElementById('agreement-status-text');
   if (hasAgreement && statusText) {
-    statusText.innerHTML = '<span class="status-approved">Ontvangen</span>';
+    statusText.innerHTML = '<span class="status-pill status-good">Ontvangen</span>';
     form.innerHTML = `
       <div class="info-message success">
         <p>✓ Je overeenkomst is succesvol geüpload!</p>
@@ -705,7 +722,7 @@ function wireAgreementUpload() {
       await refreshInternshipData();
 
       if (statusText) {
-        statusText.innerHTML = '<span class="status-approved">Ontvangen</span>';
+        statusText.innerHTML = '<span class="status-pill status-good">Ontvangen</span>';
       }
     } catch (error) {
       hideLoading(submitBtn);
@@ -740,12 +757,12 @@ async function renderCommitteeProposals() {
 
     if (tbody) {
       tbody.innerHTML = allInternships.map(p => `
-        <tr data-id="${p.id}" class="proposal-row" style="cursor: pointer;">
+        <tr data-id="${p.id}" class="proposal-row">
           <td>${p.student?.first_name || 'Onbekend'} ${p.student?.last_name || ''}</td>
           <td>${p.company?.name || 'Onbekend'}</td>
           <td>${new Date(p.created_at).toLocaleDateString('nl-BE')}</td>
-          <td><span class="status-pill status-${p.status.toLowerCase().replace(/\s+/g, '-')}">${p.status}</span></td>
-          <td>${p.agreement_uploaded ? '<span class="status-approved">Ontvangen</span>' : '<span class="status-pending">Nog niet</span>'}</td>
+          <td><span class="status-pill ${getStatusClass(p.status)}">${p.status}</span></td>
+          <td>${p.agreement_uploaded ? '<span class="status-pill status-good">Ontvangen</span>' : '<span class="status-pill status-warn">Nog niet</span>'}</td>
         </tr>
       `).join('');
 
@@ -808,8 +825,8 @@ function selectProposalForReview(internshipId) {
   const actionsDiv = document.getElementById('review-actions');
   if (actionsDiv) {
     actionsDiv.innerHTML = `
-      <button id="btn-approve" class="btn" style="background: linear-gradient(125deg, var(--good), #3c9d78);">✓ Goedkeuren</button>
-      <button id="btn-reject" class="btn" style="background: linear-gradient(125deg, var(--bad), #ff6b6b);">✗ Afkeuren</button>
+      <button id="btn-approve" class="btn good">✓ Goedkeuren</button>
+      <button id="btn-reject" class="btn bad">✗ Afkeuren</button>
       <button id="btn-changes" class="btn alt">⚠ Aanpassingen Vereist</button>
     `;
 
@@ -867,8 +884,8 @@ async function renderCommitteeOverview() {
           <td>${p.student?.first_name || 'Onbekend'}</td>
           <td>${p.company?.name || 'Onbekend'}</td>
           <td>${formatDate(p.start_date)} - ${formatDate(p.end_date)}</td>
-          <td><span class="status-pill status-${p.status.toLowerCase().replace(/\s+/g, '-')}">${p.status}</span></td>
-          <td>${p.agreement != null ? '<span class="status-approved">Ontvangen</span>' : '<span class="status-pending">Nog niet</span>'}</td>
+          <td><span class="status-pill ${getStatusClass(p.status)}">${p.status}</span></td>
+          <td>${p.agreement != null ? '<span class="status-pill status-good">Ontvangen</span>' : '<span class="status-pill status-warn">Nog niet</span>'}</td>
         </tr>
       `).join('');
     }
@@ -1124,7 +1141,7 @@ function renderTeacherLogbooks() {
       <td>${lb.week_number}</td>
       <td>${lb.tasks || '-'}</td>
       <td>${lb.reflection || '-'}</td>
-      <td><span class="status-pill status-${lb.status}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+      <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
       <td>${lb.mentor_validated ? '✓ Gevalideerd' : 'In afwachting'}</td>
     </tr>
   `).join('');
@@ -1173,10 +1190,10 @@ function renderMentorLogbooks() {
       <td>${lb.week_number}</td>
       <td>${lb.tasks || '-'}</td>
       <td>${lb.reflection || '-'}</td>
-      <td><span class="status-pill status-${lb.status}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+      <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
       <td>
         ${lb.mentor_validated
-          ? '<span class="status-approved">✓ Gevalideerd</span>'
+          ? '<span class="status-pill status-good">✓ Gevalideerd</span>'
           : `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`
         }
       </td>
