@@ -147,6 +147,70 @@
         background: rgba(60, 157, 120, 0.15);
         color: #1d6650;
       }
+
+      .proposal-row {
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+      .proposal-row:hover {
+        background: rgba(0, 121, 140, 0.06);
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      #internship-selector-wrapper {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+      }
+
+      #internship-select {
+        width: 100%;
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--ink);
+      }
+
+      .eval-row {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: rgba(0,0,0,0.03);
+        border-radius: 8px;
+      }
+
+      .score-inputs {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      .score-select {
+        padding: 0.4rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+      }
+
+      .feedback-input {
+        flex: 1;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+      }
+
+      .student-desc-input {
+        width: 100%;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        resize: vertical;
+      }
     </style>
   </head>
   <body>
@@ -181,6 +245,13 @@
 
         <label for="view-select">Scherm</label>
         <select id="view-select" aria-label="Kies scherm"></select>
+
+        <div id="internship-selector-wrapper" style="display: none; margin-top: 1rem;">
+          <label for="internship-select">Stage</label>
+          <select id="internship-select" aria-label="Kies stage">
+            <option value="">Laden...</option>
+          </select>
+        </div>
       </aside>
 
       <section class="content" id="content"></section>
@@ -374,23 +445,34 @@
     <template id="commissie-template">
       <div class="panel card reveal">
         <h2>Stagevoorstellen Beoordelen</h2>
-        <table>
+        <p class="hint">Klik op een rij om een voorstel te selecteren en te beoordelen.</p>
+        <table id="proposals-table">
           <thead>
-            <tr><th>Student</th><th>Bedrijf</th><th>Datum</th><th>Status</th></tr>
+            <tr><th>Student</th><th>Bedrijf</th><th>Datum</th><th>Status</th><th>Overeenkomst</th></tr>
           </thead>
           <tbody>
-            <tr><td colspan="4">Laden...</td></tr>
+            <tr><td colspan="5">Laden...</td></tr>
           </tbody>
         </table>
       </div>
 
-      <div class="panel card reveal">
-        <h2>Feedback</h2>
-        <div class="row" style="grid-template-columns: 1fr; margin-top: 1rem;">
+      <div id="proposal-detail-panel" class="panel card reveal" style="display: none;">
+        <h2>Beoordeling: <span id="selected-student-name">Student</span></h2>
+        <p><strong>Bedrijf:</strong> <span id="selected-company">-</span></p>
+        <p><strong>Status:</strong> <span id="selected-status">-</span></p>
+        <p><strong>Omschrijving:</strong></p>
+        <div id="selected-description" style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">-</div>
+
+        <div class="btn-group" id="review-actions" style="margin-bottom: 1rem;">
+          <button id="btn-approve" class="btn" style="background: linear-gradient(125deg, var(--good), #3c9d78);">✓ Goedkeuren</button>
+          <button id="btn-reject" class="btn" style="background: linear-gradient(125deg, var(--bad), #ff6b6b);">✗ Afkeuren</button>
+          <button id="btn-changes" class="btn alt">⚠ Aanpassingen Vereist</button>
+        </div>
+
+        <div id="feedback-section">
           <label>Feedback voor student</label>
           <textarea id="feedback-box" rows="4" placeholder="Voer hier je feedback in..."></textarea>
         </div>
-        <button id="save-feedback" class="btn" style="margin-top: 0.75rem;">Feedback opslaan</button>
       </div>
     </template>
 
@@ -425,19 +507,26 @@
 
     <!-- Docent Templates -->
     <template id="docent-template">
-      <div class="grid two-col reveal">
-        <article class="panel card">
-          <h2>Missing Logs</h2>
-          <ul>
-            <li>Geen ontbrekende logboeken</li>
-          </ul>
-        </article>
+      <div class="panel card reveal">
+        <h2>Logboeken Opvolging</h2>
+        <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te bekijken.</p>
+        <table id="teacher-logbooks-table">
+          <thead>
+            <tr><th>Week</th><th>Taken</th><th>Reflectie</th><th>Status</th><th>Mentor</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="5">Geen stage geselecteerd</td></tr>
+          </tbody>
+        </table>
+      </div>
 
-        <article class="panel card">
-          <h2>Tussentijdse Evaluaties</h2>
-          <p>Registratiepunt: Datum + opmerkingen + optionele score per competentie.</p>
-          <button class="btn" style="margin-top: 0.75rem;">Nieuwe evaluatie</button>
-        </article>
+      <div class="panel card reveal">
+        <h2>Feedback Geven</h2>
+        <div class="row" style="grid-template-columns: 1fr;">
+          <label>Bericht voor student</label>
+          <textarea id="teacher-feedback-msg" rows="3" placeholder="Schrijf je feedback..."></textarea>
+        </div>
+        <button id="teacher-send-feedback" class="btn" style="margin-top: 0.75rem;">Feedback versturen</button>
       </div>
     </template>
 
@@ -475,12 +564,13 @@
     <template id="mentor-template">
       <div class="panel card reveal">
         <h2>Wekelijkse Validatie</h2>
-        <table>
+        <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te valideren.</p>
+        <table id="mentor-logbooks-table">
           <thead>
-            <tr><th>Student</th><th>Week</th><th>Logboek</th><th>Actie</th></tr>
+            <tr><th>Week</th><th>Taken</th><th>Reflectie</th><th>Status</th><th>Actie</th></tr>
           </thead>
           <tbody>
-            <tr><td colspan="4">Geen logboeken in afwachting</td></tr>
+            <tr><td colspan="5">Geen stage geselecteerd</td></tr>
           </tbody>
         </table>
       </div>

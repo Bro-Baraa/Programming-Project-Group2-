@@ -37,11 +37,24 @@ const templates = {
 };
 
 // State
-let currentInternship = null;
+let allInternships = [];           // All internships visible to current user
+let selectedInternshipId = null;   // User-selected internship (from URL param)
 let currentCompetencies = [];
 let currentLogbooks = [];
 let currentEvaluations = [];
 let currentFeedback = [];
+
+// Convenience: get the internship the user has selected
+function getSelectedInternship() {
+  if (selectedInternshipId) {
+    const found = allInternships.find(i => i.id == selectedInternshipId);
+    if (found) return found;
+  }
+  return allInternships[0] || null;
+}
+
+// Back-compat alias — replace gradually
+let currentInternship = null;
 
 // ============================================
 // Utility Functions
@@ -250,24 +263,27 @@ async function renderView() {
   const templateId = templates[key] || templates[role];
 
   try {
-    // Load data based on role and view
-    if (role === 'student') {
-      const internships = await InternshipsAPI.list();
-      currentInternship = internships[0] || null;
+    // Resolve selected internship from URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const internshipParam = urlParams.get('internship');
+    if (internshipParam) selectedInternshipId = parseInt(internshipParam);
 
-      if (currentInternship) {
-        [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
-          InternshipsAPI.getLogbooks(currentInternship.id),
-          InternshipsAPI.getEvaluations(currentInternship.id),
-          InternshipsAPI.getFeedback(currentInternship.id)
-        ]);
-      }
-    }
+    // Load ALL internships visible to this user
+    allInternships = await InternshipsAPI.list();
 
-    if (role === 'committee') {
-      // Refresh internship data for committee views too
-      const internships = await InternshipsAPI.list();
-      currentInternship = internships[0] || null;
+    // Populate internship selector (for roles that see multiple)
+    populateInternshipSelector(role);
+
+    // Set current internship (back-compat)
+    currentInternship = getSelectedInternship();
+
+    // Load internship-specific data for the selected one
+    if (currentInternship) {
+      [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
+        InternshipsAPI.getLogbooks(currentInternship.id),
+        InternshipsAPI.getEvaluations(currentInternship.id),
+        InternshipsAPI.getFeedback(currentInternship.id)
+      ]);
     }
 
     if (role === 'admin' || view === 'evaluatie') {
@@ -286,11 +302,67 @@ async function renderView() {
   }
 }
 
+// Populate the internship selector dropdown
+function populateInternshipSelector(role) {
+  const wrapper = document.getElementById('internship-selector-wrapper');
+  const select = document.getElementById('internship-select');
+  if (!wrapper || !select) return;
+
+  // Only show selector for roles that might see multiple internships
+  // (committee, teacher, mentor always see multiple; student might have resubmissions)
+  const showSelector = allInternships.length > 1 || role !== 'student';
+
+  if (!showSelector || allInternships.length === 0) {
+    wrapper.style.display = 'none';
+    return;
+  }
+
+  wrapper.style.display = 'block';
+  select.innerHTML = '';
+
+  allInternships.forEach(i => {
+    const option = document.createElement('option');
+    option.value = i.id;
+    const label = i.student
+      ? `${i.student.first_name} ${i.student.last_name} — ${i.company?.name || 'Onbekend'} (${i.status})`
+      : `Stage ${i.id} — ${i.status}`;
+    option.textContent = label;
+    select.appendChild(option);
+  });
+
+  // Pre-select from URL param or first item
+  const targetId = selectedInternshipId || allInternships[0]?.id;
+  if (targetId) select.value = targetId;
+}
+
+// Handle internship selection change
+function handleInternshipChange() {
+  const select = document.getElementById('internship-select');
+  if (!select) return;
+  const newId = parseInt(select.value);
+  if (newId === selectedInternshipId) return;
+
+  selectedInternshipId = newId;
+  currentInternship = getSelectedInternship();
+
+  // Update URL without reloading page
+  const url = new URL(window.location.href);
+  url.searchParams.set('internship', newId);
+  window.history.replaceState({}, '', url);
+
+  // Re-render current view with new internship data
+  renderView();
+}
+
 // Refresh internship data from API and update all references
 async function refreshInternshipData() {
   try {
-    const internships = await InternshipsAPI.list();
-    currentInternship = internships[0] || null;
+    allInternships = await InternshipsAPI.list();
+    currentInternship = getSelectedInternship();
+
+    // Update selector if visible
+    const role = AuthAPI.getRole();
+    populateInternshipSelector(role);
 
     if (currentInternship) {
       [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
@@ -344,8 +416,18 @@ function wireRoleInteractions(role, view) {
 
   // TEACHER
   if (role === 'teacher') {
+    if (view === 'opvolging') {
+      renderTeacherLogbooks();
+    }
     if (view === 'evaluatie') {
       wireEvaluationForm();
+    }
+  }
+
+  // MENTOR
+  if (role === 'mentor') {
+    if (view === 'validatie') {
+      renderMentorLogbooks();
     }
   }
   
@@ -643,36 +725,103 @@ function renderStudentEvaluations() {
 
 async function renderCommitteeProposals() {
   try {
-    const proposals = await InternshipsAPI.list();
-    const tbody = document.querySelector('table tbody');
+    const tbody = document.querySelector('#proposals-table tbody');
 
     if (tbody) {
-      tbody.innerHTML = proposals.map(p => `
-        <tr data-id="${p.id}">
+      tbody.innerHTML = allInternships.map(p => `
+        <tr data-id="${p.id}" class="proposal-row" style="cursor: pointer;">
           <td>${p.student?.first_name || 'Onbekend'} ${p.student?.last_name || ''}</td>
           <td>${p.company?.name || 'Onbekend'}</td>
           <td>${new Date(p.created_at).toLocaleDateString('nl-BE')}</td>
           <td><span class="status-pill status-${p.status.toLowerCase().replace(/\s+/g, '-')}">${p.status}</span></td>
+          <td>${p.agreement_uploaded ? '<span class="status-approved">Ontvangen</span>' : '<span class="status-pending">Nog niet</span>'}</td>
         </tr>
       `).join('');
+
+      // Click handler: select internship and show detail panel
+      tbody.querySelectorAll('.proposal-row').forEach(row => {
+        row.addEventListener('click', () => {
+          const id = parseInt(row.dataset.id);
+          selectProposalForReview(id);
+        });
+      });
     }
 
-    // Wire up feedback form
-    const saveBtn = document.getElementById('save-feedback');
-    saveBtn?.addEventListener('click', async () => {
-      const feedback = document.getElementById('feedback-box')?.value;
-      if (feedback && currentInternship) {
-        try {
-          await InternshipsAPI.createFeedback(currentInternship.id, { message: feedback });
-          showToast('Feedback opgeslagen', 'success');
-        } catch (error) {
-          showToast(error.message, 'error');
-        }
-      } else {
-        showToast('Geen feedback ingegeven', 'info');
-      }
-    });
+    // If a proposal is already selected via URL param, show its detail
+    if (selectedInternshipId) {
+      const preselected = allInternships.find(i => i.id == selectedInternshipId);
+      if (preselected) selectProposalForReview(preselected.id);
+    }
 
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+function selectProposalForReview(internshipId) {
+  const internship = allInternships.find(i => i.id == internshipId);
+  if (!internship) return;
+
+  // Update URL
+  selectedInternshipId = internshipId;
+  currentInternship = internship;
+  const url = new URL(window.location.href);
+  url.searchParams.set('internship', internshipId);
+  window.history.replaceState({}, '', url);
+
+  // Highlight selected row
+  document.querySelectorAll('.proposal-row').forEach(r => {
+    r.style.background = r.dataset.id == internshipId ? 'rgba(0, 121, 140, 0.1)' : '';
+  });
+
+  // Show detail panel
+  const panel = document.getElementById('proposal-detail-panel');
+  if (panel) panel.style.display = 'block';
+
+  // Fill detail info
+  document.getElementById('selected-student-name').textContent =
+    `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`;
+  document.getElementById('selected-company').textContent = internship.company?.name || 'Onbekend';
+  document.getElementById('selected-status').textContent = internship.status;
+
+  // Fetch and show proposal description
+  document.getElementById('selected-description').textContent = 'Laden...';
+  InternshipsAPI.get(internship.id).then(full => {
+    document.getElementById('selected-description').textContent =
+      full.proposal?.description || 'Geen omschrijving beschikbaar.';
+  }).catch(() => {
+    document.getElementById('selected-description').textContent = 'Kon omschrijving niet laden.';
+  });
+
+  // Wire action buttons
+  const actionsDiv = document.getElementById('review-actions');
+  if (actionsDiv) {
+    actionsDiv.innerHTML = `
+      <button id="btn-approve" class="btn" style="background: linear-gradient(125deg, var(--good), #3c9d78);">✓ Goedkeuren</button>
+      <button id="btn-reject" class="btn" style="background: linear-gradient(125deg, var(--bad), #ff6b6b);">✗ Afkeuren</button>
+      <button id="btn-changes" class="btn alt">⚠ Aanpassingen Vereist</button>
+    `;
+
+    document.getElementById('btn-approve')?.addEventListener('click', () => doReview(internship.id, 'Goedgekeurd'));
+    document.getElementById('btn-reject')?.addEventListener('click', () => doReview(internship.id, 'Afgekeurd'));
+    document.getElementById('btn-changes')?.addEventListener('click', () => doReview(internship.id, 'Aanpassingen Vereist'));
+  }
+}
+
+async function doReview(internshipId, decision) {
+  const feedback = document.getElementById('feedback-box')?.value || null;
+
+  if (decision === 'Aanpassingen Vereist' && !feedback) {
+    showToast('Feedback is verplicht bij "Aanpassingen Vereist"', 'warning');
+    return;
+  }
+
+  try {
+    await ProposalsAPI.review(internshipId, decision, feedback);
+    showToast(`Voorstel ${decision.toLowerCase()}!`, 'success');
+    // Refresh data
+    allInternships = await InternshipsAPI.list();
+    renderCommitteeProposals();
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -680,10 +829,7 @@ async function renderCommitteeProposals() {
 
 async function renderCommitteeOverview() {
   try {
-    const [proposals, stats] = await Promise.all([
-      InternshipsAPI.list(),
-      InternshipsAPI.getDashboardStats()
-    ]);
+    const stats = await InternshipsAPI.getDashboardStats();
 
     // Update stats
     const statElements = document.querySelectorAll('.grid.two-col ul');
@@ -705,7 +851,7 @@ async function renderCommitteeOverview() {
     // Update table
     const tbody = document.querySelector('table tbody');
     if (tbody) {
-      tbody.innerHTML = proposals.map(p => `
+      tbody.innerHTML = allInternships.map(p => `
         <tr>
           <td>${p.student?.first_name || 'Onbekend'}</td>
           <td>${p.company?.name || 'Onbekend'}</td>
@@ -726,56 +872,100 @@ async function renderCommitteeOverview() {
 
 function wireEvaluationForm() {
   const container = document.getElementById('eval-competencies');
-  if (container && currentCompetencies.length > 0) {
-    container.innerHTML = currentCompetencies.map(comp => `
-      <div class="eval-row">
-        <label>${comp.name} (${comp.weight}%)</label>
-        <div class="score-inputs">
-          <select class="score-select" data-comp="${comp.id}">
-            <option value="1">1 - Onvoldoende</option>
-            <option value="2">2 - Matig</option>
-            <option value="3" selected>3 - Voldoende</option>
-            <option value="4">4 - Goed</option>
-            <option value="5">5 - Uitstekend</option>
-          </select>
-          <input type="text" class="feedback-input" placeholder="Feedback..." />
-        </div>
+
+  if (!currentInternship) {
+    content.innerHTML = `
+      <div class="panel card reveal">
+        <h2>Geen stage geselecteerd</h2>
+        <p>Selecteer eerst een stage via het navigatiemenu links.</p>
       </div>
-    `).join('');
+    `;
+    return;
   }
+
+  // Fetch existing evaluations for this internship
+  InternshipsAPI.getEvaluations(currentInternship.id).then(evaluations => {
+    currentEvaluations = evaluations;
+
+    // If there are existing draft evaluations, use the first one; otherwise create on save
+    const existingEval = evaluations.find(e => !e.finalized);
+
+    if (container && currentCompetencies.length > 0) {
+      container.innerHTML = currentCompetencies.map(comp => {
+        // Find rule for this competency if evaluation exists
+        let rule = null;
+        if (existingEval && existingEval.rules) {
+          rule = existingEval.rules.find(r => r.competency_id === comp.id);
+        }
+        return `
+          <div class="eval-row" data-comp-id="${comp.id}">
+            <label>${comp.name} (${comp.weight}%)</label>
+            <div class="score-inputs">
+              <select class="score-select" data-comp="${comp.id}" ${existingEval?.finalized ? 'disabled' : ''}>
+                <option value="1" ${rule?.score == 1 ? 'selected' : ''}>1 - Onvoldoende</option>
+                <option value="2" ${rule?.score == 2 ? 'selected' : ''}>2 - Matig</option>
+                <option value="3" ${rule?.score == 3 ? 'selected' : ''}>3 - Voldoende</option>
+                <option value="4" ${rule?.score == 4 ? 'selected' : ''}>4 - Goed</option>
+                <option value="5" ${rule?.score == 5 ? 'selected' : ''}>5 - Uitstekend</option>
+              </select>
+              <input type="text" class="feedback-input" placeholder="Feedback..." value="${rule?.evaluator_feedback || ''}" ${existingEval?.finalized ? 'disabled' : ''} />
+            </div>
+            <textarea class="student-desc-input" rows="2" placeholder="Student beschrijving..." ${existingEval?.finalized ? 'disabled' : ''}>${rule?.student_description || ''}</textarea>
+          </div>
+        `;
+      }).join('');
+    }
+  }).catch(err => {
+    console.error('Failed to load evaluations:', err);
+  });
 
   const evalForm = document.getElementById('eval-form');
   const finalizeBtn = document.getElementById('finalize-eval');
 
-  // Save draft evaluation
+  // Save scores (creates evaluation if needed, then updates each rule)
   evalForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = evalForm.querySelector('button[type="submit"]');
     const evalType = document.getElementById('eval-type')?.value || 'tussentijds';
 
     if (!currentInternship) {
-      showToast('Geen stage gevonden', 'error');
+      showToast('Geen stage geselecteerd', 'error');
       return;
     }
-
-    // Build evaluation data
-    const scores = [];
-    container.querySelectorAll('.score-select').forEach(select => {
-      scores.push({
-        competency_id: parseInt(select.dataset.comp),
-        score: parseInt(select.value)
-      });
-    });
 
     showLoading(submitBtn, 'Opslaan...');
 
     try {
-      await InternshipsAPI.createEvaluation(currentInternship.id, {
-        eval_type: evalType,
-        scores: scores
-      });
+      // Step 1: Create evaluation (if no existing draft)
+      let evaluation = currentEvaluations.find(e => !e.finalized && e.eval_type === evalType);
+      if (!evaluation) {
+        evaluation = await InternshipsAPI.createEvaluation(currentInternship.id, {
+          eval_type: evalType
+        });
+        currentEvaluations.push(evaluation);
+      }
+
+      // Step 2: Update each rule with score, feedback, and student description
+      const rows = container.querySelectorAll('.eval-row');
+      for (const row of rows) {
+        const compId = parseInt(row.dataset.compId);
+        const score = parseInt(row.querySelector('.score-select')?.value);
+        const feedback = row.querySelector('.feedback-input')?.value || null;
+        const studentDesc = row.querySelector('.student-desc-input')?.value || null;
+
+        // Find the rule ID for this competency
+        const rule = evaluation.rules?.find(r => r.competency_id === compId);
+        if (rule) {
+          await EvaluationRulesAPI.update(evaluation.id, rule.id, {
+            score,
+            evaluator_feedback: feedback,
+            student_description: studentDesc
+          });
+        }
+      }
+
       hideLoading(submitBtn);
-      showToast('Evaluatie opgeslagen als concept', 'info');
+      showToast('Evaluatie opgeslagen!', 'success');
     } catch (error) {
       hideLoading(submitBtn);
       showToast(error.message, 'error');
@@ -787,17 +977,28 @@ function wireEvaluationForm() {
     if (!confirm('Evaluatie definitief afsluiten? Dit kan niet ongedaan gemaakt worden.')) return;
 
     if (!currentInternship) {
-      showToast('Geen stage gevonden', 'error');
+      showToast('Geen stage geselecteerd', 'error');
+      return;
+    }
+
+    // First save current scores
+    const submitBtn = evalForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.click();
+
+    // Then find the evaluation and finalize it
+    const evalType = document.getElementById('eval-type')?.value || 'tussentijds';
+    const evaluation = currentEvaluations.find(e => !e.finalized && e.eval_type === evalType);
+
+    if (!evaluation) {
+      showToast('Geen evaluatie gevonden om af te sluiten', 'error');
       return;
     }
 
     showLoading(finalizeBtn, 'Bezig...');
 
     try {
-      await InternshipsAPI.createEvaluation(currentInternship.id, {
-        eval_type: 'final',
-        finalize: true
-      });
+      // The backend finalize endpoint is POST /evaluations/{id}/finalize
+      await apiRequest(`/evaluations/${evaluation.id}/finalize`, { method: 'POST' });
       hideLoading(finalizeBtn);
       showToast('Evaluatie definitief afgesloten!', 'success');
     } catch (error) {
@@ -889,6 +1090,111 @@ function renderCompetencyManager() {
   render();
 }
 
+// ============================================
+// Teacher & Mentor Logbook Views
+// ============================================
+
+function renderTeacherLogbooks() {
+  const tbody = document.querySelector('#teacher-logbooks-table tbody');
+  if (!tbody) return;
+
+  if (!currentInternship) {
+    tbody.innerHTML = '<tr><td colspan="5">Selecteer een stage via het navigatiemenu.</td></tr>';
+    return;
+  }
+
+  if (currentLogbooks.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5">Geen logboeken gevonden voor deze stage.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = currentLogbooks.map(lb => `
+    <tr>
+      <td>${lb.week_number}</td>
+      <td>${lb.tasks || '-'}</td>
+      <td>${lb.reflection || '-'}</td>
+      <td><span class="status-pill status-${lb.status}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+      <td>${lb.mentor_validated ? '✓ Gevalideerd' : 'In afwachting'}</td>
+    </tr>
+  `).join('');
+
+  // Wire feedback button
+  const sendBtn = document.getElementById('teacher-send-feedback');
+  sendBtn?.addEventListener('click', async () => {
+    const msg = document.getElementById('teacher-feedback-msg')?.value;
+    if (!msg) {
+      showToast('Geen feedback ingevuld', 'warning');
+      return;
+    }
+    if (!currentInternship) {
+      showToast('Geen stage geselecteerd', 'error');
+      return;
+    }
+    try {
+      await InternshipsAPI.createFeedback(currentInternship.id, {
+        message: msg,
+        to_user_id: currentInternship.student_id
+      });
+      showToast('Feedback verstuurd!', 'success');
+      document.getElementById('teacher-feedback-msg').value = '';
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
+}
+
+function renderMentorLogbooks() {
+  const tbody = document.querySelector('#mentor-logbooks-table tbody');
+  if (!tbody) return;
+
+  if (!currentInternship) {
+    tbody.innerHTML = '<tr><td colspan="5">Selecteer een stage via het navigatiemenu.</td></tr>';
+    return;
+  }
+
+  if (currentLogbooks.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5">Geen logboeken gevonden voor deze stage.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = currentLogbooks.map(lb => `
+    <tr data-logbook-id="${lb.id}">
+      <td>${lb.week_number}</td>
+      <td>${lb.tasks || '-'}</td>
+      <td>${lb.reflection || '-'}</td>
+      <td><span class="status-pill status-${lb.status}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+      <td>
+        ${lb.mentor_validated
+          ? '<span class="status-approved">✓ Gevalideerd</span>'
+          : `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`
+        }
+      </td>
+    </tr>
+  `).join('');
+
+  // Wire validate buttons
+  tbody.querySelectorAll('.validate-logbook-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const logbookId = parseInt(btn.dataset.id);
+      showLoading(btn, 'Bezig...');
+      try {
+        await apiRequest(`/internships/logbooks/${logbookId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ mentor_validated: true })
+        });
+        hideLoading(btn);
+        showToast('Logboek gevalideerd!', 'success');
+        // Refresh logbooks
+        currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
+        renderMentorLogbooks();
+      } catch (error) {
+        hideLoading(btn);
+        showToast(error.message, 'error');
+      }
+    });
+  });
+}
+
 // Competency deletion handler - attached to window for onclick handlers in templates
 async function handleDeleteCompetency(id) {
   if (!confirm('Competentie verwijderen?')) return;
@@ -905,6 +1211,8 @@ async function handleDeleteCompetency(id) {
 
 // Expose to window for template onclick handlers
 window.handleDeleteCompetency = handleDeleteCompetency;
+window.selectProposalForReview = selectProposalForReview;
+window.doReview = doReview;
 
 // ============================================
 // Initialization
@@ -913,6 +1221,8 @@ window.handleDeleteCompetency = handleDeleteCompetency;
 function init() {
   const urlParams = new URLSearchParams(window.location.search);
   const view = urlParams.get('view');
+  const internshipParam = urlParams.get('internship');
+  if (internshipParam) selectedInternshipId = parseInt(internshipParam);
   
   if (view === 'login' || !AuthAPI.isLoggedIn()) {
     renderLogin();
@@ -924,6 +1234,8 @@ function init() {
   document.getElementById('view-select')?.addEventListener('change', () => {
     renderView();
   });
+  
+  document.getElementById('internship-select')?.addEventListener('change', handleInternshipChange);
   
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
 }

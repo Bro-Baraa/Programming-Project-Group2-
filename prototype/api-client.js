@@ -258,6 +258,60 @@ const CompetenciesAPI = {
 };
 
 // ============================================
+// Proposals
+// ============================================
+
+const ProposalsAPI = {
+  async review(internshipId, status, feedback = null) {
+    const body = { status };
+    if (feedback) body.feedback = feedback;
+    return apiRequest(`/internships/${internshipId}/proposal`, {
+      method: 'PATCH',
+      body: JSON.stringify(body)
+    });
+  },
+  
+  async resubmit(internshipId, newDescription) {
+    return apiRequest(`/internships/${internshipId}/resubmit`, {
+      method: 'POST',
+      body: JSON.stringify({ new_description: newDescription })
+    });
+  }
+};
+
+// ============================================
+// Evaluation Rules
+// ============================================
+
+const EvaluationRulesAPI = {
+  async update(evaluationId, ruleId, data) {
+    return apiRequest(`/evaluations/${evaluationId}/rules/${ruleId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  }
+};
+
+// ============================================
+// Agreements (validate)
+// ============================================
+
+const AgreementsAPI = {
+  async validate(internshipId, status, insuranceVerified = null) {
+    const body = { status };
+    if (insuranceVerified !== null) body.insurance_verified = insuranceVerified;
+    return apiRequest(`/internships/${internshipId}/agreement`, {
+      method: 'PATCH',
+      body: JSON.stringify(body)
+    });
+  },
+  
+  async download(internshipId) {
+    return `${API_BASE_URL}/internships/${internshipId}/agreement/download`;
+  }
+};
+
+// ============================================
 // Health Check
 // ============================================
 
