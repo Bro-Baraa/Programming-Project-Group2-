@@ -56,7 +56,11 @@ class InternshipResponse(BaseModel):
 
 
 class InternshipListResponse(BaseModel):
-    """Simplified response for list views"""
+    """Simplified response for list views — enriched for frontend usability.
+
+    Includes computed fields (proposal_status, agreement_status, agreement_uploaded)
+    so the frontend can render meaningful list rows without N+1 detail calls.
+    """
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -69,3 +73,8 @@ class InternshipListResponse(BaseModel):
 
     student: Optional[UserResponse] = None
     company: Optional[CompanyResponse] = None
+    teacher: Optional[UserResponse] = None
+    mentor: Optional[UserResponse] = None
+    proposal_status: Optional[str] = None
+    agreement_status: Optional[str] = None
+    agreement_uploaded: bool = False

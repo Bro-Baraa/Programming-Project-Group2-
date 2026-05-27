@@ -1,6 +1,6 @@
 """Core internship (stage) CRUD endpoints."""
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from pathlib import Path
 
@@ -34,11 +34,22 @@ def list_internships(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """List internships - filtered by role"""
+    """List internships - filtered by role.
+
+    Returns enriched list data including proposal status, agreement status,
+    assigned teacher/mentor, and agreement-uploaded flag.
+    """
     if status and status not in VALID_STATUSES:
         raise HTTPException(status_code=400, detail=f"Invalid status: {status}. Must be one of: {', '.join(VALID_STATUSES)}")
-    
-    query = db.query(Internship)
+
+    query = db.query(Internship).options(
+        joinedload(Internship.student),
+        joinedload(Internship.company),
+        joinedload(Internship.teacher),
+        joinedload(Internship.mentor),
+        joinedload(Internship.proposal),
+        joinedload(Internship.agreement),
+    )
 
     # Filter based on role
     if current_user.role == "student":
@@ -53,7 +64,27 @@ def list_internships(
         query = query.filter(Internship.status == status)
 
     internships = query.order_by(Internship.created_at.desc()).all()
-    return internships
+
+    # Build enriched response manually so computed fields are populated
+    return [
+        {
+            "id": i.id,
+            "student_id": i.student_id,
+            "company_id": i.company_id,
+            "start_date": i.start_date,
+            "end_date": i.end_date,
+            "status": i.status,
+            "created_at": i.created_at,
+            "student": i.student,
+            "company": i.company,
+            "teacher": i.teacher,
+            "mentor": i.mentor,
+            "proposal_status": i.proposal.status if i.proposal else None,
+            "agreement_status": i.agreement.status if i.agreement else None,
+            "agreement_uploaded": i.agreement is not None,
+        }
+        for i in internships
+    ]
 
 
 @router.post("", response_model=InternshipResponse, status_code=status.HTTP_201_CREATED)
