@@ -1,8 +1,9 @@
 """Competency item CRUD endpoints."""
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from app.auth import get_current_active_user, require_admin
 from app.database import get_db
@@ -14,18 +15,29 @@ from app.schemas import (
     CompetencyUpdate,
     CompetencyWithProfileResponse,
 )
+from app.dependencies import pagination
 
 router = APIRouter()
 
 
 @router.get("", response_model=List[CompetencyWithProfileResponse])
 def list_competencies(
+    response: Response,
     profile_id: Optional[int] = None,
     active_only: bool = True,
+    search: Annotated[Optional[str], Query(min_length=1, max_length=100, description="Search competency name")] = None,
+    pag: Annotated[dict, Depends(pagination)] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """List competencies with optional filters."""
+    """List competencies with optional filters, search, and pagination.
+
+    Query params:
+    - profile_id: filter by profile
+    - active_only: exclude deactivated (default true)
+    - search: keyword search on competency name
+    - skip / limit: pagination
+    """
     query = db.query(Competency)
 
     if profile_id:
@@ -33,7 +45,17 @@ def list_competencies(
     if active_only:
         query = query.filter(Competency.active == True)
 
-    return query.all()
+    if search:
+        query = query.filter(Competency.name.ilike(f"%{search}%"))
+
+    # Count total
+    total_count = query.with_entities(func.count(Competency.id)).scalar()
+    response.headers["X-Total-Count"] = str(total_count)
+
+    # Pagination
+    skip = pag.get("skip", 0) if pag else 0
+    limit = pag.get("limit", 50) if pag else 50
+    return query.offset(skip).limit(limit).all()
 
 
 @router.post("", response_model=CompetencyResponse, status_code=status.HTTP_201_CREATED)

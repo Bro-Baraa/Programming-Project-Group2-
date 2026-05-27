@@ -1,11 +1,14 @@
 """Core internship (stage) CRUD endpoints."""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, or_
 from typing import List, Optional
+from datetime import date
 from pathlib import Path
+from typing import Annotated
 
 from app.database import get_db
-from app.models import User, Internship
+from app.models import User, Internship, Company
 from app.schemas import (
     InternshipCreate,
     InternshipResponse,
@@ -19,6 +22,7 @@ from app.auth import (
 )
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.dependencies import pagination, search_query
 
 router = APIRouter(prefix="/internships", tags=["internships"])
 
@@ -30,18 +34,41 @@ VALID_STATUSES = {"Ingediend", "In Beoordeling", "Goedgekeurd", "Afgekeurd", "Aa
 
 @router.get("", response_model=List[InternshipListResponse])
 def list_internships(
+    response: Response,
     status: Optional[str] = None,
+    search: Annotated[Optional[str], Query(min_length=1, max_length=100, description="Search student name or company name")] = None,
+    start_date_from: Annotated[Optional[date], Query(description="Filter from start date")] = None,
+    start_date_to: Annotated[Optional[date], Query(description="Filter to start date")] = None,
+    sort: Annotated[Optional[str], Query(pattern=r"^-?[a-zA-Z_]+$", description="Sort field. Prefix with - for descending. E.g. created_at, -status")] = "-created_at",
+    pag: Annotated[dict, Depends(pagination)] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """List internships - filtered by role.
+    """List internships - filtered by role with pagination, search, and sorting.
 
-    Returns enriched list data including proposal status, agreement status,
-    assigned teacher/mentor, and agreement-uploaded flag.
+    Query params:
+    - status: single status or comma-separated (e.g. `Ingediend,Goedgekeurd`)
+    - search: keyword search across student name and company name
+    - start_date_from / start_date_to: date range filter
+    - sort: sort field, prefix with `-` for descending
+    - skip / limit: pagination (default limit=50, max=200)
+
+    Response headers:
+    - X-Total-Count: total matching items (for pagination UI)
     """
-    if status and status not in VALID_STATUSES:
-        raise HTTPException(status_code=400, detail=f"Invalid status: {status}. Must be one of: {', '.join(VALID_STATUSES)}")
+    # Validate status(es)
+    status_filter = None
+    if status:
+        statuses = [s.strip() for s in status.split(",")]
+        invalid = [s for s in statuses if s not in VALID_STATUSES]
+        if invalid:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status(es): {', '.join(invalid)}. Must be one of: {', '.join(VALID_STATUSES)}"
+            )
+        status_filter = statuses
 
+    # Base query with eager loads
     query = db.query(Internship).options(
         joinedload(Internship.student),
         joinedload(Internship.company),
@@ -51,7 +78,7 @@ def list_internships(
         joinedload(Internship.agreement),
     )
 
-    # Filter based on role
+    # Role-based access filter
     if current_user.role == "student":
         query = query.filter(Internship.student_id == current_user.id)
     elif current_user.role == "mentor":
@@ -60,12 +87,59 @@ def list_internships(
         query = query.filter(Internship.teacher_id == current_user.id)
     # Committee and admin see all
 
-    if status:
-        query = query.filter(Internship.status == status)
+    # Status filter (supports multi-status)
+    if status_filter:
+        if len(status_filter) == 1:
+            query = query.filter(Internship.status == status_filter[0])
+        else:
+            query = query.filter(Internship.status.in_(status_filter))
 
-    internships = query.order_by(Internship.created_at.desc()).all()
+    # Date range filter
+    if start_date_from:
+        query = query.filter(Internship.start_date >= start_date_from)
+    if start_date_to:
+        query = query.filter(Internship.start_date <= start_date_to)
 
-    # Build enriched response manually so computed fields are populated
+    # Search: join with User (student) and Company for name filtering
+    if search:
+        search_term = f"%{search}%"
+        query = query.join(Internship.student).join(Internship.company).filter(
+            or_(
+                User.first_name.ilike(search_term),
+                User.last_name.ilike(search_term),
+                Company.name.ilike(search_term),
+            )
+        )
+
+    # Count total before pagination
+    total_count = query.with_entities(func.count(Internship.id)).scalar()
+
+    # Sorting
+    sort_field = sort.lstrip("-") if sort else "created_at"
+    sort_desc = sort and sort.startswith("-")
+
+    if sort_field == "created_at":
+        order_col = Internship.created_at
+    elif sort_field == "status":
+        order_col = Internship.status
+    elif sort_field == "start_date":
+        order_col = Internship.start_date
+    elif sort_field == "end_date":
+        order_col = Internship.end_date
+    else:
+        order_col = Internship.created_at
+
+    query = query.order_by(order_col.desc() if sort_desc else order_col.asc())
+
+    # Pagination
+    skip = pag.get("skip", 0) if pag else 0
+    limit = pag.get("limit", 50) if pag else 50
+    internships = query.offset(skip).limit(limit).all()
+
+    # Set total count header for pagination UI
+    response.headers["X-Total-Count"] = str(total_count)
+
+    # Build enriched response
     return [
         {
             "id": i.id,
