@@ -173,8 +173,8 @@
         <label for="role-select">Actieve rol</label>
         <select id="role-select" aria-label="Kies rol" disabled>
           <option value="student">Student</option>
-          <option value="commissie">Stagecommissie</option>
-          <option value="docent">Docent</option>
+          <option value="committee">Stagecommissie</option>
+          <option value="teacher">Docent</option>
           <option value="mentor">Stagementor</option>
           <option value="admin">Administratie</option>
         </select>
@@ -266,6 +266,14 @@
           <div class="row" style="grid-template-columns: 1fr;">
             <label>Bedrijfsnaam *</label>
             <input type="text" id="company-name" placeholder="Naam van het bedrijf" required />
+          </div>
+          <div class="row" style="grid-template-columns: 1fr;">
+            <label>Adres</label>
+            <input type="text" id="company-address" placeholder="Straat en nummer" />
+          </div>
+          <div class="row" style="grid-template-columns: 1fr;">
+            <label>Sector</label>
+            <input type="text" id="company-sector" placeholder="Bijv. IT, Data & Analytics..." />
           </div>
           <div class="row" style="grid-template-columns: 1fr;">
             <label>Contactpersoon *</label>

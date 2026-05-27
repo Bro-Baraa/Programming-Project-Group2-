@@ -322,6 +322,16 @@ body {
   color: #8a6100;
 }
 
+.status-lopend {
+  background: rgba(60, 157, 120, 0.18);
+  color: #1d6650;
+}
+
+.status-overeenkomst-ingediend {
+  background: rgba(0, 121, 140, 0.15);
+  color: #005564;
+}
+
 /* ============================================
    Evaluation Form
    ============================================ */
@@ -461,15 +471,6 @@ input:invalid {
   margin-top: 1rem;
   border-top: 1px solid var(--border);
   padding-top: 1rem;
-}
-
-.status-pill {
-  display: inline-block;
-  padding: 0.3rem 0.65rem;
-  border-radius: 10px;
-  background: rgba(60, 157, 120, 0.18);
-  color: #1d6650;
-  font-weight: 700;
 }
 
 .status-actions {

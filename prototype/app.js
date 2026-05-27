@@ -52,7 +52,7 @@ function renderView() {
   const currentView = viewSelect.value;
 
   // Only populate dropdown if it's empty or role changed
-  if (viewSelect.options.length === 0 || !roleViews[role].includes(currentView)) {
+  if (viewSelect.options.length === 0 || !currentView || !roleViews[role].includes(currentView)) {
     viewSelect.innerHTML = "";
     roleViews[role].forEach((view) => {
       const option = document.createElement("option");

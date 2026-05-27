@@ -4,6 +4,7 @@
 // ============================================
 
 // View configuration
+// Role values MUST match backend User.role values exactly
 const roleViews = {
   student: ["dashboard", "voorstel", "logboek", "overeenkomst", "evaluaties"],
   committee: ["voorstellen", "overzicht"],
@@ -40,6 +41,22 @@ let currentInternship = null;
 let currentCompetencies = [];
 let currentLogbooks = [];
 let currentEvaluations = [];
+let currentFeedback = [];
+
+// ============================================
+// Utility Functions
+// ============================================
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
 
 
 
@@ -215,7 +232,7 @@ async function renderMainApp() {
   // Get URL param or default to first view
   const urlParams = new URLSearchParams(window.location.search);
   const viewParam = urlParams.get('view');
-  if (viewParam && views.includes(viewParam)) {
+  if (viewParam && typeof viewParam === 'string' && views.includes(viewParam)) {
     viewSelect.value = viewParam;
   }
   
@@ -226,30 +243,37 @@ async function renderView() {
   const role = AuthAPI.getRole();
   const viewSelect = document.getElementById('view-select');
   const view = viewSelect?.value || roleViews[role]?.[0];
-  
+
   content.innerHTML = '<div class="loading-overlay"><span class="loading-spinner"></span> Laden...</div>';
-  
+
   const key = view ? `${role}-${view}` : role;
   const templateId = templates[key] || templates[role];
-  
+
   try {
-    // Load data based on view
+    // Load data based on role and view
     if (role === 'student') {
       const internships = await InternshipsAPI.list();
       currentInternship = internships[0] || null;
-      
+
       if (currentInternship) {
-        [currentLogbooks, currentEvaluations] = await Promise.all([
+        [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
           InternshipsAPI.getLogbooks(currentInternship.id),
-          InternshipsAPI.getEvaluations(currentInternship.id)
+          InternshipsAPI.getEvaluations(currentInternship.id),
+          InternshipsAPI.getFeedback(currentInternship.id)
         ]);
       }
     }
-    
+
+    if (role === 'committee') {
+      // Refresh internship data for committee views too
+      const internships = await InternshipsAPI.list();
+      currentInternship = internships[0] || null;
+    }
+
     if (role === 'admin' || view === 'evaluatie') {
       currentCompetencies = await CompetenciesAPI.list();
     }
-    
+
     // Render template
     content.innerHTML = '';
     const tpl = document.getElementById(templateId);
@@ -259,6 +283,24 @@ async function renderView() {
     }
   } catch (error) {
     content.innerHTML = `<div class="error-message">Fout bij laden: ${error.message}</div>`;
+  }
+}
+
+// Refresh internship data from API and update all references
+async function refreshInternshipData() {
+  try {
+    const internships = await InternshipsAPI.list();
+    currentInternship = internships[0] || null;
+
+    if (currentInternship) {
+      [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
+        InternshipsAPI.getLogbooks(currentInternship.id),
+        InternshipsAPI.getEvaluations(currentInternship.id),
+        InternshipsAPI.getFeedback(currentInternship.id)
+      ]);
+    }
+  } catch (error) {
+    console.error('Failed to refresh internship data:', error);
   }
 }
 
@@ -330,18 +372,23 @@ function renderStudentDashboard() {
     `;
     return;
   }
-  
+
   const hero = document.querySelector('.hero');
   if (hero) {
+    const companyName = currentInternship.company?.name || 'Onbekend';
+    const startDate = formatDate(currentInternship.start_date);
+    const endDate = formatDate(currentInternship.end_date);
+    const hasAgreement = currentInternship.agreement != null;
+
     hero.innerHTML = `
       <h2>Mijn Stage</h2>
-      <p><strong>Bedrijf:</strong> ${currentInternship.company_name}</p>
-      <p><strong>Periode:</strong> ${currentInternship.start_date} - ${currentInternship.end_date}</p>
+      <p><strong>Bedrijf:</strong> ${companyName}</p>
+      <p><strong>Periode:</strong> ${startDate} - ${endDate}</p>
       <p><strong>Status:</strong> <span class="status-pill status-${currentInternship.status.toLowerCase().replace(/\s+/g, '-')}">${currentInternship.status}</span></p>
-      <p><strong>Overeenkomst:</strong> ${currentInternship.agreement_uploaded ? '✓ Ontvangen' : '✗ Nog niet'}</p>
+      <p><strong>Overeenkomst:</strong> ${hasAgreement ? '✓ Ontvangen' : '✗ Nog niet'}</p>
     `;
   }
-  
+
   // Update logbooks table
   const tbody = document.querySelector('table tbody');
   if (tbody && currentLogbooks.length > 0) {
@@ -353,11 +400,26 @@ function renderStudentDashboard() {
       </tr>
     `).join('');
   }
+
+  // Update feedback section
+  const feedbackDiv = document.getElementById('student-feedback');
+  if (feedbackDiv) {
+    if (currentFeedback.length > 0) {
+      feedbackDiv.innerHTML = currentFeedback.map(fb => `
+        <div style="margin-bottom: 0.75rem; padding: 0.75rem; background: rgba(0,121,140,0.08); border-radius: 8px;">
+          <p style="margin: 0 0 0.25rem 0;"><strong>${fb.from_user?.first_name || 'Onbekend'} ${fb.from_user?.last_name || ''}</strong> (${formatDate(fb.created_at)})</p>
+          <p style="margin: 0; color: var(--ink-soft);">${fb.message}</p>
+        </div>
+      `).join('');
+    } else {
+      feedbackDiv.innerHTML = '<p class="hint">Je hebt nog geen feedback ontvangen.</p>';
+    }
+  }
 }
 
 function wireProposalForm() {
   const form = document.getElementById('proposal-form');
-  
+
   // If already has internship, show message
   if (currentInternship) {
     form.innerHTML = `
@@ -368,22 +430,24 @@ function wireProposalForm() {
     `;
     return;
   }
-  
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = form.querySelector('button[type="submit"]');
-    
+
     const data = {
       company_name: document.getElementById('company-name').value,
+      company_address: document.getElementById('company-address').value || null,
+      company_sector: document.getElementById('company-sector').value || null,
       contact_person: document.getElementById('contact-person').value,
       contact_email: document.getElementById('contact-email').value,
       start_date: document.getElementById('start-date').value,
       end_date: document.getElementById('end-date').value,
       description: document.getElementById('assignment-desc').value
     };
-    
+
     showLoading(submitBtn, 'Indienen...');
-    
+
     try {
       await InternshipsAPI.create(data);
       hideLoading(submitBtn);
@@ -399,7 +463,7 @@ function wireProposalForm() {
 function wireLogbookForm() {
   const form = document.getElementById('logbook-form');
   const submitBtn = document.getElementById('submit-logbook');
-  
+
   if (!currentInternship) {
     content.innerHTML = `
       <div class="panel card reveal">
@@ -409,47 +473,66 @@ function wireLogbookForm() {
     `;
     return;
   }
-  
+
   // Populate week number with next available week
   const weekInput = document.getElementById('log-week');
   if (weekInput && currentLogbooks.length > 0) {
     const maxWeek = Math.max(...currentLogbooks.map(lb => lb.week_number));
     weekInput.value = maxWeek + 1;
   }
-  
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const saveBtn = form.querySelector('button[type="submit"]');
+    const week = document.getElementById('log-week')?.value;
+
     showLoading(saveBtn, 'Opslaan...');
-    
-    // In real app, save as draft
-    setTimeout(() => {
+
+    try {
+      await InternshipsAPI.createLogbook(currentInternship.id, {
+        week_number: parseInt(week),
+        tasks: document.getElementById('log-tasks').value,
+        reflection: document.getElementById('log-reflection').value,
+        issues: document.getElementById('log-issues').value,
+        status: 'draft'
+      });
+
       hideLoading(saveBtn);
       showToast('Logboek opgeslagen als concept', 'info');
-    }, 500);
+
+      // Refresh data
+      currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
+    } catch (error) {
+      hideLoading(saveBtn);
+      showToast(error.message, 'error');
+    }
   });
-  
+
   submitBtn?.addEventListener('click', async () => {
     const week = document.getElementById('log-week').value;
     const tasks = document.getElementById('log-tasks').value;
-    
+
     if (!week || !tasks) {
       showToast('Weeknummer en taken zijn verplicht', 'error');
       return;
     }
-    
+
     showLoading(submitBtn, 'Indienen...');
-    
+
     try {
       await InternshipsAPI.createLogbook(currentInternship.id, {
         week_number: parseInt(week),
         tasks: tasks,
         reflection: document.getElementById('log-reflection').value,
-        issues: document.getElementById('log-issues').value
+        issues: document.getElementById('log-issues').value,
+        status: 'submitted'
       });
-      
+
       hideLoading(submitBtn);
       showToast(`Logboek week ${week} ingediend!`, 'success');
+
+      // Refresh data
+      currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
     } catch (error) {
       hideLoading(submitBtn);
       showToast(error.message, 'error');
@@ -459,7 +542,7 @@ function wireLogbookForm() {
 
 function wireAgreementUpload() {
   const form = document.getElementById('agreement-form');
-  
+
   if (!currentInternship) {
     content.innerHTML = `
       <div class="panel card reveal">
@@ -469,8 +552,8 @@ function wireAgreementUpload() {
     `;
     return;
   }
-  
-  // Check status
+
+  // Check status - only allowed when proposal is approved (Goedgekeurd)
   if (currentInternship.status !== 'Goedgekeurd') {
     form.innerHTML = `
       <div class="info-message warning">
@@ -481,49 +564,53 @@ function wireAgreementUpload() {
     `;
     return;
   }
-  
+
+  // Check if agreement already exists (backend returns agreement object when present)
+  const hasAgreement = currentInternship.agreement != null;
+
   // Update status display
   const statusText = document.getElementById('agreement-status-text');
-  if (statusText) {
-    if (currentInternship.agreement_uploaded) {
-      statusText.innerHTML = '<span class="status-approved">Ontvangen</span>';
-      form.innerHTML = `
-        <div class="info-message success">
-          <p>✓ Je overeenkomst is succesvol geüpload!</p>
-        </div>
-      `;
-      return;
-    }
+  if (hasAgreement && statusText) {
+    statusText.innerHTML = '<span class="status-approved">Ontvangen</span>';
+    form.innerHTML = `
+      <div class="info-message success">
+        <p>✓ Je overeenkomst is succesvol geüpload!</p>
+      </div>
+    `;
+    return;
   }
-  
+
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fileInput = document.getElementById('agreement-file');
     const file = fileInput?.files[0];
     const submitBtn = form.querySelector('button[type="submit"]');
-    
+
     if (!file) {
       showToast('Selecteer een PDF bestand', 'error');
       return;
     }
-    
+
     if (file.type !== 'application/pdf') {
       showToast('Alleen PDF bestanden zijn toegestaan', 'error');
       return;
     }
-    
+
     if (file.size > 5 * 1024 * 1024) {
       showToast('Bestand is te groot (max 5MB)', 'error');
       return;
     }
-    
+
     showLoading(submitBtn, 'Uploaden...');
-    
+
     try {
       await InternshipsAPI.uploadAgreement(currentInternship.id, file);
       hideLoading(submitBtn);
       showToast('Overeenkomst succesvol geüpload!', 'success');
-      
+
+      // Refresh internship data to reflect new agreement status
+      await refreshInternshipData();
+
       if (statusText) {
         statusText.innerHTML = '<span class="status-approved">Ontvangen</span>';
       }
@@ -539,12 +626,14 @@ function renderStudentEvaluations() {
   if (tbody && currentEvaluations.length > 0) {
     tbody.innerHTML = currentEvaluations.map(ev => `
       <tr>
-        <td>${ev.type === 'tussentijds' ? 'Tussentijds' : 'Final'}</td>
-        <td>${ev.finalized ? new Date(ev.created_at).toLocaleDateString('nl-BE') : '-'}</td>
+        <td>${ev.eval_type === 'tussentijds' ? 'Tussentijds' : ev.eval_type === 'final' ? 'Final' : ev.eval_type}</td>
+        <td>${ev.finalized ? formatDate(ev.finalized_at) : '-'}</td>
         <td>${ev.finalized ? 'Afgerond' : 'In behandeling'}</td>
         <td>${ev.finalized ? '<button class="btn small">Bekijken</button>' : '-'}</td>
       </tr>
     `).join('');
+  } else if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="4">Geen evaluaties gevonden</td></tr>';
   }
 }
 
@@ -556,27 +645,34 @@ async function renderCommitteeProposals() {
   try {
     const proposals = await InternshipsAPI.list();
     const tbody = document.querySelector('table tbody');
-    
+
     if (tbody) {
       tbody.innerHTML = proposals.map(p => `
         <tr data-id="${p.id}">
           <td>${p.student?.first_name || 'Onbekend'} ${p.student?.last_name || ''}</td>
-          <td>${p.company_name}</td>
+          <td>${p.company?.name || 'Onbekend'}</td>
           <td>${new Date(p.created_at).toLocaleDateString('nl-BE')}</td>
           <td><span class="status-pill status-${p.status.toLowerCase().replace(/\s+/g, '-')}">${p.status}</span></td>
         </tr>
       `).join('');
     }
-    
+
     // Wire up feedback form
     const saveBtn = document.getElementById('save-feedback');
     saveBtn?.addEventListener('click', async () => {
       const feedback = document.getElementById('feedback-box')?.value;
-      if (feedback) {
-        showToast('Feedback opgeslagen', 'success');
+      if (feedback && currentInternship) {
+        try {
+          await InternshipsAPI.createFeedback(currentInternship.id, { message: feedback });
+          showToast('Feedback opgeslagen', 'success');
+        } catch (error) {
+          showToast(error.message, 'error');
+        }
+      } else {
+        showToast('Geen feedback ingegeven', 'info');
       }
     });
-    
+
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -588,7 +684,7 @@ async function renderCommitteeOverview() {
       InternshipsAPI.list(),
       InternshipsAPI.getDashboardStats()
     ]);
-    
+
     // Update stats
     const statElements = document.querySelectorAll('.grid.two-col ul');
     if (statElements[0]) {
@@ -605,17 +701,17 @@ async function renderCommitteeOverview() {
         <li>Nog uitstaand: ${stats.agreements_pending}</li>
       `;
     }
-    
+
     // Update table
     const tbody = document.querySelector('table tbody');
     if (tbody) {
       tbody.innerHTML = proposals.map(p => `
         <tr>
           <td>${p.student?.first_name || 'Onbekend'}</td>
-          <td>${p.company_name}</td>
-          <td>${p.start_date} - ${p.end_date}</td>
+          <td>${p.company?.name || 'Onbekend'}</td>
+          <td>${formatDate(p.start_date)} - ${formatDate(p.end_date)}</td>
           <td><span class="status-pill status-${p.status.toLowerCase().replace(/\s+/g, '-')}">${p.status}</span></td>
-          <td>${p.agreement_uploaded ? '<span class="status-approved">Ontvangen</span>' : '<span class="status-pending">Nog niet</span>'}</td>
+          <td>${p.agreement != null ? '<span class="status-approved">Ontvangen</span>' : '<span class="status-pending">Nog niet</span>'}</td>
         </tr>
       `).join('');
     }
@@ -647,11 +743,67 @@ function wireEvaluationForm() {
       </div>
     `).join('');
   }
-  
+
+  const evalForm = document.getElementById('eval-form');
   const finalizeBtn = document.getElementById('finalize-eval');
+
+  // Save draft evaluation
+  evalForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = evalForm.querySelector('button[type="submit"]');
+    const evalType = document.getElementById('eval-type')?.value || 'tussentijds';
+
+    if (!currentInternship) {
+      showToast('Geen stage gevonden', 'error');
+      return;
+    }
+
+    // Build evaluation data
+    const scores = [];
+    container.querySelectorAll('.score-select').forEach(select => {
+      scores.push({
+        competency_id: parseInt(select.dataset.comp),
+        score: parseInt(select.value)
+      });
+    });
+
+    showLoading(submitBtn, 'Opslaan...');
+
+    try {
+      await InternshipsAPI.createEvaluation(currentInternship.id, {
+        eval_type: evalType,
+        scores: scores
+      });
+      hideLoading(submitBtn);
+      showToast('Evaluatie opgeslagen als concept', 'info');
+    } catch (error) {
+      hideLoading(submitBtn);
+      showToast(error.message, 'error');
+    }
+  });
+
+  // Finalize evaluation
   finalizeBtn?.addEventListener('click', async () => {
-    if (!confirm('Evaluatie definitief afsluiten?')) return;
-    showToast('Evaluatie afgesloten', 'success');
+    if (!confirm('Evaluatie definitief afsluiten? Dit kan niet ongedaan gemaakt worden.')) return;
+
+    if (!currentInternship) {
+      showToast('Geen stage gevonden', 'error');
+      return;
+    }
+
+    showLoading(finalizeBtn, 'Bezig...');
+
+    try {
+      await InternshipsAPI.createEvaluation(currentInternship.id, {
+        eval_type: 'final',
+        finalize: true
+      });
+      hideLoading(finalizeBtn);
+      showToast('Evaluatie definitief afgesloten!', 'success');
+    } catch (error) {
+      hideLoading(finalizeBtn);
+      showToast(error.message, 'error');
+    }
   });
 }
 
