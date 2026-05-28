@@ -9,7 +9,7 @@ const roleViews = {
   student: ["dashboard", "voorstel", "logboek", "overeenkomst", "evaluaties"],
   committee: ["voorstellen", "overzicht"],
   teacher: ["opvolging", "evaluatie"],
-  mentor: ["validatie"],
+  mentor: ["validatie", "evaluatie"],
   admin: ["competenties"],
 };
 
@@ -33,6 +33,7 @@ const templates = {
   teacher: "docent-template",
   "teacher-evaluatie": "docent-evaluatie-template",
   mentor: "mentor-template",
+  "mentor-evaluatie": "mentor-evaluatie-template",
   admin: "admin-template",
 };
 
@@ -463,6 +464,9 @@ function wireRoleInteractions(role, view) {
     if (view === 'validatie') {
       renderMentorLogbooks();
     }
+    if (view === 'evaluatie') {
+      renderMentorEvaluation();
+    } 
   }
   
   // ADMIN
@@ -1229,6 +1233,42 @@ function renderMentorLogbooks() {
     });
   });
 }
+
+// Renders the mentor evaluation feedback form per competency
+async function renderMentorEvaluation() {
+  const container = document.getElementById('mentor-eval-content');
+  if (!container) return;
+
+  if (!currentInternship) {
+    container.innerHTML = '<p>Selecteer een stage via het navigatiemenu.</p>'; 
+    return;
+  }
+  const actieveEval = currentEvaluations.find(e => !e.finalized);
+  if (!actieveEval) {
+    container.innerHTML = '<p>Geen actieve evaluatie gevonden voor deze stage.</p>';
+    return;
+  }
+
+  container.innerHTML = `
+  ${currentCompetencies.map(comp => {
+    const rule = actieveEval.rules?.find(r => r.competency_id === comp.id);
+    return `<label>${comp.name}</label><textarea data-rule-id="${rule?.id ?? ''}" placeholder="Geef hier je feedback..."></textarea>`;
+  }).join('')}<button id="save-mentor-feedback" class="btn">Feedback Opslaan</button>`;
+
+  document.getElementById('save-mentor-feedback')?.addEventListener('click', async () => {
+    const textareas = container.querySelectorAll('textarea');
+
+    for (const textarea of textareas) {
+      const ruleId = textarea.dataset.ruleId;
+      const feedback = textarea.value;
+
+      if (ruleId) {
+      await EvaluationRulesAPI.update(actieveEval.id, ruleId, { evaluator_feedback: feedback });
+      }
+    }
+    showToast('Feedback opgeslagen!', 'success');
+  });
+} 
 
 // Competency deletion handler - attached to window for onclick handlers in templates
 async function handleDeleteCompetency(id) {
