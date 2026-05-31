@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stage Monitoring Tool - API Version</title>
+    <title>Stage Monitoring Tool</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,7 +17,6 @@
     
     <header class="topbar">
       <div class="brand">
-        <p class="eyebrow">API Version</p>
         <h1>Stage Monitoring Tool</h1>
       </div>
       <div class="user-info" id="user-info">
@@ -31,7 +30,7 @@
           <span class="user-name" id="user-name">Gebruiker</span>
           <span class="user-role" id="user-role">Rol</span>
         </div>
-        <button class="btn danger" id="logout-btn">Uitloggen</button>
+        <button class="btn logout" id="logout-btn">Uitloggen</button>
       </div>
     </header>
 
@@ -46,23 +45,29 @@
     <!-- Login Template -->
     <template id="login-template">
       <div class="login-layout">
-        <div class="panel card login-card reveal">
-          <h2>Inloggen</h2>
-          <form id="login-form">
-            <div class="row">
-              <label for="login-email">E-mail</label>
-              <input type="email" id="login-email" required placeholder="naam@school.be" />
+        <div class="login-card">
+          <header class="login-header">
+            <h1>Stage Monitoring Tool</h1>
+            <p class="login-subtitle">Inloggen om verder te gaan</p>
+          </header>
+
+          <form id="login-form" class="login-form" novalidate>
+            <div class="field-group">
+              <label for="login-email">E-mailadres</label>
+              <input type="email" id="login-email" required placeholder="naam@school.be" autocomplete="email" />
             </div>
-            <div class="row">
+            <div class="field-group">
               <label for="login-password">Wachtwoord</label>
-              <input type="password" id="login-password" required placeholder="••••••" />
+              <input type="password" id="login-password" required placeholder="••••••" autocomplete="current-password" />
             </div>
-            <button type="submit" class="btn">Inloggen</button>
+            <button type="submit" class="login-btn">Inloggen</button>
+            <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
           </form>
-          
-          <div class="test-credentials" id="test-credentials">
-            <!-- Filled by JS -->
+
+          <div class="login-divider">
+            <span>of snel inloggen (demo)</span>
           </div>
+
           <div class="quick-login" id="quick-login">
             <!-- Quick login buttons filled by JS -->
           </div>
@@ -182,7 +187,7 @@
           </div>
           <div class="btn-group">
             <button type="submit" class="btn">Opslaan als Concept</button>
-            <button type="button" id="submit-logbook" class="btn alt">Definitief Indienen</button>
+            <button type="button" id="submit-logbook" class="btn secondary">Definitief Indienen</button>
           </div>
         </form>
       </div>
@@ -253,9 +258,9 @@
         <div id="selected-description" style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">-</div>
 
         <div class="btn-group" id="review-actions" style="margin-bottom: 1rem;">
-          <button id="btn-approve" class="btn good">✓ Goedkeuren</button>
-          <button id="btn-reject" class="btn bad">✗ Afkeuren</button>
-          <button id="btn-changes" class="btn alt">⚠ Aanpassingen Vereist</button>
+          <button id="btn-approve" class="btn success">✓ Goedkeuren</button>
+          <button id="btn-reject" class="btn danger">✗ Afkeuren</button>
+          <button id="btn-changes" class="btn secondary">⚠ Aanpassingen Vereist</button>
         </div>
 
         <div id="feedback-section">
@@ -343,7 +348,7 @@
           
           <div class="btn-group">
             <button type="submit" class="btn">Opslaan als Concept</button>
-            <button type="button" id="finalize-eval" class="btn alt">Definitief Afsluiten</button>
+            <button type="button" id="finalize-eval" class="btn secondary">Definitief Afsluiten</button>
           </div>
         </form>
       </div>
