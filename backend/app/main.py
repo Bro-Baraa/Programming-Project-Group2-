@@ -1,4 +1,5 @@
 """Stage Monitoring Tool API - FastAPI application."""
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
@@ -28,10 +29,20 @@ app = FastAPI(
 )
 
 # CORS for frontend communication
+# FRONTEND_ORIGINS env var: comma-separated list, e.g. "http://localhost:8080,http://framearch-juan:8080"
+# Default "*" allows any origin (development only — no credentials, since JWT is in header)
+_origins = os.getenv("FRONTEND_ORIGINS", "*")
+if _origins == "*":
+    allow_origins = ["*"]
+    allow_credentials = False
+else:
+    allow_origins = [o.strip() for o in _origins.split(",") if o.strip()]
+    allow_credentials = True
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080", "http://localhost:3000", "http://localhost:5173"],
-    allow_credentials=True,
+    allow_origins=allow_origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

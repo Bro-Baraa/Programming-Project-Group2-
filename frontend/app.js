@@ -182,6 +182,13 @@ async function handleLogin(e) {
   const email = document.getElementById('login-email').value;
   const password = document.getElementById('login-password').value;
   const submitBtn = e.target.querySelector('button[type="submit"]');
+  const errorEl = document.getElementById('login-error');
+  
+  // Clear previous error
+  if (errorEl) {
+    errorEl.textContent = '';
+    errorEl.classList.remove('show');
+  }
   
   showLoading(submitBtn, "Inloggen...");
   
@@ -194,7 +201,10 @@ async function handleLogin(e) {
     window.location.href = 'index.html';
   } catch (error) {
     hideLoading(submitBtn);
-    showToast(error.message, 'error', 5000);
+    if (errorEl) {
+      errorEl.textContent = error.message;
+      errorEl.classList.add('show');
+    }
   }
 }
 
@@ -212,6 +222,13 @@ function renderLogin() {
   app.className = 'login-layout';
   app.innerHTML = '';
   navPanel.style.display = 'none';
+  document.body.classList.add('login-active');
+  
+  // Hide header and ambient grid on login page
+  const topbar = document.querySelector('.topbar');
+  const ambient = document.querySelector('.ambient');
+  if (topbar) topbar.style.display = 'none';
+  if (ambient) ambient.style.display = 'none';
   
   const tpl = document.getElementById('login-template');
   if (tpl) {
@@ -230,17 +247,20 @@ function renderLogin() {
         { email: 'docent1@school.be', password: 'docent123', label: 'Docent' },
         { email: 'mentor1@school.be', password: 'mentor123', label: 'Mentor' },
       ];
-      quickLogin.innerHTML = `
-        <p><strong>Snel inloggen (demo):</strong></p>
-        <div class="quick-login-buttons">
-          ${accounts.map(a => `<button class="quick-login-btn" data-email="${a.email}" data-password="${a.password}">${a.label}</button>`).join('')}
-        </div>
-      `;
+      quickLogin.innerHTML = accounts.map(a =>
+        `<button class="quick-login-btn" data-email="${a.email}" data-password="${a.password}">${a.label}</button>`
+      ).join('');
       quickLogin.querySelectorAll('.quick-login-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.getElementById('login-email').value = btn.dataset.email;
           document.getElementById('login-password').value = btn.dataset.password;
-          form.dispatchEvent(new Event('submit'));
+          // Clear any previous error
+          const errorEl = document.getElementById('login-error');
+          if (errorEl) {
+            errorEl.textContent = '';
+            errorEl.classList.remove('show');
+          }
+          form.requestSubmit();
         });
       });
     }
@@ -250,6 +270,13 @@ function renderLogin() {
 async function renderMainApp() {
   app.className = 'layout';
   navPanel.style.display = 'block';
+  document.body.classList.remove('login-active');
+  
+  // Show header and ambient grid when logged in
+  const topbar = document.querySelector('.topbar');
+  const ambient = document.querySelector('.ambient');
+  if (topbar) topbar.style.display = 'flex';
+  if (ambient) ambient.style.display = 'block';
 
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
@@ -836,9 +863,9 @@ function selectProposalForReview(internshipId) {
   const actionsDiv = document.getElementById('review-actions');
   if (actionsDiv) {
     actionsDiv.innerHTML = `
-      <button id="btn-approve" class="btn good">✓ Goedkeuren</button>
-      <button id="btn-reject" class="btn bad">✗ Afkeuren</button>
-      <button id="btn-changes" class="btn alt">⚠ Aanpassingen Vereist</button>
+      <button id="btn-approve" class="btn success">✓ Goedkeuren</button>
+      <button id="btn-reject" class="btn danger">✗ Afkeuren</button>
+      <button id="btn-changes" class="btn secondary">⚠ Aanpassingen Vereist</button>
     `;
 
     document.getElementById('btn-approve')?.addEventListener('click', () => doReview(internship.id, 'Goedgekeurd'));
@@ -1059,7 +1086,7 @@ function renderCompetencyManager() {
       <li>
         <span class="comp-name">${comp.name}</span>
         <span class="comp-weight">${comp.weight}%</span>
-        <button class="btn small alt" onclick="handleDeleteCompetency(${comp.id})" style="margin-left: 0.6rem;">Verwijder</button>
+        <button class="btn small secondary" onclick="handleDeleteCompetency(${comp.id})" style="margin-left: 0.6rem;">Verwijder</button>
       </li>
     `).join('');
     

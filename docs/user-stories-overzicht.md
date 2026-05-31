@@ -48,7 +48,7 @@ Datum: 2026-05-27
 | US-05 | Student vult wekelijks logboek in met taken en reflecties | PART | `POST /logbooks` en `PATCH /logbooks/{id}` werken. Velden: tasks, reflection, issues. | Logboek formulier met week, taken, reflectie, problemen. | Geen expliciete "definitief indienen" actie; generieke PATCH zet `status` op "submitted". Max 1 per week alleen afgedwongen bij create, niet bij update. |
 | US-06 | Student beschrijft per competentie wat hij geleerd heeft | BUG | `EvaluationRule.student_description` bestaat. | Student beschrijving veld zichtbaar in evaluatie formulier. | **Router blokkeert studenten**: `PATCH /evaluations/{id}/rules/{rule_id}` gebruikt `require_any_staff` (teacher, committee, mentor, admin). Student heeft geen toegang. Service zou student wel toestaan, maar router blokkeert bij de deur. |
 | US-07 | Student leest feedback van docent/mentor | PART | `GET /internships/{id}/feedback` retourneert feedback. | Feedback sectie op student dashboard toont berichten. | Feedback is generiek (from_user, to_user, message); niet gekoppeld aan specifieke logboek-week. |
-| US-08 | Student ziet historiek van logboeken | OK | `GET /internships/{id}/logbooks` en `GET .../logbooks/weeks` met "missing" markering. | Logboek-tabel in dashboard met week, status, mentor validatie. | — |
+| US-08 | Student ziet historiek van logboeken | PART | `GET /internships/{id}/logbooks` en `GET .../logbooks/weeks` bestaan, met "missing" markering. | Logboek-tabel in dashboard toont alleen bestaande logboeken; frontend gebruikt de week-overview niet. | Ontbrekende weken worden niet visueel weergegeven in de student UI. |
 | US-14 | Commissie ziet overzicht alle stages en statussen | OK | `GET /internships` en `GET /stats/dashboard`. | Overzicht tabel + statistieken paneel met totalen. | — |
 | US-15 | Docent ziet wekelijkse logboeken | OK | `GET /internships/{id}/logbooks` beschikbaar voor docent. | Docent logboek-tabel met week, taken, reflectie, status, mentor validatie. | — |
 | US-16 | Docent geeft feedback per competentie | PART | `evaluator_feedback` in `EvaluationRule` werkt via PATCH. | Evaluatie formulier heeft feedback veld per competentie. | Gekoppeld aan evaluaties (Evaluatie-fase), niet aan logboeken (Opvolging-fase). Geen mogelijkheid om feedback te geven op specifieke logboek-week. |
@@ -63,7 +63,7 @@ Datum: 2026-05-27
 | US-09 | Student raadpleegt eindevaluatierapport | PART | `GET /evaluations/{id}` met score; `GET /internships/{id}/final-report` geeft eindoverzicht. | Student evaluatie view toont evaluatie tabel, maar **eindoverzicht is statische tekst** ("nog niet ingediend"). Frontend haalt `/final-report` endpoint niet op. | Eindrapport data wordt niet daadwerkelijk opgehaald en getoond. |
 | US-18 | Docent vult finale evaluatie in met score per competentie | PART | `POST /evaluations` (type final) + `PATCH /evaluations/{id}/rules/{rule_id}` met score. Automatische gewogen eindscore. `POST /evaluations/{id}/finalize` lockt evaluatie. | Evaluatie formulier toont score selectors per competentie + afronden knop. | Geen bulk-update endpoint; docent moet per competentie een aparte PATCH call doen (frontend doet dit wel automatisch). |
 | US-19 | Docent genereert eindoverzicht per student | BE-OK | `GET /internships/{id}/final-report` retourneert `FinalReportItem` met gewogen score. | **Geen frontend view** voor eindoverzicht bij docent. Alleen backend endpoint beschikbaar. | Docent mist scherm om eindrapport te bekijken/afdrukken. |
-| US-23 | Mentor geeft feedback per competentie | BE-OK | Zelfde endpoint als US-16; mentor toegang via `require_any_staff`. | **Geen frontend view** voor mentor evaluatie/feedback. Mentor heeft alleen "validatie" scherm (logboeken), geen evaluatie scherm. | Mentor kan via backend wel feedback geven, maar frontend biedt hiervoor geen UI. |
+| US-23 | Mentor geeft feedback per competentie | OK | Zelfde endpoint als US-16; mentor toegang via `require_any_staff`. | Mentor heeft een eigen evaluatiescherm en kan feedback per competentie invullen. | — |
 
 ## Configuratie & Beheer
 
@@ -86,8 +86,8 @@ Datum: 2026-05-27
 | Status | Aantal |
 |--------|--------|
 | OK | 11 |
-| BE-OK | 2 |
-| PART | 10 |
+| BE-OK | 1 |
+| PART | 11 |
 | BUG | 2 |
 | NOK | 3 |
 
@@ -95,7 +95,7 @@ Datum: 2026-05-27
 
 1. **US-06 (BUG)** — Student kan eigen competentie-beschrijving niet invullen door router-blokkade
 2. **US-27 (BUG)** — Admin kan geen gebruikers beheren (alleen lezen)
-3. **US-19 (BE-OK)** — Eindoverzicht frontend view toevoegen voor docent
-4. **US-23 (BE-OK)** — Mentor evaluatie-feedback frontend view toevoegen
+3. **US-29 + US-20 (NOK)** — Notificatiesysteem implementeren
+4. **US-19 (BE-OK)** — Eindoverzicht frontend view toevoegen voor docent
 5. **US-09 (PART)** — Eindrapport daadwerkelijk ophalen en tonen in student view
-6. **US-29 + US-20 (NOK)** — Notificatiesysteem implementeren
+6. **US-25 (PART)** — Competentieprofiel koppelen aan stage zodat historische evaluaties stabiel blijven

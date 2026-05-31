@@ -3,7 +3,13 @@
 // Communicates with the FastAPI backend
 // ============================================
 
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = (() => {
+  // Use the same host as the frontend page, but port 8001
+  // This works for localhost:8080 → localhost:8001
+  // and for remote access: framearch-juan:8080 → framearch-juan:8001
+  const host = window.location.hostname;
+  return `http://${host}:8001`;
+})();
 
 // Token storage
 function getToken() {

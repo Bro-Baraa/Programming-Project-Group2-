@@ -119,7 +119,7 @@ fi
 # Start backend
 echo -e "${GREEN}Backend starten op http://localhost:$BACKEND_PORT${NC}"
 cd "$PROJECT_DIR/backend"
-$PYTHON_RUNNER -m uvicorn app.main:app --reload --port $BACKEND_PORT &
+$PYTHON_RUNNER -m uvicorn app.main:app --reload --port $BACKEND_PORT --host 0.0.0.0 &
 BACKEND_PID=$!
 
 # Wait a moment for backend to start
