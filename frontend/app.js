@@ -1,10 +1,7 @@
-// ============================================
-// Stage Monitoring Tool - API Integrated Version
-// Connects to the FastAPI backend
-// ============================================
+// Stage Monitoring Tool
 
-// View configuration
-// Role values MUST match backend User.role values exactly
+// Configuratie
+// Role waarden moeten overeenkomen met backend User.role
 const roleViews = {
   student: ["dashboard", "voorstel", "logboek", "overeenkomst", "evaluaties"],
   committee: ["voorstellen", "overzicht"],
@@ -37,15 +34,15 @@ const templates = {
   admin: "admin-template",
 };
 
-// State
-let allInternships = [];           // All internships visible to current user
-let selectedInternshipId = null;   // User-selected internship (from URL param)
+// Toestand
+let allInternships = [];
+let selectedInternshipId = null;
 let currentCompetencies = [];
 let currentLogbooks = [];
 let currentEvaluations = [];
 let currentFeedback = [];
 
-// Convenience: get the internship the user has selected
+// Geeft de geselecteerde stage terug
 function getSelectedInternship() {
   if (selectedInternshipId) {
     const found = allInternships.find(i => i.id == selectedInternshipId);
@@ -54,98 +51,17 @@ function getSelectedInternship() {
   return allInternships[0] || null;
 }
 
-// Back-compat alias — replace gradually
+// Back-compat alias
 let currentInternship = null;
 
-// ============================================
-// Utility Functions
-// ============================================
+// Hulpfuncties (formatDate, getStatusClass, showToast, showLoading, hideLoading)
+// zijn verplaatst naar `ui-helpers.js` om dit bestand overzichtelijk te houden.
 
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch {
-    return dateStr;
-  }
-}
-
-function getStatusClass(status) {
-  if (!status) return '';
-  const map = {
-    'ingediend': 'status-info',
-    'overeenkomst-ingediend': 'status-info',
-    'submitted': 'status-info',
-    'draft': '',
-    'in-beoordeling': 'status-warn',
-    'aanpassingen-vereist': 'status-warn',
-    'pending': 'status-warn',
-    'goedgekeurd': 'status-good',
-    'lopend': 'status-good',
-    'approved': 'status-good',
-    'afgekeurd': 'status-bad',
-    'rejected': 'status-bad',
-  };
-  return map[status.toLowerCase().replace(/\s+/g, '-')] || '';
-}
-
-// Note: localStorage persistence removed - this is the API-connected version
-// All data is persisted through the backend API
-
-// DOM elements
 const app = document.getElementById("app");
 const navPanel = document.getElementById("nav-panel");
 const content = document.getElementById("content");
 
-// ============================================
-// UI Helpers
-// ============================================
-
-function showToast(message, type = "success", duration = 3000) {
-  const existing = document.querySelector(".toast-notification");
-  if (existing) existing.remove();
-
-  const toast = document.createElement("div");
-  toast.className = `toast-notification toast-${type}`;
-  
-  const icons = { success: "✓", error: "✗", warning: "⚠", info: "ℹ" };
-  
-  toast.innerHTML = `
-    <span class="toast-icon">${icons[type] || "•"}</span>
-    <span class="toast-message">${message}</span>
-    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
-  `;
-  
-  document.body.appendChild(toast);
-  requestAnimationFrame(() => toast.classList.add("show"));
-  
-  setTimeout(() => {
-    toast.classList.remove("show");
-    setTimeout(() => toast.remove(), 300);
-  }, duration);
-}
-
-function showLoading(element, message = "Laden...") {
-  if (!element) return;
-  element.dataset.originalContent = element.innerHTML;
-  element.innerHTML = `<span class="loading-spinner"></span> ${message}`;
-  element.disabled = true;
-}
-
-function hideLoading(element) {
-  if (!element) return;
-  const original = element.dataset.originalContent;
-  if (original !== undefined) {
-    element.innerHTML = original;
-  }
-  element.disabled = false;
-}
-
-// ============================================
-// Authentication
-// ============================================
+// Authenticatie
 
 function checkAuth() {
   const isLoggedIn = AuthAPI.isLoggedIn();
@@ -184,7 +100,7 @@ async function handleLogin(e) {
   const submitBtn = e.target.querySelector('button[type="submit"]');
   const errorEl = document.getElementById('login-error');
   
-  // Clear previous error
+  // Vorige fout wissen
   if (errorEl) {
     errorEl.textContent = '';
     errorEl.classList.remove('show');
@@ -197,7 +113,7 @@ async function handleLogin(e) {
     hideLoading(submitBtn);
     showToast(`Welkom, ${data.user.first_name}!`, 'success');
     
-    // Redirect to main app
+    // Doorsturen naar hoofdapp
     window.location.href = 'index.html';
   } catch (error) {
     hideLoading(submitBtn);
@@ -214,9 +130,7 @@ function handleLogout() {
   window.location.href = 'index.html?view=login';
 }
 
-// ============================================
-// View Rendering
-// ============================================
+// Weergave
 
 function renderLogin() {
   app.className = 'login-layout';
@@ -224,7 +138,7 @@ function renderLogin() {
   navPanel.style.display = 'none';
   document.body.classList.add('login-active');
   
-  // Hide header and ambient grid on login page
+  // Header en ambient grid verbergen op login
   const topbar = document.querySelector('.topbar');
   const ambient = document.querySelector('.ambient');
   if (topbar) topbar.style.display = 'none';
@@ -237,7 +151,7 @@ function renderLogin() {
     const form = document.getElementById('login-form');
     form?.addEventListener('submit', handleLogin);
     
-    // Fill quick-login buttons for demo
+    // Quick-login knoppen vullen
     const quickLogin = document.getElementById('quick-login');
     if (quickLogin) {
       const accounts = [
@@ -254,7 +168,7 @@ function renderLogin() {
         btn.addEventListener('click', () => {
           document.getElementById('login-email').value = btn.dataset.email;
           document.getElementById('login-password').value = btn.dataset.password;
-          // Clear any previous error
+          // Vorige fout wissen
           const errorEl = document.getElementById('login-error');
           if (errorEl) {
             errorEl.textContent = '';
@@ -272,7 +186,7 @@ async function renderMainApp() {
   navPanel.style.display = 'block';
   document.body.classList.remove('login-active');
   
-  // Show header and ambient grid when logged in
+  // Header en ambient grid tonen na login
   const topbar = document.querySelector('.topbar');
   const ambient = document.querySelector('.ambient');
   if (topbar) topbar.style.display = 'flex';
@@ -281,20 +195,53 @@ async function renderMainApp() {
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
 
-  // Populate view tabs
+  // Tabs vullen
   const viewTabs = document.getElementById('view-tabs');
   viewTabs.innerHTML = '';
+  // ARIA: markeer als tablist
+  viewTabs.setAttribute('role', 'tablist');
   views.forEach((view) => {
     const li = document.createElement('li');
     const btn = document.createElement('button');
     btn.className = 'nav-tab';
     btn.dataset.view = view;
     btn.textContent = view.charAt(0).toUpperCase() + view.slice(1);
+    // ARIA: maak tab toetsenbord-bedienbaar
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', 'false');
+    btn.setAttribute('tabindex', '-1');
+    btn.id = `tab-${view}`;
     btn.addEventListener('click', () => {
       const url = new URL(window.location.href);
       url.searchParams.set('view', view);
       window.history.replaceState({}, '', url);
       renderView();
+    });
+
+    // Pijltjestoetsen navigatie voor tabs
+    btn.addEventListener('keydown', (e) => {
+      const key = e.key;
+      const tabs = Array.from(viewTabs.querySelectorAll('[role="tab"]'));
+      const idx = tabs.indexOf(e.currentTarget);
+      if (key === 'ArrowRight') {
+        e.preventDefault();
+        const next = tabs[(idx + 1) % tabs.length];
+        next.focus();
+        next.click();
+      } else if (key === 'ArrowLeft') {
+        e.preventDefault();
+        const prev = tabs[(idx - 1 + tabs.length) % tabs.length];
+        prev.focus();
+        prev.click();
+      } else if (key === 'Home') {
+        e.preventDefault();
+        tabs[0].focus();
+        tabs[0].click();
+      } else if (key === 'End') {
+        e.preventDefault();
+        tabs[tabs.length - 1].focus();
+        tabs[tabs.length - 1].click();
+      }
     });
     li.appendChild(btn);
     viewTabs.appendChild(li);
@@ -307,14 +254,14 @@ async function renderView() {
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
 
-  // Resolve view from URL param or default to first
+  // Bepaal view vanuit URL of standaard
   const urlParams = new URLSearchParams(window.location.search);
   let view = urlParams.get('view');
   if (!view || !views.includes(view)) {
     view = views[0] || '';
   }
 
-  // Highlight active tab
+  // Actieve tab markeren
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.classList.toggle('active', tab.dataset.view === view);
   });
@@ -325,21 +272,21 @@ async function renderView() {
   const templateId = templates[key] || templates[role];
 
   try {
-    // Resolve selected internship from URL param
+    // Geselecteerde stage uit URL
     const urlParams = new URLSearchParams(window.location.search);
     const internshipParam = urlParams.get('internship');
     if (internshipParam) selectedInternshipId = parseInt(internshipParam);
 
-    // Load ALL internships visible to this user
+    // Laad alle stages zichtbaar voor gebruiker
     allInternships = await InternshipsAPI.list();
 
-    // Populate internship selector (for roles that see multiple)
+    // Vul stage-selector (voor meerdere rollen)
     populateInternshipSelector(role);
 
-    // Set current internship (back-compat)
+    // Stel huidige stage in (back-compat)
     currentInternship = getSelectedInternship();
 
-    // Load internship-specific data for the selected one
+    // Laad stage-specifieke data
     if (currentInternship) {
       [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
         InternshipsAPI.getLogbooks(currentInternship.id),
@@ -352,7 +299,7 @@ async function renderView() {
       currentCompetencies = await CompetenciesAPI.list();
     }
 
-    // Render template
+    // Template renderen
     content.innerHTML = '';
     const tpl = document.getElementById(templateId);
     if (tpl) {
@@ -364,14 +311,13 @@ async function renderView() {
   }
 }
 
-// Populate the internship selector dropdown
+// Stage-selector vullen
 function populateInternshipSelector(role) {
   const wrapper = document.getElementById('internship-selector-wrapper');
   const select = document.getElementById('internship-select');
   if (!wrapper || !select) return;
 
-  // Only show selector for roles that might see multiple internships
-  // (committee, teacher, mentor always see multiple; student might have resubmissions)
+  // Toon selector waar nodig
   const showSelector = allInternships.length > 1 || role !== 'student';
 
   if (!showSelector || allInternships.length === 0) {
@@ -392,12 +338,12 @@ function populateInternshipSelector(role) {
     select.appendChild(option);
   });
 
-  // Pre-select from URL param or first item
+  // Voorselectie vanuit URL of eerste item
   const targetId = selectedInternshipId || allInternships[0]?.id;
   if (targetId) select.value = targetId;
 }
 
-// Handle internship selection change
+// Afhandeling selectie wijziging
 function handleInternshipChange() {
   const select = document.getElementById('internship-select');
   if (!select) return;
@@ -407,16 +353,16 @@ function handleInternshipChange() {
   selectedInternshipId = newId;
   currentInternship = getSelectedInternship();
 
-  // Update URL without reloading page
+  // URL bijwerken zonder reload
   const url = new URL(window.location.href);
   url.searchParams.set('internship', newId);
   window.history.replaceState({}, '', url);
 
-  // Re-render current view with new internship data
+  // Huidige view vernieuwen met nieuwe data
   renderView();
 }
 
-// Refresh internship data from API and update all references
+// Vernieuw stagegegevens vanaf API
 async function refreshInternshipData() {
   try {
     allInternships = await InternshipsAPI.list();
@@ -439,7 +385,7 @@ async function refreshInternshipData() {
 }
 
 // ============================================
-// Role Interactions
+// Rol interacties
 // ============================================
 
 function wireRoleInteractions(role, view) {
@@ -505,7 +451,7 @@ function wireRoleInteractions(role, view) {
 }
 
 // ============================================
-// Student Views
+// Studentweergaven
 // ============================================
 
 function renderStudentDashboard() {
@@ -536,7 +482,7 @@ function renderStudentDashboard() {
     `;
   }
 
-  // Update logbooks table
+  // Logboeken tabel bijwerken
   const tbody = document.querySelector('table tbody');
   if (tbody && currentLogbooks.length > 0) {
     tbody.innerHTML = currentLogbooks.map(lb => `
@@ -548,7 +494,7 @@ function renderStudentDashboard() {
     `).join('');
   }
 
-  // Update feedback section
+  // Feedback sectie bijwerken
   const feedbackDiv = document.getElementById('student-feedback');
   if (feedbackDiv) {
     if (currentFeedback.length > 0) {
@@ -567,8 +513,7 @@ function renderStudentDashboard() {
 function wireProposalForm() {
   const form = document.getElementById('proposal-form');
 
-  // If student already has an internship, show a note but keep the form
-  // (student can submit multiple proposals; backend supports multiple internships)
+  // Als student al een stage heeft, toon een melding maar behoud formulier
   if (currentInternship) {
     const note = document.createElement('div');
     note.className = 'info-message';
@@ -622,7 +567,7 @@ function wireLogbookForm() {
     return;
   }
 
-  // Populate week number with next available week
+  // Vul weeknummer met volgende beschikbare week
   const weekInput = document.getElementById('log-week');
   if (weekInput && currentLogbooks.length > 0) {
     const maxWeek = Math.max(...currentLogbooks.map(lb => lb.week_number));
@@ -648,7 +593,7 @@ function wireLogbookForm() {
       hideLoading(saveBtn);
       showToast('Logboek opgeslagen als concept', 'info');
 
-      // Refresh data
+      // Gegevens verversen
       currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
     } catch (error) {
       hideLoading(saveBtn);
@@ -679,7 +624,7 @@ function wireLogbookForm() {
       hideLoading(submitBtn);
       showToast(`Logboek week ${week} ingediend!`, 'success');
 
-      // Refresh data
+      // Gegevens verversen
       currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
     } catch (error) {
       hideLoading(submitBtn);
@@ -701,7 +646,7 @@ function wireAgreementUpload() {
     return;
   }
 
-  // Check status - only allowed when proposal is approved (Goedgekeurd)
+  // Controleer status - alleen toegestaan bij goedkeuring
   if (currentInternship.status !== 'Goedgekeurd') {
     form.innerHTML = `
       <div class="info-message warning">
@@ -713,10 +658,10 @@ function wireAgreementUpload() {
     return;
   }
 
-  // Check if agreement already exists (backend returns agreement object when present)
+  // Controleer of overeenkomst al bestaat (backend retourneert object)
   const hasAgreement = currentInternship.agreement != null;
 
-  // Update status display
+  // Statusweergave bijwerken
   const statusText = document.getElementById('agreement-status-text');
   if (hasAgreement && statusText) {
     statusText.innerHTML = '<span class="status-pill status-good">Ontvangen</span>';
@@ -756,7 +701,7 @@ function wireAgreementUpload() {
       hideLoading(submitBtn);
       showToast('Overeenkomst succesvol geüpload!', 'success');
 
-      // Refresh internship data to reflect new agreement status
+      // Vernieuw stagegegevens na upload overeenkomst
       await refreshInternshipData();
 
       if (statusText) {
@@ -786,7 +731,7 @@ function renderStudentEvaluations() {
 }
 
 // ============================================
-// Committee Views
+// Commissieweergaven
 // ============================================
 
 async function renderCommitteeProposals() {
@@ -804,7 +749,7 @@ async function renderCommitteeProposals() {
         </tr>
       `).join('');
 
-      // Click handler: select internship and show detail panel
+      // Klikhandler: selecteer stage en toon detailpaneel
       tbody.querySelectorAll('.proposal-row').forEach(row => {
         row.addEventListener('click', () => {
           const id = parseInt(row.dataset.id);
@@ -813,7 +758,7 @@ async function renderCommitteeProposals() {
       });
     }
 
-    // If a proposal is already selected via URL param, show its detail
+    // Als een voorstel via URL is geselecteerd, toon detail
     if (selectedInternshipId) {
       const preselected = allInternships.find(i => i.id == selectedInternshipId);
       if (preselected) selectProposalForReview(preselected.id);
@@ -828,29 +773,29 @@ function selectProposalForReview(internshipId) {
   const internship = allInternships.find(i => i.id == internshipId);
   if (!internship) return;
 
-  // Update URL
+  // URL bijwerken
   selectedInternshipId = internshipId;
   currentInternship = internship;
   const url = new URL(window.location.href);
   url.searchParams.set('internship', internshipId);
   window.history.replaceState({}, '', url);
 
-  // Highlight selected row
+  // Geselecteerde rij markeren
   document.querySelectorAll('.proposal-row').forEach(r => {
     r.style.background = r.dataset.id == internshipId ? 'rgba(0, 121, 140, 0.1)' : '';
   });
 
-  // Show detail panel
+  // Detailpaneel tonen
   const panel = document.getElementById('proposal-detail-panel');
   if (panel) panel.style.display = 'block';
 
-  // Fill detail info
+  // Detailinformatie vullen
   document.getElementById('selected-student-name').textContent =
     `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`;
   document.getElementById('selected-company').textContent = internship.company?.name || 'Onbekend';
   document.getElementById('selected-status').textContent = internship.status;
 
-  // Fetch and show proposal description
+  // Haal voorstelbeschrijving op en toon
   document.getElementById('selected-description').textContent = 'Laden...';
   InternshipsAPI.get(internship.id).then(full => {
     document.getElementById('selected-description').textContent =
@@ -859,7 +804,7 @@ function selectProposalForReview(internshipId) {
     document.getElementById('selected-description').textContent = 'Kon omschrijving niet laden.';
   });
 
-  // Wire action buttons
+  // Actieknoppen verbinden
   const actionsDiv = document.getElementById('review-actions');
   if (actionsDiv) {
     actionsDiv.innerHTML = `
@@ -885,7 +830,7 @@ async function doReview(internshipId, decision) {
   try {
     await ProposalsAPI.review(internshipId, decision, feedback);
     showToast(`Voorstel ${decision.toLowerCase()}!`, 'success');
-    // Refresh data
+    // Gegevens verversen
     allInternships = await InternshipsAPI.list();
     renderCommitteeProposals();
   } catch (error) {
@@ -897,7 +842,7 @@ async function renderCommitteeOverview() {
   try {
     const stats = await InternshipsAPI.getDashboardStats();
 
-    // Update stats
+    // Statistieken bijwerken
     const statElements = document.querySelectorAll('.grid.two-col ul');
     if (statElements[0]) {
       statElements[0].innerHTML = `
@@ -914,7 +859,7 @@ async function renderCommitteeOverview() {
       `;
     }
 
-    // Update table
+    // Tabel bijwerken
     const tbody = document.querySelector('table tbody');
     if (tbody) {
       tbody.innerHTML = allInternships.map(p => `
@@ -933,7 +878,7 @@ async function renderCommitteeOverview() {
 }
 
 // ============================================
-// Teacher/Admin Views
+// Docent/Admin weergaven
 // ============================================
 
 function wireEvaluationForm() {
@@ -949,16 +894,16 @@ function wireEvaluationForm() {
     return;
   }
 
-  // Fetch existing evaluations for this internship
+  // Haal bestaande evaluaties voor deze stage op
   InternshipsAPI.getEvaluations(currentInternship.id).then(evaluations => {
     currentEvaluations = evaluations;
 
-    // If there are existing draft evaluations, use the first one; otherwise create on save
+    // Gebruik bestaande concept-evaluatie indien aanwezig, anders aanmaken bij opslaan
     const existingEval = evaluations.find(e => !e.finalized);
 
     if (container && currentCompetencies.length > 0) {
       container.innerHTML = currentCompetencies.map(comp => {
-        // Find rule for this competency if evaluation exists
+        // Zoek regel voor deze competentie als evaluatie bestaat
         let rule = null;
         if (existingEval && existingEval.rules) {
           rule = existingEval.rules.find(r => r.competency_id === comp.id);
@@ -988,7 +933,7 @@ function wireEvaluationForm() {
   const evalForm = document.getElementById('eval-form');
   const finalizeBtn = document.getElementById('finalize-eval');
 
-  // Save scores (creates evaluation if needed, then updates each rule)
+  // Scores opslaan (maakt evaluatie aan indien nodig)
   evalForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = evalForm.querySelector('button[type="submit"]');
@@ -1002,7 +947,7 @@ function wireEvaluationForm() {
     showLoading(submitBtn, 'Opslaan...');
 
     try {
-      // Step 1: Create evaluation (if no existing draft)
+      // Stap 1: Evaluatie aanmaken (indien geen concept)
       let evaluation = currentEvaluations.find(e => !e.finalized && e.eval_type === evalType);
       if (!evaluation) {
         evaluation = await InternshipsAPI.createEvaluation(currentInternship.id, {
@@ -1011,7 +956,7 @@ function wireEvaluationForm() {
         currentEvaluations.push(evaluation);
       }
 
-      // Step 2: Update each rule with score, feedback, and student description
+      // Stap 2: Werk elke regel bij met score, feedback en omschrijving
       const rows = container.querySelectorAll('.eval-row');
       for (const row of rows) {
         const compId = parseInt(row.dataset.compId);
@@ -1019,7 +964,7 @@ function wireEvaluationForm() {
         const feedback = row.querySelector('.feedback-input')?.value || null;
         const studentDesc = row.querySelector('.student-desc-input')?.value || null;
 
-        // Find the rule ID for this competency
+        // Vind regel-ID voor deze competentie
         const rule = evaluation.rules?.find(r => r.competency_id === compId);
         if (rule) {
           await EvaluationRulesAPI.update(evaluation.id, rule.id, {
@@ -1038,7 +983,7 @@ function wireEvaluationForm() {
     }
   });
 
-  // Finalize evaluation
+  // Evaluatie finaliseren
   finalizeBtn?.addEventListener('click', async () => {
     if (!confirm('Evaluatie definitief afsluiten? Dit kan niet ongedaan gemaakt worden.')) return;
 
@@ -1047,11 +992,11 @@ function wireEvaluationForm() {
       return;
     }
 
-    // First save current scores
+    // Eerst huidige scores opslaan
     const submitBtn = evalForm.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.click();
 
-    // Then find the evaluation and finalize it
+    // Daarna evaluatie zoeken en finaliseren
     const evalType = document.getElementById('eval-type')?.value || 'tussentijds';
     const evaluation = currentEvaluations.find(e => !e.finalized && e.eval_type === evalType);
 
@@ -1063,7 +1008,7 @@ function wireEvaluationForm() {
     showLoading(finalizeBtn, 'Bezig...');
 
     try {
-      // The backend finalize endpoint is POST /evaluations/{id}/finalize
+      // Backend finalize endpoint: POST /evaluations/{id}/finalize
       await apiRequest(`/evaluations/${evaluation.id}/finalize`, { method: 'POST' });
       hideLoading(finalizeBtn);
       showToast('Evaluatie definitief afgesloten!', 'success');
@@ -1103,7 +1048,7 @@ function renderCompetencyManager() {
     weightCheck.className = `weight-check ${valid ? 'valid' : 'invalid'}`;
   }
   
-  // Wire up form
+  // Formulier verbinden
   const form = document.getElementById('competency-form');
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1126,7 +1071,7 @@ function renderCompetencyManager() {
     }
   });
   
-  // Calculate button
+  // Bereken knop
   const calcBtn = document.getElementById('calc-score');
   calcBtn?.addEventListener('click', () => {
     const total = currentCompetencies.reduce((sum, c) => sum + c.weight, 0);
@@ -1135,7 +1080,7 @@ function renderCompetencyManager() {
       return;
     }
     
-    // Calculate weighted score
+    // Bereken gewogen score
     let score = 0;
     document.querySelectorAll('#score-inputs input').forEach(input => {
       const compId = parseInt(input.dataset.comp);
@@ -1157,7 +1102,7 @@ function renderCompetencyManager() {
 }
 
 // ============================================
-// Teacher & Mentor Logbook Views
+// Docent & Mentor logboekweergaven
 // ============================================
 
 function renderTeacherLogbooks() {
@@ -1184,7 +1129,7 @@ function renderTeacherLogbooks() {
     </tr>
   `).join('');
 
-  // Wire feedback button
+  // Feedbackknop verbinden
   const sendBtn = document.getElementById('teacher-send-feedback');
   sendBtn?.addEventListener('click', async () => {
     const msg = document.getElementById('teacher-feedback-msg')?.value;
@@ -1238,7 +1183,7 @@ function renderMentorLogbooks() {
     </tr>
   `).join('');
 
-  // Wire validate buttons
+  // Validatieknoppen verbinden
   tbody.querySelectorAll('.validate-logbook-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const logbookId = parseInt(btn.dataset.id);
@@ -1250,7 +1195,7 @@ function renderMentorLogbooks() {
         });
         hideLoading(btn);
         showToast('Logboek gevalideerd!', 'success');
-        // Refresh logbooks
+        // Vernieuw logboeken
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
         renderMentorLogbooks();
       } catch (error) {
@@ -1261,7 +1206,7 @@ function renderMentorLogbooks() {
   });
 }
 
-// Renders the mentor evaluation feedback form per competency
+// Renderen van mentor-feedbackformulier per competentie
 async function renderMentorEvaluation() {
   const container = document.getElementById('mentor-eval-content');
   if (!container) return;
@@ -1297,7 +1242,7 @@ async function renderMentorEvaluation() {
   });
 } 
 
-// Competency deletion handler - attached to window for onclick handlers in templates
+// Handler voor verwijderen van competentie - beschikbaar in window voor templates
 async function handleDeleteCompetency(id) {
   if (!confirm('Competentie verwijderen?')) return;
 
@@ -1311,13 +1256,13 @@ async function handleDeleteCompetency(id) {
   }
 }
 
-// Expose to window for template onclick handlers
+// Blootstellen aan window voor template onclick-handlers
 window.handleDeleteCompetency = handleDeleteCompetency;
 window.selectProposalForReview = selectProposalForReview;
 window.doReview = doReview;
 
 // ============================================
-// Initialization
+// Initialisatie
 // ============================================
 
 function init() {
@@ -1333,8 +1278,8 @@ function init() {
     renderMainApp();
   }
   
-  // Event listeners
-  // (tab clicks are wired in renderMainApp)
+  // Gebeurtenisluisteraars
+  // (tab clicks worden verbonden in renderMainApp)
 
   
   document.getElementById('internship-select')?.addEventListener('change', handleInternshipChange);
@@ -1342,5 +1287,6 @@ function init() {
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
 }
 
-// Start
+// Table-card helper functies zijn verplaatst naar `table-cards.js`.
+
 init();
