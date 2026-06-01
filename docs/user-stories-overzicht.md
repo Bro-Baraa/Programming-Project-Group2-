@@ -87,7 +87,7 @@ Datum: 2026-05-27
 |--------|--------|
 | OK | 14 |
 | BE-OK | 1 |
-| PART | 10 |
+| PART | 9 |
 | BUG | 0 |
 | NOK | 3 |
 
@@ -96,6 +96,6 @@ Datum: 2026-05-27
 1. **US-29 + US-20 (NOK)** — Notificatiesysteem implementeren
 2. **US-25 (PART)** — Competentieprofiel koppelen aan stage zodat historische evaluaties stabiel blijven
 3. **US-28 (NOK)** — Export rapportages (CSV/XLSX/PDF)
-4. **US-11 (PART)** — Status "In Beoordeling" toevoegen aan proposal lifecycle
-5. **US-01 (PART)** — Stagevoorstel-formulier uitbreiden met docent/mentor selectie
-6. **US-27 (BE-OK)** — Admin UI voor gebruikersbeheer (frontend)
+4. **US-01 (PART)** — Stagevoorstel-formulier uitbreiden met docent/mentor selectie
+5. **US-27 (BE-OK)** — Admin UI voor gebruikersbeheer (frontend)
+6. **US-05 (PART)** — Logboek definitief indienen actie toevoegen
