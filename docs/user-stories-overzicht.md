@@ -62,7 +62,7 @@ Datum: 2026-05-27
 |----|-----------|--------|---------|----------|-------------|
 | US-09 | Student raadpleegt eindevaluatierapport | PART | `GET /evaluations/{id}` met score; `GET /internships/{id}/final-report` geeft eindoverzicht. | Student evaluatie view toont evaluatie tabel, maar **eindoverzicht is statische tekst** ("nog niet ingediend"). Frontend haalt `/final-report` endpoint niet op. | Eindrapport data wordt niet daadwerkelijk opgehaald en getoond. |
 | US-18 | Docent vult finale evaluatie in met score per competentie | PART | `POST /evaluations` (type final) + `PATCH /evaluations/{id}/rules/{rule_id}` met score. Automatische gewogen eindscore. `POST /evaluations/{id}/finalize` lockt evaluatie. | Evaluatie formulier toont score selectors per competentie + afronden knop. | Geen bulk-update endpoint; docent moet per competentie een aparte PATCH call doen (frontend doet dit wel automatisch). |
-| US-19 | Docent genereert eindoverzicht per student | BE-OK | `GET /internships/{id}/final-report` retourneert `FinalReportItem` met gewogen score. | **Geen frontend view** voor eindoverzicht bij docent. Alleen backend endpoint beschikbaar. | Docent mist scherm om eindrapport te bekijken/afdrukken. |
+| US-19 | Docent genereert eindoverzicht per student | OK | `GET /internships/{id}/final-report` retourneert `FinalReportItem` met gewogen score. | Docent heeft "Eindoverzicht" tab met tabel van alle competenties, scores, beschrijvingen, feedback en gewogen eindscore. Afdrukknop aanwezig. | — |
 | US-23 | Mentor geeft feedback per competentie | OK | Zelfde endpoint als US-16; mentor toegang via `require_any_staff`. | Mentor heeft een eigen evaluatiescherm en kan feedback per competentie invullen. | — |
 
 ## Configuratie & Beheer
@@ -85,17 +85,17 @@ Datum: 2026-05-27
 
 | Status | Aantal |
 |--------|--------|
-| OK | 12 |
-| BE-OK | 2 |
+| OK | 13 |
+| BE-OK | 1 |
 | PART | 11 |
 | BUG | 0 |
 | NOK | 3 |
 
 ## Top prioriteiten (gesorteerd)
 
-1. **US-19 (BE-OK)** — Eindoverzicht frontend view toevoegen voor docent
-2. **US-09 (PART)** — Eindrapport daadwerkelijk ophalen en tonen in student view
-3. **US-29 + US-20 (NOK)** — Notificatiesysteem implementeren
-4. **US-25 (PART)** — Competentieprofiel koppelen aan stage zodat historische evaluaties stabiel blijven
-5. **US-28 (NOK)** — Export rapportages (CSV/XLSX/PDF)
-6. **US-11 (PART)** — Status "In Beoordeling" toevoegen aan proposal lifecycle
+1. **US-09 (PART)** — Eindrapport daadwerkelijk ophalen en tonen in student view
+2. **US-29 + US-20 (NOK)** — Notificatiesysteem implementeren
+3. **US-25 (PART)** — Competentieprofiel koppelen aan stage zodat historische evaluaties stabiel blijven
+4. **US-28 (NOK)** — Export rapportages (CSV/XLSX/PDF)
+5. **US-11 (PART)** — Status "In Beoordeling" toevoegen aan proposal lifecycle
+6. **US-01 (PART)** — Stagevoorstel-formulier uitbreiden met docent/mentor selectie
