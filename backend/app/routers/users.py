@@ -13,8 +13,8 @@ from sqlalchemy import func, or_
 
 from app.database import get_db
 from app.models import User
-from app.schemas import UserResponse
-from app.auth import get_current_active_user
+from app.schemas import UserResponse, UserCreate, UserUpdate
+from app.auth import get_current_active_user, get_password_hash
 from app.dependencies import pagination
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -74,3 +74,82 @@ def get_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_active_user)) -> User:
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    return current_user
+
+
+@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+def create_user(
+    data: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """US-27: Admin maakt een nieuwe gebruiker aan."""
+    # Check for duplicate email
+    existing = db.query(User).filter(User.email == data.email).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"User with email {data.email} already exists"
+        )
+
+    user = User(
+        email=data.email,
+        password_hash=get_password_hash(data.password),
+        first_name=data.first_name,
+        last_name=data.last_name,
+        role=data.role,
+        is_active=True,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.patch("/{user_id}", response_model=UserResponse)
+def update_user(
+    user_id: int,
+    data: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """US-27: Admin wijzigt een gebruiker."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if data.email is not None:
+        user.email = data.email
+    if data.first_name is not None:
+        user.first_name = data.first_name
+    if data.last_name is not None:
+        user.last_name = data.last_name
+    if data.role is not None:
+        user.role = data.role
+    if data.is_active is not None:
+        user.is_active = data.is_active
+
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """US-27: Admin verwijdert een gebruiker."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    db.delete(user)
+    db.commit()
+    return None

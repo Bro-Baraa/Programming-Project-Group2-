@@ -17,6 +17,7 @@ This package provides schemas organized by domain:
 from .user import (
     UserBase,
     UserCreate,
+    UserUpdate,
     UserResponse,
     Token,
 )
@@ -97,6 +98,7 @@ __all__ = [
     # User
     "UserBase",
     "UserCreate",
+    "UserUpdate",
     "UserResponse",
     "Token",
     # Company

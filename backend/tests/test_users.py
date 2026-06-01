@@ -3,6 +3,135 @@
 import pytest
 
 
+class TestCreateUser:
+    """Test POST /users endpoint."""
+
+    def test_admin_can_create_user(self, client, auth_headers_admin):
+        """US-27: Admin kan een nieuwe gebruiker aanmaken."""
+        new_user = {
+            "email": "newuser@test.com",
+            "first_name": "Nieuwe",
+            "last_name": "Gebruiker",
+            "role": "student",
+            "password": "securepass123"
+        }
+        response = client.post("/users", json=new_user, headers=auth_headers_admin)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["email"] == "newuser@test.com"
+        assert data["first_name"] == "Nieuwe"
+        assert data["last_name"] == "Gebruiker"
+        assert data["role"] == "student"
+        assert data["is_active"] is True
+        assert "password" not in data
+        assert "password_hash" not in data
+
+    def test_non_admin_cannot_create_user(self, client, auth_headers_student):
+        """US-27: Niet-admin mag geen gebruiker aanmaken."""
+        new_user = {
+            "email": "hacker@test.com",
+            "first_name": "Hacker",
+            "last_name": "User",
+            "role": "admin",
+            "password": "hackpass123"
+        }
+        response = client.post("/users", json=new_user, headers=auth_headers_student)
+        assert response.status_code == 403
+
+    def test_cannot_create_user_with_existing_email(self, client, auth_headers_admin, test_student):
+        """US-27: Geen dubbele email toegestaan."""
+        new_user = {
+            "email": test_student.email,
+            "first_name": "Duplicate",
+            "last_name": "User",
+            "role": "student",
+            "password": "pass123"
+        }
+        response = client.post("/users", json=new_user, headers=auth_headers_admin)
+        assert response.status_code == 400
+        assert "already exists" in response.json()["detail"].lower() or "email" in response.json()["detail"].lower()
+
+    def test_unauthorized_cannot_create_user(self, client):
+        """US-27: Zonder token mag je geen gebruiker aanmaken."""
+        new_user = {
+            "email": "anon@test.com",
+            "first_name": "Anon",
+            "last_name": "User",
+            "role": "student",
+            "password": "pass123"
+        }
+        response = client.post("/users", json=new_user)
+        assert response.status_code == 401
+
+
+class TestUpdateUser:
+    """Test PATCH /users/{id} endpoint."""
+
+    def test_admin_can_update_user(self, client, auth_headers_admin, test_student):
+        """US-27: Admin kan een gebruiker wijzigen."""
+        update_data = {
+            "first_name": "Gewijzigd",
+            "last_name": "Student",
+            "role": "teacher"
+        }
+        response = client.patch(f"/users/{test_student.id}", json=update_data, headers=auth_headers_admin)
+        assert response.status_code == 200
+        data = response.json()
+        assert data["first_name"] == "Gewijzigd"
+        assert data["last_name"] == "Student"
+        assert data["role"] == "teacher"
+
+    def test_non_admin_cannot_update_user(self, client, auth_headers_student, test_teacher):
+        """US-27: Niet-admin mag geen gebruiker wijzigen."""
+        update_data = {"first_name": "Hacked"}
+        response = client.patch(f"/users/{test_teacher.id}", json=update_data, headers=auth_headers_student)
+        assert response.status_code == 403
+
+    def test_update_nonexistent_user(self, client, auth_headers_admin):
+        """US-27: Wijzigen van niet-bestaande gebruiker geeft 404."""
+        update_data = {"first_name": "Ghost"}
+        response = client.patch("/users/99999", json=update_data, headers=auth_headers_admin)
+        assert response.status_code == 404
+
+
+class TestDeleteUser:
+    """Test DELETE /users/{id} endpoint."""
+
+    def test_admin_can_delete_user(self, client, auth_headers_admin, db):
+        """US-27: Admin kan een gebruiker verwijderen."""
+        from app.models import User
+        from app.auth import get_password_hash
+
+        user = User(
+            email="todelete@test.com",
+            password_hash=get_password_hash("delete123"),
+            first_name="Delete",
+            last_name="Me",
+            role="student",
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        response = client.delete(f"/users/{user.id}", headers=auth_headers_admin)
+        assert response.status_code == 204
+
+        # Verify user is gone
+        get_response = client.get(f"/users/{user.id}", headers=auth_headers_admin)
+        assert get_response.status_code == 404
+
+    def test_non_admin_cannot_delete_user(self, client, auth_headers_student, test_teacher):
+        """US-27: Niet-admin mag geen gebruiker verwijderen."""
+        response = client.delete(f"/users/{test_teacher.id}", headers=auth_headers_student)
+        assert response.status_code == 403
+
+    def test_delete_nonexistent_user(self, client, auth_headers_admin):
+        """US-27: Verwijderen van niet-bestaande gebruiker geeft 404."""
+        response = client.delete("/users/99999", headers=auth_headers_admin)
+        assert response.status_code == 404
+
+
 class TestListUsers:
     """Test GET /users endpoint."""
 
