@@ -100,27 +100,33 @@ async function handleLogin(e) {
   const password = document.getElementById('login-password').value;
   const submitBtn = e.target.querySelector('button[type="submit"]');
   const errorEl = document.getElementById('login-error');
-  
+
+  console.log('[DEBUG] handleLogin called for email:', email);
+
   // Vorige fout wissen
   if (errorEl) {
     errorEl.textContent = '';
     errorEl.classList.remove('show');
   }
-  
+
   showLoading(submitBtn, "Inloggen...");
-  
+
   try {
     const data = await AuthAPI.login(email, password);
+    console.log('[DEBUG] Login successful, redirecting...');
     hideLoading(submitBtn);
     showToast(`Welkom, ${data.user.first_name}!`, 'success');
-    
+
     // Doorsturen naar hoofdapp
     window.location.href = 'index.html';
   } catch (error) {
+    console.error('[DEBUG] Login error in handleLogin:', error.message);
     hideLoading(submitBtn);
     if (errorEl) {
       errorEl.textContent = error.message;
       errorEl.classList.add('show');
+    } else {
+      alert('Login fout: ' + error.message);
     }
   }
 }
@@ -166,16 +172,28 @@ function renderLogin() {
         `<button class="quick-login-btn" data-email="${a.email}" data-password="${a.password}">${a.label}</button>`
       ).join('');
       quickLogin.querySelectorAll('.quick-login-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.getElementById('login-email').value = btn.dataset.email;
-          document.getElementById('login-password').value = btn.dataset.password;
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const emailInput = document.getElementById('login-email');
+          const passwordInput = document.getElementById('login-password');
+          if (!emailInput || !passwordInput) {
+            console.error('[DEBUG] Login inputs not found');
+            return;
+          }
+          emailInput.value = btn.dataset.email;
+          passwordInput.value = btn.dataset.password;
+          console.log('[DEBUG] Quick-login clicked for:', btn.dataset.email);
           // Vorige fout wissen
           const errorEl = document.getElementById('login-error');
           if (errorEl) {
             errorEl.textContent = '';
             errorEl.classList.remove('show');
           }
-          form.requestSubmit();
+          // Direct handleLogin aanroepen ipv requestSubmit (browser compatibiliteit)
+          handleLogin({
+            preventDefault: () => {},
+            target: form
+          });
         });
       });
     }

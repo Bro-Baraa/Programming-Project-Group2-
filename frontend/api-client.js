@@ -103,21 +103,41 @@ const AuthAPI = {
     const formData = new URLSearchParams();
     formData.append('username', email);
     formData.append('password', password);
-    
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: formData
-    });
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Login failed' }));
-      throw new Error(error.detail);
+
+    const url = `${API_BASE_URL}/auth/login`;
+    console.log('[DEBUG] Login request to:', url);
+    console.log('[DEBUG] Login email:', email);
+
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formData
+      });
+    } catch (networkError) {
+      console.error('[DEBUG] Network error during login:', networkError);
+      throw new Error('Kan geen verbinding maken met de server. Is de backend gestart?');
     }
-    
+
+    console.log('[DEBUG] Login response status:', response.status);
+
+    if (!response.ok) {
+      let errorText;
+      try {
+        const errorJson = await response.json();
+        errorText = errorJson.detail || JSON.stringify(errorJson);
+      } catch (e) {
+        errorText = `HTTP ${response.status} - ${response.statusText}`;
+      }
+      console.error('[DEBUG] Login error:', errorText);
+      throw new Error(errorText);
+    }
+
     const data = await response.json();
+    console.log('[DEBUG] Login success, user:', data.user?.email, 'role:', data.user?.role);
     setToken(data.access_token);
     setCurrentUser(data.user);
     return data;
