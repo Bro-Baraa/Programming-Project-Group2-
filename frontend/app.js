@@ -849,15 +849,26 @@ function selectProposalForReview(internshipId) {
   // Actieknoppen verbinden
   const actionsDiv = document.getElementById('review-actions');
   if (actionsDiv) {
-    actionsDiv.innerHTML = `
-      <button id="btn-approve" class="btn success">✓ Goedkeuren</button>
-      <button id="btn-reject" class="btn danger">✗ Afkeuren</button>
-      <button id="btn-changes" class="btn secondary">⚠ Aanpassingen Vereist</button>
-    `;
-
-    document.getElementById('btn-approve')?.addEventListener('click', () => doReview(internship.id, 'Goedgekeurd'));
-    document.getElementById('btn-reject')?.addEventListener('click', () => doReview(internship.id, 'Afgekeurd'));
-    document.getElementById('btn-changes')?.addEventListener('click', () => doReview(internship.id, 'Aanpassingen Vereist'));
+    const status = internship.status;
+    if (status === 'Ingediend' || status === 'Aanpassingen Vereist') {
+      // Eerst "In Beoordeling" zetten
+      actionsDiv.innerHTML = `
+        <button id="btn-review" class="btn">🔍 In Beoordeling Zetten</button>
+      `;
+      document.getElementById('btn-review')?.addEventListener('click', () => doReview(internship.id, 'In Beoordeling'));
+    } else if (status === 'In Beoordeling') {
+      // Dan pas beslissen
+      actionsDiv.innerHTML = `
+        <button id="btn-approve" class="btn success">✓ Goedkeuren</button>
+        <button id="btn-reject" class="btn danger">✗ Afkeuren</button>
+        <button id="btn-changes" class="btn secondary">⚠ Aanpassingen Vereist</button>
+      `;
+      document.getElementById('btn-approve')?.addEventListener('click', () => doReview(internship.id, 'Goedgekeurd'));
+      document.getElementById('btn-reject')?.addEventListener('click', () => doReview(internship.id, 'Afgekeurd'));
+      document.getElementById('btn-changes')?.addEventListener('click', () => doReview(internship.id, 'Aanpassingen Vereist'));
+    } else {
+      actionsDiv.innerHTML = '<p class="hint">Voorstel is al beoordeeld.</p>';
+    }
   }
 }
 

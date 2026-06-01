@@ -208,7 +208,16 @@ class TestInternshipWorkflow:
         """Test valid status transition via proposal approval workflow."""
         internship_id = created_internship["id"]
 
-        # Approve proposal: This updates both proposal and internship status to "Goedgekeurd"
+        # Step 1: Set to "In Beoordeling"
+        response = client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "In Beoordeling", "feedback": ""},
+            headers=auth_headers_committee
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "In Beoordeling"
+
+        # Step 2: Approve proposal
         response = client.patch(
             f"/internships/{internship_id}/proposal",
             json={"status": "Goedgekeurd", "feedback": ""},
@@ -229,7 +238,15 @@ class TestInternshipWorkflow:
         """Test that requesting changes requires feedback."""
         internship_id = created_internship["id"]
 
-        # Cannot set status to "Aanpassingen Vereist" without providing feedback
+        # Step 1: Set to "In Beoordeling"
+        response = client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "In Beoordeling", "feedback": ""},
+            headers=auth_headers_committee
+        )
+        assert response.status_code == 200
+
+        # Step 2: Cannot set status to "Aanpassingen Vereist" without providing feedback
         response = client.patch(
             f"/internships/{internship_id}/proposal",
             json={"status": "Aanpassingen Vereist"},  # Missing feedback
@@ -245,7 +262,7 @@ class TestInternshipWorkflow:
         # Students cannot use the proposal approval endpoint
         response = client.patch(
             f"/internships/{internship_id}/proposal",
-            json={"status": "Goedgekeurd"},
+            json={"status": "In Beoordeling"},
             headers=auth_headers_student
         )
         assert response.status_code == 403
@@ -256,7 +273,15 @@ class TestInternshipWorkflow:
 
         internship_id = created_internship["id"]
 
-        # Step 1: Approve the proposal first
+        # Step 1: Set to "In Beoordeling"
+        response = client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "In Beoordeling", "feedback": ""},
+            headers=auth_headers_committee
+        )
+        assert response.status_code == 200
+
+        # Step 2: Approve the proposal
         response = client.patch(
             f"/internships/{internship_id}/proposal",
             json={"status": "Goedgekeurd", "feedback": ""},

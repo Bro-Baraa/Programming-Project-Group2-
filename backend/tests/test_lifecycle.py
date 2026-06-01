@@ -181,6 +181,13 @@ class TestReviewProposal:
 
     def test_committee_approves(self, db, pending_internship, test_committee, config):
         lifecycle = InternshipLifecycle(db, config)
+        # Eerst naar "In Beoordeling" zetten
+        lifecycle.review_proposal(
+            internship_id=pending_internship.id,
+            actor=test_committee,
+            decision="In Beoordeling",
+        )
+        # Daarna goedkeuren
         result = lifecycle.review_proposal(
             internship_id=pending_internship.id,
             actor=test_committee,
@@ -191,6 +198,11 @@ class TestReviewProposal:
 
     def test_committee_rejects(self, db, pending_internship, test_committee, config):
         lifecycle = InternshipLifecycle(db, config)
+        lifecycle.review_proposal(
+            internship_id=pending_internship.id,
+            actor=test_committee,
+            decision="In Beoordeling",
+        )
         result = lifecycle.review_proposal(
             internship_id=pending_internship.id,
             actor=test_committee,
@@ -202,6 +214,11 @@ class TestReviewProposal:
         self, db, pending_internship, test_committee, config
     ):
         lifecycle = InternshipLifecycle(db, config)
+        lifecycle.review_proposal(
+            internship_id=pending_internship.id,
+            actor=test_committee,
+            decision="In Beoordeling",
+        )
         result = lifecycle.review_proposal(
             internship_id=pending_internship.id,
             actor=test_committee,
@@ -215,6 +232,11 @@ class TestReviewProposal:
         self, db, pending_internship, test_committee, config
     ):
         lifecycle = InternshipLifecycle(db, config)
+        lifecycle.review_proposal(
+            internship_id=pending_internship.id,
+            actor=test_committee,
+            decision="In Beoordeling",
+        )
         with pytest.raises(HTTPException) as exc:
             lifecycle.review_proposal(
                 internship_id=pending_internship.id,
@@ -229,7 +251,7 @@ class TestReviewProposal:
             lifecycle.review_proposal(
                 internship_id=pending_internship.id,
                 actor=test_student,
-                decision="Goedgekeurd",
+                decision="In Beoordeling",
             )
         assert exc.value.status_code == 403
 
@@ -237,6 +259,11 @@ class TestReviewProposal:
         self, db, pending_internship, test_committee, config
     ):
         lifecycle = InternshipLifecycle(db, config)
+        lifecycle.review_proposal(
+            internship_id=pending_internship.id,
+            actor=test_committee,
+            decision="In Beoordeling",
+        )
         with pytest.raises(HTTPException) as exc:
             lifecycle.review_proposal(
                 internship_id=pending_internship.id,
@@ -262,6 +289,11 @@ class TestUploadAgreement:
             start_date=date.today(),
             end_date=date.today(),
             description="Test",
+        )
+        lifecycle.review_proposal(
+            internship_id=result.internship.id,
+            actor=test_committee,
+            decision="In Beoordeling",
         )
         lifecycle.review_proposal(
             internship_id=result.internship.id,
@@ -352,6 +384,11 @@ class TestValidateAgreement:
         lifecycle.review_proposal(
             internship_id=result.internship.id,
             actor=test_committee,
+            decision="In Beoordeling",
+        )
+        lifecycle.review_proposal(
+            internship_id=result.internship.id,
+            actor=test_committee,
             decision="Goedgekeurd",
         )
         from io import BytesIO
@@ -427,6 +464,11 @@ class TestResubmitProposal:
         lifecycle.review_proposal(
             internship_id=result.internship.id,
             actor=test_committee,
+            decision="In Beoordeling",
+        )
+        lifecycle.review_proposal(
+            internship_id=result.internship.id,
+            actor=test_committee,
             decision="Aanpassingen Vereist",
             feedback="Expand scope",
         )
@@ -440,8 +482,8 @@ class TestResubmitProposal:
             new_description="Expanded scope description",
         )
         internship = result.internship
-        assert internship.status == "Ingediend"
-        assert internship.proposal.status == "Ingediend"
+        assert internship.status == "In Beoordeling"
+        assert internship.proposal.status == "In Beoordeling"
         assert internship.proposal.description == "Expanded scope description"
         assert internship.proposal.submitted_at is not None
 
@@ -460,6 +502,11 @@ class TestResubmitProposal:
             start_date=date.today(),
             end_date=date.today(),
             description="Test",
+        )
+        lifecycle.review_proposal(
+            internship_id=result.internship.id,
+            actor=test_committee,
+            decision="In Beoordeling",
         )
         lifecycle.review_proposal(
             internship_id=result.internship.id,

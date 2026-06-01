@@ -19,8 +19,9 @@ from app.models import Agreement, Company, Internship, Proposal, User
 
 # ── Internal: legal status transitions ──
 _TRANSITIONS: dict[str, set[str]] = {
-    "Ingediend": {"Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist"},
-    "Aanpassingen Vereist": {"Ingediend"},
+    "Ingediend": {"In Beoordeling"},
+    "In Beoordeling": {"Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist"},
+    "Aanpassingen Vereist": {"In Beoordeling"},
     "Goedgekeurd": {"Overeenkomst Ingediend"},
     "Overeenkomst Ingediend": {"Lopend"},
 }
@@ -363,12 +364,12 @@ class InternshipLifecycle:
                 detail="Can only resubmit when changes are requested",
             )
 
-        self._assert_transition(internship.status, "Ingediend")
+        self._assert_transition(internship.status, "In Beoordeling")
 
         internship.proposal.description = new_description
-        internship.proposal.status = "Ingediend"
+        internship.proposal.status = "In Beoordeling"
         internship.proposal.submitted_at = self._now()
-        internship.status = "Ingediend"
+        internship.status = "In Beoordeling"
 
         self.db.commit()
         self.db.refresh(internship)
