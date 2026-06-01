@@ -305,7 +305,7 @@ async function renderView() {
     const tpl = document.getElementById(templateId);
     if (tpl) {
       content.appendChild(tpl.content.cloneNode(true));
-      wireRoleInteractions(role, view);
+      await wireRoleInteractions(role, view);
     }
   } catch (error) {
     content.innerHTML = `<div class="error-message">Fout bij laden: ${error.message}</div>`;
@@ -389,7 +389,7 @@ async function refreshInternshipData() {
 // Rol interacties
 // ============================================
 
-function wireRoleInteractions(role, view) {
+async function wireRoleInteractions(role, view) {
   // STUDENT
   if (role === 'student') {
     if (view === 'dashboard') {
@@ -718,7 +718,7 @@ function wireAgreementUpload() {
   });
 }
 
-function renderStudentEvaluations() {
+async function renderStudentEvaluations() {
   const tbody = document.querySelector('table tbody');
   if (tbody && currentEvaluations.length > 0) {
     tbody.innerHTML = currentEvaluations.map(ev => `
@@ -731,6 +731,44 @@ function renderStudentEvaluations() {
     `).join('');
   } else if (tbody) {
     tbody.innerHTML = '<tr><td colspan="4">Geen evaluaties gevonden</td></tr>';
+  }
+
+  // US-09: Eindoverzicht ophalen
+  const finalSummary = document.getElementById('final-summary');
+  if (!finalSummary || !currentInternship) return;
+
+  try {
+    const report = await InternshipsAPI.getFinalReport(currentInternship.id);
+    if (!report || !report.rules || report.rules.length === 0) {
+      finalSummary.innerHTML = `
+        <p><strong>Status:</strong> Afwachten</p>
+        <p>De finale evaluatie is nog niet ingediend.</p>
+      `;
+      return;
+    }
+
+    const rows = report.rules.map(r => `
+      <tr>
+        <td>${r.competency_name}</td>
+        <td>${r.weight}%</td>
+        <td>${r.score !== null ? r.score : '-'}</td>
+        <td>${r.student_description || '-'}</td>
+        <td>${r.evaluator_feedback || '-'}</td>
+      </tr>
+    `).join('');
+
+    finalSummary.innerHTML = `
+      <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${report.weighted_average_score !== null ? report.weighted_average_score.toFixed(2) : '-'} / 5</span></p>
+      <table style="margin-top: 0.5rem;">
+        <thead>
+          <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Mijn beschrijving</th><th>Feedback</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  } catch (error) {
+    console.error('Failed to load final report:', error);
+    finalSummary.innerHTML = '<p class="error">Kon eindoverzicht niet laden.</p>';
   }
 }
 
