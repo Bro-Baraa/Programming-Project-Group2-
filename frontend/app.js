@@ -493,7 +493,7 @@ function renderStudentDashboard() {
     const companyName = currentInternship.company?.name || 'Onbekend';
     const startDate = formatDate(currentInternship.start_date);
     const endDate = formatDate(currentInternship.end_date);
-    const hasAgreement = currentInternship.agreement != null;
+    const hasAgreement = currentInternship.agreement_uploaded === true;
 
     hero.innerHTML = `
       <h2>Mijn Stage</h2>
@@ -689,8 +689,8 @@ function wireAgreementUpload() {
     return;
   }
 
-  // Controleer of overeenkomst al bestaat (backend retourneert object)
-  const hasAgreement = currentInternship.agreement != null;
+  // Controleer of overeenkomst al bestaat (backend list retourneert agreement_uploaded)
+  const hasAgreement = currentInternship.agreement_uploaded === true;
 
   // Statusweergave bijwerken
   const statusText = document.getElementById('agreement-status-text');
@@ -948,7 +948,7 @@ async function renderCommitteeOverview() {
           <td>${p.company?.name || 'Onbekend'}</td>
           <td>${formatDate(p.start_date)} - ${formatDate(p.end_date)}</td>
           <td><span class="status-pill ${getStatusClass(p.status)}">${p.status}</span></td>
-          <td>${p.agreement != null ? '<span class="status-pill status-good">Ontvangen</span>' : '<span class="status-pill status-warn">Nog niet</span>'}</td>
+          <td>${p.agreement_uploaded ? '<span class="status-pill status-good">Ontvangen</span>' : '<span class="status-pill status-warn">Nog niet</span>'}</td>
         </tr>
       `).join('');
     }

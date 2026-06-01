@@ -23,7 +23,7 @@ _TRANSITIONS: dict[str, set[str]] = {
     "In Beoordeling": {"Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist"},
     "Aanpassingen Vereist": {"In Beoordeling"},
     "Goedgekeurd": {"Overeenkomst Ingediend"},
-    "Overeenkomst Ingediend": {"Lopend"},
+    "Overeenkomst Ingediend": {"Lopend", "Overeenkomst Ingediend"},
 }
 
 
