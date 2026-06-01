@@ -1,20 +1,22 @@
 @echo off
+setlocal enabledelayedexpansion
 REM Easy Windows startup script — starts backend + frontend
 REM Just double-click this file, or run "start" in Command Prompt
 REM
+
 cd /d "%~dp0"
 
 echo ============================================
 echo  Stage Monitoring Tool — Windows Startscript
 echo ============================================
-echo.
+echo(
 
 REM Check if Python is available
-where python >nul 2>&1 (
+where python >nul 2>&1
+if !errorlevel! == 0 (
     echo [OK] python found
     python start.py
-    echo.
-    if %ERRORLEVEL% NEQ 0 (
+    if !errorlevel! neq 0 (
         echo.
         echo ============================================
         echo  Something went wrong. Check startup.log
@@ -25,11 +27,11 @@ where python >nul 2>&1 (
     goto done
 )
 
-where py >nul 2>&1 (
+where py >nul 2>&1
+if !errorlevel! == 0 (
     echo [OK] py found
     py start.py
-    echo.
-    if %ERRORLEVEL% NEQ 0 (
+    if !errorlevel! neq 0 (
         echo.
         echo ============================================
         echo  Something went wrong. Check startup.log
@@ -49,4 +51,5 @@ echo Python venv if one doesn't exist. But you DO need Python first.
 echo.
 pause
 
-done:
+:done
+endlocal
