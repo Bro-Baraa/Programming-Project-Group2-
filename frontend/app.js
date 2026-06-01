@@ -5,7 +5,7 @@
 const roleViews = {
   student: ["dashboard", "voorstel", "logboek", "overeenkomst", "evaluaties"],
   committee: ["voorstellen", "overzicht"],
-  teacher: ["opvolging", "evaluatie"],
+  teacher: ["opvolging", "evaluatie", "eindoverzicht"],
   mentor: ["validatie", "evaluatie"],
   admin: ["competenties"],
 };
@@ -29,6 +29,7 @@ const templates = {
   "committee-overzicht": "commissie-overzicht-template",
   teacher: "docent-template",
   "teacher-evaluatie": "docent-evaluatie-template",
+  "teacher-eindoverzicht": "docent-eindoverzicht-template",
   mentor: "mentor-template",
   "mentor-evaluatie": "mentor-evaluatie-template",
   admin: "admin-template",
@@ -429,6 +430,9 @@ function wireRoleInteractions(role, view) {
     }
     if (view === 'evaluatie') {
       wireEvaluationForm();
+    }
+    if (view === 'eindoverzicht') {
+      renderTeacherFinalReport();
     }
   }
 
@@ -1099,6 +1103,59 @@ function renderCompetencyManager() {
   });
   
   render();
+}
+
+// ============================================
+// Docent eindoverzicht
+// ============================================
+
+async function renderTeacherFinalReport() {
+  const container = document.getElementById('final-report-content');
+  if (!container) return;
+
+  if (!currentInternship) {
+    container.innerHTML = '<p>Selecteer een stage via het navigatiemenu.</p>';
+    return;
+  }
+
+  container.innerHTML = '<p>Laden...</p>';
+
+  try {
+    const report = await InternshipsAPI.getFinalReport(currentInternship.id);
+    if (!report || !report.rules || report.rules.length === 0) {
+      container.innerHTML = '<p>Geen eindoverzicht beschikbaar. Finaliseer eerst een evaluatie.</p>';
+      return;
+    }
+
+    const rows = report.rules.map(r => `
+      <tr>
+        <td>${r.competency_name}</td>
+        <td>${r.weight}%</td>
+        <td>${r.score !== null ? r.score : '-'}</td>
+        <td>${r.student_description || '-'}</td>
+        <td>${r.evaluator_feedback || '-'}</td>
+      </tr>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="panel card" style="margin-top: 1rem;">
+        <p><strong>Student:</strong> ${currentInternship.student_name || 'Onbekend'}</p>
+        <p><strong>Bedrijf:</strong> ${currentInternship.company_name || 'Onbekend'}</p>
+        <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} – ${formatDate(currentInternship.end_date)}</p>
+        <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${report.weighted_average_score !== null ? report.weighted_average_score.toFixed(2) : '-'} / 5</span></p>
+      </div>
+      <table style="margin-top: 1rem;">
+        <thead>
+          <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Student beschrijving</th><th>Feedback</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <button class="btn" style="margin-top: 1rem;" onclick="window.print()">Afdrukken</button>
+    `;
+  } catch (error) {
+    console.error('Failed to load final report:', error);
+    container.innerHTML = '<p class="error">Kon eindoverzicht niet laden.</p>';
+  }
 }
 
 // ============================================

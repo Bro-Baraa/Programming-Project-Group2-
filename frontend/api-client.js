@@ -226,6 +226,10 @@ const InternshipsAPI = {
   
   async getDashboardStats() {
     return apiRequest('/internships/stats/dashboard');
+  },
+
+  async getFinalReport(internshipId) {
+    return apiRequest(`/internships/${internshipId}/final-report`);
   }
 };
 
