@@ -620,3 +620,48 @@ class TestEvaluations:
             headers=auth_headers_student
         )
         assert response.status_code == 403
+
+    def test_student_can_update_own_description(self, client, auth_headers_student, created_evaluation, db):
+        """US-06: Student can update their own student_description on evaluation rules."""
+        from app.models import EvaluationRule
+
+        evaluation_id = created_evaluation["id"]
+
+        # Get the first rule for this evaluation
+        rule = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).first()
+        assert rule is not None, "Evaluation should have rules created automatically"
+
+        update_data = {
+            "student_description": "I learned how to build REST APIs during this week"
+        }
+
+        response = client.patch(
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            json=update_data,
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["student_description"] == "I learned how to build REST APIs during this week"
+
+    def test_student_cannot_update_score_or_feedback(self, client, auth_headers_student, created_evaluation, db):
+        """US-06: Student cannot update score or evaluator_feedback on evaluation rules."""
+        from app.models import EvaluationRule
+
+        evaluation_id = created_evaluation["id"]
+
+        # Get the first rule for this evaluation
+        rule = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).first()
+        assert rule is not None, "Evaluation should have rules created automatically"
+
+        # Try to set score (should be ignored by service)
+        response = client.patch(
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            json={"score": 5, "student_description": "Valid description"},
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["student_description"] == "Valid description"
+        # Score should remain unchanged (None)
+        assert data["score"] is None

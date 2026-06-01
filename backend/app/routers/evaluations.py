@@ -63,7 +63,7 @@ def update_evaluation_rule(
     rule_id: int,
     update: EvaluationRuleUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_staff),
+    current_user: User = Depends(get_current_active_user),
 ):
     """US-06, US-16, US-18, US-23: Update an evaluation rule
 
