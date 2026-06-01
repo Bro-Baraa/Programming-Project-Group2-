@@ -617,13 +617,22 @@ function wireLogbookForm() {
     showLoading(submitBtn, 'Indienen...');
 
     try {
-      await InternshipsAPI.createLogbook(currentInternship.id, {
-        week_number: parseInt(week),
-        tasks: tasks,
-        reflection: document.getElementById('log-reflection').value,
-        issues: document.getElementById('log-issues').value,
-        status: 'submitted'
-      });
+      // Zoek of maak logboek
+      let logbook = currentLogbooks.find(lb => lb.week_number === parseInt(week));
+      
+      if (!logbook) {
+        // Maak eerst concept aan
+        logbook = await InternshipsAPI.createLogbook(currentInternship.id, {
+          week_number: parseInt(week),
+          tasks: tasks,
+          reflection: document.getElementById('log-reflection').value,
+          issues: document.getElementById('log-issues').value,
+          status: 'draft'
+        });
+      }
+
+      // Submit via dedicated endpoint
+      await InternshipsAPI.submitLogbook(logbook.id);
 
       hideLoading(submitBtn);
       showToast(`Logboek week ${week} ingediend!`, 'success');

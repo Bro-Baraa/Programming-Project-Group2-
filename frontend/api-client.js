@@ -230,6 +230,12 @@ const InternshipsAPI = {
 
   async getFinalReport(internshipId) {
     return apiRequest(`/internships/${internshipId}/final-report`);
+  },
+
+  async submitLogbook(logbookId) {
+    return apiRequest(`/internships/logbooks/${logbookId}/submit`, {
+      method: 'POST'
+    });
   }
 };
 

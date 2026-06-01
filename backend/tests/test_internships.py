@@ -404,6 +404,74 @@ class TestLogbooks:
         assert len(data) == 1
         assert data[0]["week_number"] == 1
 
+    def test_student_can_submit_logbook(self, client, auth_headers_student, internship_with_logbook, db):
+        """US-05: Student kan logboek definitief indienen via submit endpoint."""
+        from app.models import Logbook
+        
+        # Create logbook in draft
+        logbook = Logbook(
+            internship_id=internship_with_logbook.id,
+            week_number=1,
+            tasks="Week 1 tasks",
+            reflection="Week 1 reflection",
+            status="draft"
+        )
+        db.add(logbook)
+        db.commit()
+        db.refresh(logbook)
+        
+        # Submit logbook
+        response = client.post(
+            f"/internships/logbooks/{logbook.id}/submit",
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "submitted"
+        assert data["submitted_at"] is not None
+
+    def test_non_student_cannot_submit_logbook(self, client, auth_headers_mentor, internship_with_logbook, db):
+        """US-05: Alleen student kan logboek indienen."""
+        from app.models import Logbook
+        
+        logbook = Logbook(
+            internship_id=internship_with_logbook.id,
+            week_number=1,
+            tasks="Tasks",
+            reflection="Reflection",
+            status="draft"
+        )
+        db.add(logbook)
+        db.commit()
+        db.refresh(logbook)
+        
+        response = client.post(
+            f"/internships/logbooks/{logbook.id}/submit",
+            headers=auth_headers_mentor
+        )
+        assert response.status_code == 403
+
+    def test_cannot_submit_already_submitted_logbook(self, client, auth_headers_student, internship_with_logbook, db):
+        """US-05: Al ingediend logboek kan niet opnieuw worden ingediend."""
+        from app.models import Logbook
+        
+        logbook = Logbook(
+            internship_id=internship_with_logbook.id,
+            week_number=1,
+            tasks="Tasks",
+            reflection="Reflection",
+            status="submitted"
+        )
+        db.add(logbook)
+        db.commit()
+        db.refresh(logbook)
+        
+        response = client.post(
+            f"/internships/logbooks/{logbook.id}/submit",
+            headers=auth_headers_student
+        )
+        assert response.status_code == 400
+
 
 class TestDashboardStats:
     """Test dashboard statistics."""

@@ -112,3 +112,29 @@ def update_logbook(
         raise HTTPException(status_code=404, detail="Logbook not found")
 
     return update_logbook_svc(db, logbook, current_user, update)
+
+
+@router.post("/logbooks/{logbook_id}/submit", response_model=LogbookResponse)
+def submit_logbook(
+    logbook_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_student),
+):
+    """US-05: Student definitively submits a logbook"""
+    logbook = db.query(Logbook).filter(Logbook.id == logbook_id).first()
+    if not logbook:
+        raise HTTPException(status_code=404, detail="Logbook not found")
+
+    if logbook.internship.student_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    if logbook.status == "submitted":
+        raise HTTPException(status_code=400, detail="Logbook already submitted")
+
+    logbook.status = "submitted"
+    from datetime import datetime, UTC
+    logbook.submitted_at = datetime.now(UTC)
+
+    db.commit()
+    db.refresh(logbook)
+    return logbook
