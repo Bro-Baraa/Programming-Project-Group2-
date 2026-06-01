@@ -10,9 +10,16 @@ Een compleet stagevolgsysteem voor de opleiding Toegepaste Informatica (Erasmus 
 
 ### Optie 1: Alles tegelijk starten
 
+**macOS / Linux:**
 ```bash
 ./start.sh
 ```
+
+**Windows:**
+```batch
+start.bat
+```
+Of dubbelklik op `start.bat` in de Verkenner.
 
 Dit start:
 - **Backend API**: http://localhost:8001
@@ -20,12 +27,14 @@ Dit start:
 
 Ga dan naar **http://localhost:8080**
 
+> **Windows opmerking:** Je hebt Python nodig (download via [python.org](https://python.org)). De script maakt automatisch een virtuele omgeving en installeert alles. Geen `uv` of Node.js nodig.
+
 ### Optie 2: Handmatig
 
 **Terminal 1 — Backend:**
 ```bash
 cd backend
-cp .env.example .env
+cp .env.example .env        # Windows: copy .env.example .env
 python init_admin.py        # Eerste keer: database + testgebruikers
 uvicorn app.main:app --reload
 ```
@@ -33,7 +42,7 @@ uvicorn app.main:app --reload
 **Terminal 2 — Frontend:**
 ```bash
 cd frontend
-python3 -m http.server 8080
+python3 -m http.server 8080   # Windows: python -m http.server 8080
 ```
 
 Bezoek http://localhost:8080
@@ -52,9 +61,17 @@ Swagger docs: http://localhost:8001/docs
 
 ## Eerste keer instellen
 
+**macOS / Linux:**
 ```bash
 cd backend
 cp .env.example .env
+python init_admin.py
+```
+
+**Windows:**
+```batch
+cd backend
+copy .env.example .env
 python init_admin.py
 ```
 
@@ -123,3 +140,5 @@ cd backend
 python seed.py          # basis users + competenties
 python seed_complete.py  # uitgebreidere testdata
 ```
+
+> **Windows:** Gebruik `python` in plaats van `python3` en `pytest` via `python -m pytest` als het commando niet in PATH staat.

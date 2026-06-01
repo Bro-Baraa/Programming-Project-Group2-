@@ -110,10 +110,15 @@ def ensure_env_file() -> None:
 
 # Keep track of running subprocesses so we can clean them up on exit
 _children: list[subprocess.Popen] = []
+_cleanup_done = False
 
 
 def cleanup(signum=None, frame=None) -> None:
     """Terminate all spawned child processes gracefully."""
+    global _cleanup_done
+    if _cleanup_done:
+        return
+    _cleanup_done = True
     log("")
     log("Servers stoppen...")
     for proc in _children:
@@ -121,7 +126,15 @@ def cleanup(signum=None, frame=None) -> None:
             try:
                 log(f"  Terminating process PID={proc.pid}")
                 if platform.system() == "Windows":
-                    proc.terminate()
+                    try:
+                        proc.send_signal(signal.CTRL_BREAK_EVENT)
+                    except (ValueError, OSError):
+                        proc.terminate()
+                    try:
+                        proc.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        log(f"  Killing PID={proc.pid} (didn't terminate)")
+                        proc.kill()
                 else:
                     proc.terminate()
                     try:
@@ -346,10 +359,18 @@ def start_backend(python_runner: str) -> subprocess.Popen:
         "app.main:app",
         "--reload",
         "--port", str(BACKEND_PORT),
+        "--host", "0.0.0.0",
     ]
     log_command(cmd, PROJECT_DIR / "backend")
     log("Starting backend process...")
-    return subprocess.Popen(cmd, cwd=PROJECT_DIR / "backend", stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    kwargs = {
+        "cwd": PROJECT_DIR / "backend",
+        "stderr": subprocess.PIPE,
+        "stdout": subprocess.PIPE,
+    }
+    if platform.system() == "Windows":
+        kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+    return subprocess.Popen(cmd, **kwargs)
 
 
 def start_frontend() -> subprocess.Popen:
