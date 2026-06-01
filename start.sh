@@ -144,11 +144,13 @@ FRONTEND_PID=$!
 
 sleep 1
 
+URL="http://localhost:$FRONTEND_PORT"
+
 echo ""
 echo "===================================="
 echo -e "${GREEN}✓ Alles draait!${NC}"
 echo ""
-echo "  Frontend:  http://localhost:$FRONTEND_PORT"
+echo "  Frontend:  $URL"
 echo "  Backend:   http://localhost:$BACKEND_PORT"
 echo "  API docs:  http://localhost:$BACKEND_PORT/docs"
 echo ""
@@ -158,6 +160,15 @@ echo "  student1@school.be / student123"
 echo ""
 echo "Druk Ctrl+C om te stoppen."
 echo ""
+
+# Open browser automatically
+if command -v open >/dev/null 2>&1; then
+    # macOS
+    open "$URL" 2>/dev/null || true
+elif command -v xdg-open >/dev/null 2>&1; then
+    # Linux
+    xdg-open "$URL" 2>/dev/null || true
+fi
 
 # Wait for both processes
 wait

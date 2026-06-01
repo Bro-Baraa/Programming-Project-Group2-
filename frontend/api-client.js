@@ -7,39 +7,58 @@ const API_BASE_URL = (() => {
   // Use the same host as the frontend page, but port 8001
   // This works for localhost:8080 → localhost:8001
   // and for remote access: framearch-juan:8080 → framearch-juan:8001
-  const host = window.location.hostname;
+  // Fallback to localhost if opened via file:// (hostname is empty)
+  const host = window.location.hostname || 'localhost';
   return `http://${host}:8001`;
 })();
 
-// Token storage
+// Token storage — wrapped in try/catch for file:// protocol where localStorage may fail
 function getToken() {
-  return localStorage.getItem('stageMonitoringToken');
+  try {
+    return localStorage.getItem('stageMonitoringToken');
+  } catch (e) {
+    console.warn('[Auth] localStorage not available:', e.message);
+    return null;
+  }
 }
 
 function setToken(token) {
-  if (token) {
-    localStorage.setItem('stageMonitoringToken', token);
-  } else {
-    localStorage.removeItem('stageMonitoringToken');
+  try {
+    if (token) {
+      localStorage.setItem('stageMonitoringToken', token);
+    } else {
+      localStorage.removeItem('stageMonitoringToken');
+    }
+  } catch (e) {
+    console.warn('[Auth] localStorage not available:', e.message);
   }
 }
 
 function getCurrentUser() {
-  const userJson = localStorage.getItem('stageMonitoringUser');
-  if (!userJson) return null;
   try {
-    return JSON.parse(userJson);
-  } catch {
-    localStorage.removeItem('stageMonitoringUser');
+    const userJson = localStorage.getItem('stageMonitoringUser');
+    if (!userJson) return null;
+    try {
+      return JSON.parse(userJson);
+    } catch {
+      localStorage.removeItem('stageMonitoringUser');
+      return null;
+    }
+  } catch (e) {
+    console.warn('[Auth] localStorage not available:', e.message);
     return null;
   }
 }
 
 function setCurrentUser(user) {
-  if (user) {
-    localStorage.setItem('stageMonitoringUser', JSON.stringify(user));
-  } else {
-    localStorage.removeItem('stageMonitoringUser');
+  try {
+    if (user) {
+      localStorage.setItem('stageMonitoringUser', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('stageMonitoringUser');
+    }
+  } catch (e) {
+    console.warn('[Auth] localStorage not available:', e.message);
   }
 }
 

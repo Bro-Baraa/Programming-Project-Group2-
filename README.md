@@ -25,7 +25,9 @@ Dit start:
 - **Backend API**: http://localhost:8001
 - **Frontend**: http://localhost:8080
 
-Ga dan naar **http://localhost:8080**
+De browser opent automatisch. Zo niet, ga dan naar **http://localhost:8080**.
+
+> **⚠️ Belangrijk:** Open `index.html` niet rechtstreeks in de Verkenner. De app moet altijd via `http://localhost:8080` bereikt worden, anders werkt het inloggen niet.
 
 > **Windows opmerking:** Je hebt Python nodig (download via [python.org](https://python.org)). De script maakt automatisch een virtuele omgeving en installeert alles. Geen `uv` of Node.js nodig.
 

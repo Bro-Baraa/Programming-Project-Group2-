@@ -17,6 +17,7 @@ import subprocess
 import sys
 import time
 import traceback
+import webbrowser
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -428,11 +429,13 @@ def main() -> None:
 
     time.sleep(1)
 
+    url = f"http://localhost:{FRONTEND_PORT}"
+
     log("")
     log("=" * 36)
     log("✓ Alles draait!")
     log("")
-    log(f"  Frontend:  http://localhost:{FRONTEND_PORT}")
+    log(f"  Frontend:  {url}")
     log(f"  Backend:   http://localhost:{BACKEND_PORT}")
     log(f"  API docs:  http://localhost:{BACKEND_PORT}/docs")
     log("")
@@ -442,6 +445,13 @@ def main() -> None:
     log("")
     log("Druk Ctrl+C om te stoppen.")
     log("")
+
+    # Open browser automatically on Windows/macOS
+    try:
+        log(f"Browser openen: {url}")
+        webbrowser.open(url, new=2)  # new=2 = new tab
+    except Exception as e:
+        log(f"Kon browser niet openen: {e}")
 
     # Keep the main thread alive while children run
     try:
