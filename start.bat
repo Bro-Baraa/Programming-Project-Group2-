@@ -11,12 +11,32 @@ echo.
 
 REM Check if Python is available
 where python >nul 2>&1 (
+    echo [OK] python found
     python start.py
+    echo.
+    if %ERRORLEVEL% NEQ 0 (
+        echo.
+        echo ============================================
+        echo  Something went wrong. Check startup.log
+        echo ============================================
+        echo.
+        pause
+    )
     goto done
 )
 
 where py >nul 2>&1 (
+    echo [OK] py found
     py start.py
+    echo.
+    if %ERRORLEVEL% NEQ 0 (
+        echo.
+        echo ============================================
+        echo  Something went wrong. Check startup.log
+        echo ============================================
+        echo.
+        pause
+    )
     goto done
 )
 

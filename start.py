@@ -16,11 +16,49 @@ import signal
 import subprocess
 import sys
 import time
+import traceback
 from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parent
 BACKEND_PORT = 8001
 FRONTEND_PORT = 8080
+
+# Setup logging to file + console
+LOG_FILE = PROJECT_DIR / "startup.log"
+log_handle = open(LOG_FILE, "w", encoding="utf-8", buffering=1)
+
+
+def log(text: str, color: str | None = None) -> None:
+    """Print to console and write to log file."""
+    if color:
+        print(f"{color}{text}\033[0m")
+    else:
+        print(text)
+    log_handle.write(f"{text}\n")
+    log_handle.flush()
+
+
+def log_command(cmd: list[str], cwd: Path | None = None) -> None:
+    log(f"[CMD] {cwd or Path.cwd()} > {' '.join(cmd)}")
+
+
+def log_result(result: subprocess.CompletedProcess) -> None:
+    log(f"[EXIT] code={result.returncode}")
+    if result.stdout:
+        log(f"[STDOUT] {result.stdout.decode('utf-8', errors='replace').strip()}")
+    if result.stderr:
+        log(f"[STDERR] {result.stderr.decode('utf-8', errors='replace').strip()}")
+
+
+def log_env() -> None:
+    log("=" * 50)
+    log(f"Platform:     {platform.platform()}")
+    log(f"Python:       {sys.executable} ({sys.version})")
+    log(f"Project dir:  {PROJECT_DIR}")
+    log(f"uv available: {shutil.which('uv') or 'NO'}")
+    log(f"Working dir:  {os.getcwd()}")
+    log("=" * 50)
+    log("")
 
 
 class Colors:
@@ -34,7 +72,7 @@ class Colors:
 
 def print_color(text: str, color: str = Colors.NC) -> None:
     """Print text with ANSI color codes."""
-    print(f"{color}{text}{Colors.NC}")
+    log(text, color)
 
 
 def print_header() -> None:
@@ -76,24 +114,27 @@ _children: list[subprocess.Popen] = []
 
 def cleanup(signum=None, frame=None) -> None:
     """Terminate all spawned child processes gracefully."""
-    print()
-    print_color("Servers stoppen...", Colors.BLUE)
+    log("")
+    log("Servers stoppen...")
     for proc in _children:
         if proc.poll() is None:
             try:
+                log(f"  Terminating process PID={proc.pid}")
                 if platform.system() == "Windows":
                     proc.terminate()
                 else:
                     proc.terminate()
-                    # Give it a moment, then kill if needed
                     try:
                         proc.wait(timeout=3)
                     except subprocess.TimeoutExpired:
+                        log(f"  Killing PID={proc.pid} (didn't terminate)")
                         proc.kill()
-            except Exception:
-                pass
-    print_color("Gestopt.", Colors.GREEN)
+            except Exception as e:
+                log(f"  Error stopping PID={proc.pid}: {e}")
+    log("Gestopt.")
     if signum is not None:
+        log("Exiting due to signal")
+        log_handle.close()
         sys.exit(0)
 
 
@@ -105,6 +146,25 @@ signal.signal(signal.SIGINT, cleanup)
 signal.signal(signal.SIGTERM, cleanup)
 if hasattr(signal, "SIGBREAK"):
     signal.signal(signal.SIGBREAK, cleanup)
+
+
+def log_fatal_error(msg: str) -> None:
+    """Print a fatal error, log it, and wait for keypress on Windows."""
+    log("")
+    log("=" * 50)
+    log(f"FATAL ERROR: {msg}")
+    log("=" * 50)
+    log(f"Full log written to: {LOG_FILE}")
+    log("")
+    if platform.system() == "Windows":
+        log("Press Enter to exit...")
+        log_handle.flush()
+        try:
+            input()
+        except EOFError:
+            pass
+    log_handle.close()
+    sys.exit(1)
 
 
 def which(cmd: str) -> str | None:
@@ -121,28 +181,36 @@ def detect_python_runner() -> tuple[str, str, bool]:
     use_uv = uv_path is not None
 
     if use_uv:
-        print_color("uv gedetecteerd", Colors.BLUE)
+        log("uv gedetecteerd")
         venv_dir = PROJECT_DIR / "backend" / ".venv"
         if not venv_dir.exists():
-            print_color("Virtuele omgeving niet gevonden. Aanmaken met uv...", Colors.YELLOW)
-            subprocess.run([uv_path, "venv"], cwd=PROJECT_DIR / "backend", check=True)
+            log("Virtuele omgeving niet gevonden. Aanmaken met uv...")
+            cmd = [uv_path, "venv"]
+            log_command(cmd, PROJECT_DIR / "backend")
+            try:
+                result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
+                log_result(result)
+                if result.returncode != 0:
+                    log_fatal_error(f"uv venv failed with exit code {result.returncode}")
+            except Exception as e:
+                log_fatal_error(f"uv venv failed: {e}\n{traceback.format_exc()}")
         return "uv run -- python", "uv run -- python", True
     else:
-        print_color("uv niet gevonden", Colors.BLUE)
+        log("uv niet gevonden")
         venv_python = PROJECT_DIR / "backend" / ".venv" / "bin" / "python"
         if platform.system() == "Windows":
             venv_python = PROJECT_DIR / "backend" / ".venv" / "Scripts" / "python.exe"
 
         if venv_python.exists():
             runner = str(venv_python)
-            print_color(f"Gebruik: {runner}", Colors.BLUE)
+            log(f"Gebruik: {runner}")
             return runner, runner, False
         else:
             if platform.system() == "Windows":
                 runner = sys.executable
             else:
                 runner = "python3"
-            print_color(f"Gebruik: {runner}", Colors.BLUE)
+            log(f"Gebruik: {runner}")
             return runner, runner, False
 
 
@@ -151,10 +219,9 @@ def check_dependencies(python_runner: str, use_uv: bool) -> str:
     Check if uvicorn, fastapi, and sqlalchemy are importable.
     If missing, install them and return the (possibly updated) runner.
     """
-    print_color("Controleren of afhankelijkheden geïnstalleerd zijn...", Colors.BLUE)
+    log("Controleren of afhankelijkheden geïnstalleerd zijn...")
 
     runner = python_runner
-    # Split the runner string into list for subprocess (handles "uv run -- python")
     base_cmd = runner.split()
 
     check_script = (
@@ -163,17 +230,29 @@ def check_dependencies(python_runner: str, use_uv: bool) -> str:
         "missing = [m for m in mods if importlib.util.find_spec(m) is None]; "
         "sys.exit(1 if missing else 0)"
     )
-    result = subprocess.run(base_cmd + ["-c", check_script], cwd=PROJECT_DIR / "backend")
+    cmd = base_cmd + ["-c", check_script]
+    log_command(cmd, PROJECT_DIR / "backend")
+    result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
+    log_result(result)
 
     if result.returncode == 0:
+        log("Dependencies OK")
         return runner
 
-    print_color("Afhankelijkheden ontbreken. Installeren uit requirements.txt...", Colors.YELLOW)
+    log("Afhankelijkheden ontbreken. Installeren uit requirements.txt...")
     req_file = PROJECT_DIR / "backend" / "requirements.txt"
 
     if use_uv:
         uv_path = which("uv")
-        subprocess.run([uv_path, "pip", "install", "-r", str(req_file)], cwd=PROJECT_DIR / "backend", check=True)
+        cmd = [uv_path, "pip", "install", "-r", str(req_file)]
+        log_command(cmd, PROJECT_DIR / "backend")
+        try:
+            result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
+            log_result(result)
+            if result.returncode != 0:
+                log_fatal_error(f"uv pip install failed with exit code {result.returncode}")
+        except Exception as e:
+            log_fatal_error(f"uv pip install failed: {e}\n{traceback.format_exc()}")
     else:
         venv_dir = PROJECT_DIR / "backend" / ".venv"
         venv_bin = venv_dir / "bin"
@@ -181,13 +260,21 @@ def check_dependencies(python_runner: str, use_uv: bool) -> str:
             venv_bin = venv_dir / "Scripts"
 
         if not venv_dir.exists():
-            print_color("Virtuele omgeving aanmaken...", Colors.YELLOW)
-            subprocess.run([sys.executable, "-m", "venv", str(venv_dir)], cwd=PROJECT_DIR / "backend", check=True)
-            # After creating venv, prefer the venv python
+            log("Virtuele omgeving aanmaken...")
+            cmd = [sys.executable, "-m", "venv", str(venv_dir)]
+            log_command(cmd, PROJECT_DIR / "backend")
+            try:
+                result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
+                log_result(result)
+                if result.returncode != 0:
+                    log_fatal_error(f"python -m venv failed with exit code {result.returncode}")
+            except Exception as e:
+                log_fatal_error(f"venv creation failed: {e}\n{traceback.format_exc()}")
             if platform.system() == "Windows":
                 runner = str(venv_dir / "Scripts" / "python.exe")
             else:
                 runner = str(venv_dir / "bin" / "python")
+            log(f"Runner updated to: {runner}")
             base_cmd = runner.split()
 
         pip_path = venv_bin / "pip"
@@ -195,13 +282,19 @@ def check_dependencies(python_runner: str, use_uv: bool) -> str:
             pip_path = venv_bin / "pip.exe"
 
         if pip_path.exists():
-            subprocess.run([str(pip_path), "install", "-r", str(req_file)], cwd=PROJECT_DIR / "backend", check=True)
+            cmd = [str(pip_path), "install", "-r", str(req_file)]
+            log_command(cmd, PROJECT_DIR / "backend")
+            try:
+                result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
+                log_result(result)
+                if result.returncode != 0:
+                    log_fatal_error(f"pip install failed with exit code {result.returncode}")
+            except Exception as e:
+                log_fatal_error(f"pip install failed: {e}\n{traceback.format_exc()}")
         else:
-            print_color("pip niet gevonden in virtuele omgeving. Probeer opnieuw:", Colors.RED)
-            print("  rm -rf backend/.venv && python start.py")
-            sys.exit(1)
+            log_fatal_error("pip niet gevonden in virtuele omgeving. Probeer opnieuw: rm -rf backend/.venv && python start.py")
 
-    print_color("Afhankelijkheden geïnstalleerd.", Colors.GREEN)
+    log("Afhankelijkheden geïnstalleerd.")
     return runner
 
 
@@ -219,21 +312,33 @@ def seed_database_if_empty(init_runner: str) -> None:
         f"conn.close(); "
         f"sys.exit(0 if count > 0 else 1)"
     )
-    result = subprocess.run(base_cmd + ["-c", check_script], cwd=PROJECT_DIR / "backend")
+    cmd = base_cmd + ["-c", check_script]
+    log_command(cmd, PROJECT_DIR / "backend")
+    result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
+    log_result(result)
 
     if db_file.exists() and result.returncode == 0:
+        log("Database OK (users exist)")
         return
 
-    print_color("Database leeg of niet gevonden. Seeding met demo-data...", Colors.YELLOW)
+    log("Database leeg of niet gevonden. Seeding met demo-data...")
     seed_script = PROJECT_DIR / "backend" / "seed_complete.py"
-    subprocess.run(base_cmd + [str(seed_script)], cwd=PROJECT_DIR / "backend", check=True)
-    print_color("Database gevuld!", Colors.GREEN)
-    print()
+    cmd = base_cmd + [str(seed_script)]
+    log_command(cmd, PROJECT_DIR / "backend")
+    try:
+        result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
+        log_result(result)
+        if result.returncode != 0:
+            log_fatal_error(f"seed_complete.py failed with exit code {result.returncode}")
+    except Exception as e:
+        log_fatal_error(f"seed script failed: {e}\n{traceback.format_exc()}")
+    log("Database gevuld!")
+    log("")
 
 
 def start_backend(python_runner: str) -> subprocess.Popen:
     """Start the uvicorn backend server."""
-    print_color(f"Backend starten op http://localhost:{BACKEND_PORT}", Colors.GREEN)
+    log(f"Backend starten op http://localhost:{BACKEND_PORT}")
     base_cmd = python_runner.split()
     cmd = base_cmd + [
         "-m", "uvicorn",
@@ -241,27 +346,42 @@ def start_backend(python_runner: str) -> subprocess.Popen:
         "--reload",
         "--port", str(BACKEND_PORT),
     ]
-    return subprocess.Popen(cmd, cwd=PROJECT_DIR / "backend")
+    log_command(cmd, PROJECT_DIR / "backend")
+    log("Starting backend process...")
+    return subprocess.Popen(cmd, cwd=PROJECT_DIR / "backend", stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
 
 def start_frontend() -> subprocess.Popen:
     """Start the frontend HTTP server."""
-    print_color(f"Frontend starten op http://localhost:{FRONTEND_PORT}", Colors.GREEN)
+    log(f"Frontend starten op http://localhost:{FRONTEND_PORT}")
     cmd = [sys.executable, "-m", "http.server", str(FRONTEND_PORT)]
-    return subprocess.Popen(cmd, cwd=PROJECT_DIR / "frontend")
+    log_command(cmd, PROJECT_DIR / "frontend")
+    return subprocess.Popen(cmd, cwd=PROJECT_DIR / "frontend", stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
 
 def wait_for_backend(proc: subprocess.Popen, timeout: int = 10) -> bool:
     """Wait briefly and check whether the backend process is still alive."""
-    for _ in range(timeout):
+    for i in range(timeout):
         if proc.poll() is not None:
+            log(f"Backend exited early after {i+1}s with code: {proc.poll()}")
+            stderr_data = b""
+            try:
+                stderr_data, _ = proc.communicate(timeout=2)
+            except Exception:
+                pass
+            if stderr_data:
+                log("Backend stderr:")
+                log(stderr_data.decode("utf-8", errors="replace").strip())
             return False
         time.sleep(1)
-    return proc.poll() is None
+    alive = proc.poll() is None
+    log(f"Backend alive after {timeout}s: {alive}")
+    return alive
 
 
 def main() -> None:
     print_header()
+    log_env()
     ensure_env_file()
 
     python_runner, init_runner, use_uv = detect_python_runner()
@@ -274,46 +394,60 @@ def main() -> None:
     _children.append(backend_proc)
 
     if not wait_for_backend(backend_proc):
-        print_color("Backend kon niet starten. Controleer of uvicorn geïnstalleerd is:", Colors.RED)
+        msg = "Backend kon niet starten. Controleer of uvicorn geïnstalleerd is."
         if use_uv:
-            print("  cd backend && uv pip install -r requirements.txt")
+            msg += "  cd backend && uv pip install -r requirements.txt"
         else:
-            print("  cd backend && pip install -r requirements.txt")
-        sys.exit(1)
+            msg += "  cd backend && pip install -r requirements.txt"
+        log_fatal_error(msg)
 
     frontend_proc = start_frontend()
     _children.append(frontend_proc)
 
     time.sleep(1)
 
-    print()
-    print("=" * 36)
-    print_color("✓ Alles draait!", Colors.GREEN)
-    print()
-    print(f"  Frontend:  http://localhost:{FRONTEND_PORT}")
-    print(f"  Backend:   http://localhost:{BACKEND_PORT}")
-    print(f"  API docs:  http://localhost:{BACKEND_PORT}/docs")
-    print()
-    print("Testaccounts:")
-    print("  admin@school.be / admin123")
-    print("  student1@school.be / student123")
-    print()
-    print("Druk Ctrl+C om te stoppen.")
-    print()
+    log("")
+    log("=" * 36)
+    log("✓ Alles draait!")
+    log("")
+    log(f"  Frontend:  http://localhost:{FRONTEND_PORT}")
+    log(f"  Backend:   http://localhost:{BACKEND_PORT}")
+    log(f"  API docs:  http://localhost:{BACKEND_PORT}/docs")
+    log("")
+    log("Testaccounts:")
+    log("  admin@school.be / admin123")
+    log("  student1@school.be / student123")
+    log("")
+    log("Druk Ctrl+C om te stoppen.")
+    log("")
 
     # Keep the main thread alive while children run
     try:
         while True:
             backend_alive = backend_proc.poll() is None
             frontend_alive = frontend_proc.poll() is None
-            if not backend_alive or not frontend_alive:
+            if not backend_alive:
+                log("Backend process stopped unexpectedly!")
+                try:
+                    stderr_data, _ = backend_proc.communicate(timeout=2)
+                    if stderr_data:
+                        log("Backend stderr:")
+                        log(stderr_data.decode("utf-8", errors="replace").strip())
+                except Exception:
+                    pass
+                break
+            if not frontend_alive:
+                log("Frontend process stopped unexpectedly!")
                 break
             time.sleep(1)
     except KeyboardInterrupt:
-        pass
+        log("Ctrl+C pressed")
     finally:
         cleanup()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        log_fatal_error(f"Unhandled exception: {e}\n{traceback.format_exc()}")
