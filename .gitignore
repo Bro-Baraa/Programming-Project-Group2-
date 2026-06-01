@@ -48,5 +48,8 @@ yarn-error.log*
 # Prototype
 prototype/*.db
 
+# Generated files
+startup.log
+
 # Git worktrees
 .worktrees/
