@@ -294,6 +294,71 @@ class InternshipLifecycle:
     # Secondary operations
     # ------------------------------------------------------------------
 
+    def edit_proposal(
+        self,
+        *,
+        internship_id: int,
+        actor: User,
+        description: Optional[str] = None,
+        company_name: Optional[str] = None,
+        company_address: Optional[str] = None,
+        company_sector: Optional[str] = None,
+        contact_person: Optional[str] = None,
+        contact_email: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> ReviewDecision:
+        """Student edits their proposal while status is still 'Ingediend'."""
+        self._assert_role(actor, {"student"})
+
+        internship = self._get_internship_or_404(internship_id)
+        self._assert_access(actor, internship)
+
+        if internship.student_id != actor.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized",
+            )
+
+        if not internship.proposal:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Proposal not found",
+            )
+
+        if internship.status != "Ingediend":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Can only edit proposals that have not yet been reviewed",
+            )
+
+        if description is not None:
+            internship.proposal.description = description
+        internship.proposal.submitted_at = self._now()
+
+        # Update company details if provided
+        if internship.company:
+            if company_name is not None:
+                internship.company.name = company_name
+            if company_address is not None:
+                internship.company.address = company_address
+            if company_sector is not None:
+                internship.company.sector = company_sector
+            if contact_person is not None:
+                internship.company.contact_person = contact_person
+            if contact_email is not None:
+                internship.company.contact_email = contact_email
+
+        # Update internship dates if provided
+        if start_date is not None:
+            internship.start_date = start_date
+        if end_date is not None:
+            internship.end_date = end_date
+
+        self.db.commit()
+        self.db.refresh(internship)
+        return ReviewDecision(internship=internship)
+
     def create_proposal(
         self,
         *,
@@ -376,6 +441,9 @@ class InternshipLifecycle:
         internship.proposal.description = new_description
         internship.proposal.status = "In Beoordeling"
         internship.proposal.submitted_at = self._now()
+        internship.proposal.feedback = None  # Clear old feedback
+        internship.proposal.revision_count = (internship.proposal.revision_count or 0) + 1
+        internship.proposal.resubmitted_at = self._now()
         internship.status = "In Beoordeling"
 
         # Update company details if provided
@@ -400,6 +468,35 @@ class InternshipLifecycle:
         self.db.commit()
         self.db.refresh(internship)
         return ReviewDecision(internship=internship)
+
+    def withdraw_proposal(
+        self,
+        *,
+        internship_id: int,
+        actor: User,
+    ) -> Internship:
+        """Student withdraws (deletes) their internship before it is reviewed.
+        Only allowed when status is 'Ingediend'."""
+        self._assert_role(actor, {"student"})
+
+        internship = self._get_internship_or_404(internship_id)
+        self._assert_access(actor, internship)
+
+        if internship.student_id != actor.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized",
+            )
+
+        if internship.status != "Ingediend":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Can only withdraw proposals that have not yet been reviewed",
+            )
+
+        self.db.delete(internship)
+        self.db.commit()
+        return internship
 
     def validate_agreement(
         self,

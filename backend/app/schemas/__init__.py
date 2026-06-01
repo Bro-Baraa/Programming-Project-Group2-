@@ -33,6 +33,7 @@ from .proposal import (
     ProposalUpdate,
     ProposalResponse,
     ResubmitRequest,
+    EditProposalRequest,
 )
 from .agreement import (
     AgreementBase,
@@ -113,6 +114,7 @@ __all__ = [
     "ProposalUpdate",
     "ProposalResponse",
     "ResubmitRequest",
+    "EditProposalRequest",
     # Agreement
     "AgreementBase",
     "AgreementUpdate",

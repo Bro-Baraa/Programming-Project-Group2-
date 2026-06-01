@@ -325,12 +325,25 @@ const ProposalsAPI = {
       body: JSON.stringify(body)
     });
   },
-  
+
+  async edit(internshipId, data = {}) {
+    return apiRequest(`/internships/${internshipId}/proposal/edit`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
   async resubmit(internshipId, newDescription, extra = {}) {
     const body = { new_description: newDescription, ...extra };
     return apiRequest(`/internships/${internshipId}/resubmit`, {
       method: 'POST',
       body: JSON.stringify(body)
+    });
+  },
+
+  async withdraw(internshipId) {
+    return apiRequest(`/internships/${internshipId}/proposal`, {
+      method: 'DELETE'
     });
   }
 };

@@ -573,7 +573,10 @@ function wireProposalForm() {
   const proposal = currentInternship.proposal;
   const company = currentInternship.company || {};
   const isChangesRequired = currentInternship.status === 'Aanpassingen Vereist';
+  const isIngediend = currentInternship.status === 'Ingediend';
   const feedback = proposal?.feedback;
+  const revisionCount = proposal?.revision_count || 0;
+  const resubmittedAt = proposal?.resubmitted_at;
 
   container.innerHTML = `
     <h2>Mijn Stagevoorstel</h2>
@@ -586,6 +589,8 @@ function wireProposalForm() {
       <p><strong>Contactpersoon:</strong> ${escapeHtml(company.contact_person || 'Onbekend')}</p>
       <p><strong>E-mail:</strong> ${escapeHtml(company.contact_email || 'Onbekend')}</p>
       <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} – ${formatDate(currentInternship.end_date)}</p>
+      ${revisionCount > 0 ? `<p><strong>Aantal herzieningen:</strong> ${revisionCount}</p>` : ''}
+      ${resubmittedAt ? `<p><strong>Laatst herzien:</strong> ${formatDate(resubmittedAt)}</p>` : ''}
       <div class="proposal-description">
         <p><strong>Omschrijving opdracht:</strong></p>
         <div style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
@@ -598,6 +603,55 @@ function wireProposalForm() {
       <div class="info-message warning">
         <p><strong>Feedback van de commissie:</strong></p>
         <p>${escapeHtml(feedback)}</p>
+      </div>
+    ` : ''}
+
+    ${isIngediend ? `
+      <div class="btn-group" style="margin-top: 1rem;">
+        <button id="btn-edit-proposal" class="btn">✏️ Wijzigen</button>
+        <button id="btn-withdraw-proposal" class="btn danger">🗑️ Intrekken</button>
+      </div>
+      <div id="edit-section" style="display: none; margin-top: 1.5rem;">
+        <h3>Voorstel wijzigen</h3>
+        <p class="hint">Pas je voorstel aan voor de commissie het beoordeelt.</p>
+        <form id="edit-form">
+          <div class="row full">
+            <label>Bedrijfsnaam</label>
+            <input type="text" id="edit-company-name" value="${escapeHtml(company.name || '')}" />
+          </div>
+          <div class="row full">
+            <label>Adres</label>
+            <input type="text" id="edit-company-address" value="${escapeHtml(company.address || '')}" />
+          </div>
+          <div class="row full">
+            <label>Sector</label>
+            <input type="text" id="edit-company-sector" value="${escapeHtml(company.sector || '')}" />
+          </div>
+          <div class="row full">
+            <label>Contactpersoon</label>
+            <input type="text" id="edit-contact-person" value="${escapeHtml(company.contact_person || '')}" />
+          </div>
+          <div class="row full">
+            <label>E-mail contactpersoon</label>
+            <input type="email" id="edit-contact-email" value="${escapeHtml(company.contact_email || '')}" />
+          </div>
+          <div class="row full">
+            <label>Stageperiode</label>
+            <div class="date-range">
+              <input type="date" id="edit-start-date" value="${currentInternship.start_date || ''}" />
+              <span>tot</span>
+              <input type="date" id="edit-end-date" value="${currentInternship.end_date || ''}" />
+            </div>
+          </div>
+          <div class="row full">
+            <label>Omschrijving opdracht * (min. 20 karakters)</label>
+            <textarea id="edit-description" rows="4" required minlength="20">${escapeHtml(proposal?.description || '')}</textarea>
+          </div>
+          <div class="btn-group">
+            <button type="submit" class="btn">Wijzigingen opslaan</button>
+            <button type="button" id="btn-cancel-edit" class="btn secondary">Annuleren</button>
+          </div>
+        </form>
       </div>
     ` : ''}
 
@@ -641,12 +695,80 @@ function wireProposalForm() {
           <button type="submit" class="btn">Voorstel Opnieuw Indienen</button>
         </form>
       </div>
-    ` : `
+    ` : ''}
+
+    ${!isIngediend && !isChangesRequired ? `
       <div class="info-message" style="margin-top: 1rem;">
         <p>Je voorstel is ${currentInternship.status === 'In Beoordeling' ? 'in beoordeling' : currentInternship.status === 'Goedgekeurd' ? 'goedgekeurd' : 'afgekeurd'}. Je kunt het op dit moment niet meer wijzigen.</p>
       </div>
-    `}
+    ` : ''}
   `;
+
+  // Wire edit form
+  const editBtn = document.getElementById('btn-edit-proposal');
+  const editSection = document.getElementById('edit-section');
+  const editForm = document.getElementById('edit-form');
+  const cancelEditBtn = document.getElementById('btn-cancel-edit');
+
+  editBtn?.addEventListener('click', () => {
+    if (editSection) editSection.style.display = 'block';
+    editBtn.style.display = 'none';
+    document.getElementById('btn-withdraw-proposal')?.style.display && (document.getElementById('btn-withdraw-proposal').style.display = 'none');
+  });
+
+  cancelEditBtn?.addEventListener('click', () => {
+    if (editSection) editSection.style.display = 'none';
+    editBtn.style.display = 'inline-block';
+    const withdrawBtn = document.getElementById('btn-withdraw-proposal');
+    if (withdrawBtn) withdrawBtn.style.display = 'inline-block';
+  });
+
+  editForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = editForm.querySelector('button[type="submit"]');
+    const description = document.getElementById('edit-description').value;
+
+    if (!description || description.length < 20) {
+      showToast('Omschrijving moet minstens 20 karakters bevatten', 'error');
+      return;
+    }
+
+    showLoading(submitBtn, 'Opslaan...');
+
+    try {
+      await ProposalsAPI.edit(currentInternship.id, {
+        description,
+        company_name: document.getElementById('edit-company-name').value || undefined,
+        company_address: document.getElementById('edit-company-address').value || undefined,
+        company_sector: document.getElementById('edit-company-sector').value || undefined,
+        contact_person: document.getElementById('edit-contact-person').value || undefined,
+        contact_email: document.getElementById('edit-contact-email').value || undefined,
+        start_date: document.getElementById('edit-start-date').value || undefined,
+        end_date: document.getElementById('edit-end-date').value || undefined,
+      });
+      hideLoading(submitBtn);
+      showToast('Wijzigingen opgeslagen!', 'success');
+      await refreshInternshipData();
+      renderView();
+    } catch (error) {
+      hideLoading(submitBtn);
+      showToast(error.message, 'error');
+    }
+  });
+
+  // Wire withdraw button
+  document.getElementById('btn-withdraw-proposal')?.addEventListener('click', async () => {
+    if (!confirm('Weet je zeker dat je je stagevoorstel wilt intrekken? Dit kan niet ongedaan gemaakt worden.')) return;
+
+    try {
+      await ProposalsAPI.withdraw(currentInternship.id);
+      showToast('Voorstel succesvol ingetrokken', 'success');
+      await refreshInternshipData();
+      renderView();
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  });
 
   // Wire resubmit form
   const resubmitForm = document.getElementById('resubmit-form');
@@ -977,6 +1099,11 @@ function selectProposalForReview(internshipId) {
   InternshipsAPI.get(internship.id).then(full => {
     document.getElementById('selected-description').textContent =
       full.proposal?.description || 'Geen omschrijving beschikbaar.';
+    // Vul feedback box met bestaande feedback (issue #5)
+    const feedbackBox = document.getElementById('feedback-box');
+    if (feedbackBox && full.proposal?.feedback) {
+      feedbackBox.value = full.proposal.feedback;
+    }
   }).catch(() => {
     document.getElementById('selected-description').textContent = 'Kon omschrijving niet laden.';
   });

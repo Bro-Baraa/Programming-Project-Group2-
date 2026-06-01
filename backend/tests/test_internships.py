@@ -328,6 +328,162 @@ class TestInternshipWorkflow:
         # Company name is in the nested company object
         assert data["company"]["name"] == "Test Company"
 
+    def test_student_can_edit_proposal_before_review(self, client, auth_headers_student, created_internship):
+        """Student can edit proposal while status is still 'Ingediend'."""
+        internship_id = created_internship["id"]
+
+        response = client.patch(
+            f"/internships/{internship_id}/proposal/edit",
+            json={
+                "description": "Updated internship description",
+                "company_name": "Updated Company"
+            },
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["description"] == "Updated internship description"
+        # Status should remain Ingediend
+        assert data["status"] == "Ingediend"
+
+        # Verify internship company was updated
+        internship = client.get(f"/internships/{internship_id}", headers=auth_headers_student).json()
+        assert internship["company"]["name"] == "Updated Company"
+        assert internship["status"] == "Ingediend"
+
+    def test_student_cannot_edit_proposal_after_review(self, client, auth_headers_student, auth_headers_committee, created_internship):
+        """Student cannot edit proposal once it has been reviewed."""
+        internship_id = created_internship["id"]
+
+        # Committee sets to In Beoordeling
+        response = client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "In Beoordeling", "feedback": ""},
+            headers=auth_headers_committee
+        )
+        assert response.status_code == 200
+
+        # Student tries to edit
+        response = client.patch(
+            f"/internships/{internship_id}/proposal/edit",
+            json={"description": "Should not work"},
+            headers=auth_headers_student
+        )
+        assert response.status_code == 400
+        assert "not yet been reviewed" in response.json()["detail"]
+
+    def test_student_can_withdraw_proposal(self, client, auth_headers_student, created_internship):
+        """Student can withdraw proposal before it is reviewed."""
+        internship_id = created_internship["id"]
+
+        response = client.delete(
+            f"/internships/{internship_id}/proposal",
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+        assert "ingetrokken" in response.json()["detail"]
+
+        # Verify internship is gone
+        response = client.get(f"/internships/{internship_id}", headers=auth_headers_student)
+        assert response.status_code == 404
+
+    def test_student_cannot_withdraw_after_review(self, client, auth_headers_student, auth_headers_committee, created_internship):
+        """Student cannot withdraw proposal after it has been reviewed."""
+        internship_id = created_internship["id"]
+
+        # Committee sets to In Beoordeling
+        response = client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "In Beoordeling", "feedback": ""},
+            headers=auth_headers_committee
+        )
+        assert response.status_code == 200
+
+        # Student tries to withdraw
+        response = client.delete(
+            f"/internships/{internship_id}/proposal",
+            headers=auth_headers_student
+        )
+        assert response.status_code == 400
+        assert "not yet been reviewed" in response.json()["detail"]
+
+    def test_feedback_cleared_on_resubmit(self, client, auth_headers_student, auth_headers_committee, created_internship):
+        """Feedback is cleared when student resubmits after changes requested."""
+        internship_id = created_internship["id"]
+
+        # Committee: In Beoordeling → Aanpassingen Vereist with feedback
+        client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "In Beoordeling", "feedback": ""},
+            headers=auth_headers_committee
+        )
+        response = client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "Aanpassingen Vereist", "feedback": "Please fix the description"},
+            headers=auth_headers_committee
+        )
+        assert response.status_code == 200
+
+        # Verify feedback is present
+        proposal = client.get(f"/internships/{internship_id}/proposal", headers=auth_headers_student).json()
+        assert proposal["feedback"] == "Please fix the description"
+
+        # Student resubmits
+        response = client.post(
+            f"/internships/{internship_id}/resubmit",
+            json={"new_description": "Fixed description"},
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+
+        # Verify feedback is cleared
+        proposal = client.get(f"/internships/{internship_id}/proposal", headers=auth_headers_student).json()
+        assert proposal["feedback"] is None
+
+    def test_revision_count_on_resubmit(self, client, auth_headers_student, auth_headers_committee, created_internship):
+        """Revision count is incremented when student resubmits."""
+        internship_id = created_internship["id"]
+
+        # Committee: In Beoordeling → Aanpassingen Vereist
+        client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "In Beoordeling", "feedback": ""},
+            headers=auth_headers_committee
+        )
+        client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "Aanpassingen Vereist", "feedback": "Fix this"},
+            headers=auth_headers_committee
+        )
+
+        # First resubmit
+        response = client.post(
+            f"/internships/{internship_id}/resubmit",
+            json={"new_description": "First fix"},
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["revision_count"] == 1
+        assert data["resubmitted_at"] is not None
+
+        # Committee sends back for changes again
+        client.patch(
+            f"/internships/{internship_id}/proposal",
+            json={"status": "Aanpassingen Vereist", "feedback": "Still not right"},
+            headers=auth_headers_committee
+        )
+
+        # Second resubmit
+        response = client.post(
+            f"/internships/{internship_id}/resubmit",
+            json={"new_description": "Second fix"},
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["revision_count"] == 2
+
 
 class TestLogbooks:
     """Test logbook functionality."""

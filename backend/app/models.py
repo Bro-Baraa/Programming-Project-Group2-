@@ -60,8 +60,8 @@ class Internship(Base):
     teacher = relationship("User", foreign_keys=[teacher_id], back_populates="internships_as_teacher")
     mentor = relationship("User", foreign_keys=[mentor_id], back_populates="internships_as_mentor")
     company = relationship("Company", back_populates="internships")
-    proposal = relationship("Proposal", back_populates="internship", uselist=False)
-    agreement = relationship("Agreement", back_populates="internship", uselist=False)
+    proposal = relationship("Proposal", back_populates="internship", uselist=False, cascade="all, delete-orphan")
+    agreement = relationship("Agreement", back_populates="internship", uselist=False, cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="internship", cascade="all, delete-orphan")
     logbooks = relationship("Logbook", back_populates="internship", cascade="all, delete-orphan")
     evaluations = relationship("Evaluation", back_populates="internship", cascade="all, delete-orphan")
@@ -89,6 +89,8 @@ class Proposal(Base):
     status = Column(String, default="Ingediend")  # Ingediend, In Beoordeling, Goedgekeurd, Afgekeurd, Aanpassingen Vereist
     feedback = Column(Text, nullable=True)
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
+    revision_count = Column(Integer, default=0)
+    resubmitted_at = Column(DateTime(timezone=True), nullable=True)
 
     internship = relationship("Internship", back_populates="proposal")
 

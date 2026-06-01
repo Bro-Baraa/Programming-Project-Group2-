@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Internship, User
-from app.schemas import ProposalResponse, ProposalUpdate, ProposalCreate, ResubmitRequest
+from app.schemas import ProposalResponse, ProposalUpdate, ProposalCreate, ResubmitRequest, EditProposalRequest
 from app.auth import get_current_active_user, require_committee, require_student
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
@@ -77,6 +77,30 @@ def update_proposal_endpoint(
     return result.internship.proposal
 
 
+@router.patch("/{internship_id}/proposal/edit", response_model=ProposalResponse)
+def edit_proposal_endpoint(
+    internship_id: int,
+    data: EditProposalRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_student)
+):
+    """Student edits proposal before it has been reviewed."""
+    lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+    result = lifecycle.edit_proposal(
+        internship_id=internship_id,
+        actor=current_user,
+        description=data.description,
+        company_name=data.company_name,
+        company_address=data.company_address,
+        company_sector=data.company_sector,
+        contact_person=data.contact_person,
+        contact_email=data.contact_email,
+        start_date=data.start_date,
+        end_date=data.end_date,
+    )
+    return result.internship.proposal
+
+
 @router.post("/{internship_id}/resubmit", response_model=ProposalResponse)
 def resubmit_proposal_endpoint(
     internship_id: int,
@@ -99,3 +123,18 @@ def resubmit_proposal_endpoint(
         end_date=data.end_date,
     )
     return result.internship.proposal
+
+
+@router.delete("/{internship_id}/proposal")
+def withdraw_proposal_endpoint(
+    internship_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_student)
+):
+    """Student withdraws (deletes) their internship before it is reviewed."""
+    lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+    result = lifecycle.withdraw_proposal(
+        internship_id=internship_id,
+        actor=current_user,
+    )
+    return {"detail": "Voorstel succesvol ingetrokken"}

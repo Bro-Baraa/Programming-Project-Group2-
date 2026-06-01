@@ -26,6 +26,21 @@ class ProposalResponse(ProposalBase):
     status: str
     feedback: Optional[str] = None
     submitted_at: datetime
+    revision_count: int = 0
+    resubmitted_at: Optional[datetime] = None
+
+
+class EditProposalRequest(BaseModel):
+    """Student edits proposal while status is still 'Ingediend'.
+    All fields are optional; omitted fields keep current values."""
+    description: Optional[str] = None
+    company_name: Optional[str] = None
+    company_address: Optional[str] = None
+    company_sector: Optional[str] = None
+    contact_person: Optional[str] = None
+    contact_email: Optional[str] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
 
 
 class ResubmitRequest(BaseModel):
