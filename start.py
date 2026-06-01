@@ -303,9 +303,10 @@ def seed_database_if_empty(init_runner: str) -> None:
     db_file = PROJECT_DIR / "backend" / "stage_monitoring.db"
 
     base_cmd = init_runner.split()
+    # Use raw-string prefix so Windows backslashes don't trigger unicode escapes
     check_script = (
         f"import sqlite3, sys; "
-        f"conn = sqlite3.connect('{db_file}'); "
+        f"conn = sqlite3.connect(r'{db_file}'); "
         f"cursor = conn.cursor(); "
         f"cursor.execute('SELECT COUNT(*) FROM users;'); "
         f"count = cursor.fetchone()[0]; "
