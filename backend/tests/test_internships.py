@@ -665,3 +665,91 @@ class TestEvaluations:
         assert data["student_description"] == "Valid description"
         # Score should remain unchanged (None)
         assert data["score"] is None
+
+    def test_student_cannot_update_other_student_rule(self, client, auth_headers_student, created_evaluation, db):
+        """US-06: Student mag geen evaluatieregel van een andere student wijzigen."""
+        from app.models import EvaluationRule, User
+        from app.auth import get_password_hash
+
+        evaluation_id = created_evaluation["id"]
+        rule = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).first()
+        assert rule is not None
+
+        # Maak een andere student aan
+        other_student = User(
+            email="other_student@test.com",
+            password_hash=get_password_hash("other123"),
+            first_name="Other",
+            last_name="Student",
+            role="student",
+            is_active=True
+        )
+        db.add(other_student)
+        db.commit()
+        db.refresh(other_student)
+
+        # Log in als andere student
+        login_response = client.post(
+            "/auth/login",
+            data={"username": "other_student@test.com", "password": "other123"}
+        )
+        assert login_response.status_code == 200
+        other_token = login_response.json()["access_token"]
+        other_headers = {"Authorization": f"Bearer {other_token}"}
+
+        response = client.patch(
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            json={"student_description": "Hacked description"},
+            headers=other_headers
+        )
+        assert response.status_code == 403
+
+    def test_student_cannot_update_finalized_rule(self, client, auth_headers_student, auth_headers_teacher, created_evaluation, db):
+        """US-06: Student mag geen gefinaliseerde evaluatieregel wijzigen."""
+        from app.models import EvaluationRule
+
+        evaluation_id = created_evaluation["id"]
+        rules = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).all()
+        assert len(rules) > 0
+
+        # Docent finaliseert de evaluatie (score alle rules eerst)
+        for rule in rules:
+            client.patch(
+                f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+                json={"score": 4},
+                headers=auth_headers_teacher
+            )
+
+        finalize_response = client.post(
+            f"/internships/evaluations/{evaluation_id}/finalize",
+            json={},
+            headers=auth_headers_teacher
+        )
+        assert finalize_response.status_code == 200
+
+        # Student probeert te updaten
+        response = client.patch(
+            f"/internships/evaluations/{evaluation_id}/rules/{rules[0].id}",
+            json={"student_description": "Te laat"},
+            headers=auth_headers_student
+        )
+        assert response.status_code == 400
+
+    def test_student_cannot_set_evaluator_feedback(self, client, auth_headers_student, created_evaluation, db):
+        """US-06: Student kan geen evaluator_feedback instellen."""
+        from app.models import EvaluationRule
+
+        evaluation_id = created_evaluation["id"]
+        rule = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).first()
+        assert rule is not None
+
+        response = client.patch(
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            json={"evaluator_feedback": "Self-praise", "student_description": "Valid description"},
+            headers=auth_headers_student
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["student_description"] == "Valid description"
+        # Feedback moet ongewijzigd blijven (None)
+        assert data["evaluator_feedback"] is None
