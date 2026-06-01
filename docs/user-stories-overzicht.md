@@ -46,7 +46,7 @@ Datum: 2026-05-27
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
 | US-05 | Student vult wekelijks logboek in met taken en reflecties | PART | `POST /logbooks` en `PATCH /logbooks/{id}` werken. Velden: tasks, reflection, issues. | Logboek formulier met week, taken, reflectie, problemen. | Geen expliciete "definitief indienen" actie; generieke PATCH zet `status` op "submitted". Max 1 per week alleen afgedwongen bij create, niet bij update. |
-| US-06 | Student beschrijft per competentie wat hij geleerd heeft | BUG | `EvaluationRule.student_description` bestaat. | Student beschrijving veld zichtbaar in evaluatie formulier. | **Router blokkeert studenten**: `PATCH /evaluations/{id}/rules/{rule_id}` gebruikt `require_any_staff` (teacher, committee, mentor, admin). Student heeft geen toegang. Service zou student wel toestaan, maar router blokkeert bij de deur. |
+| US-06 | Student beschrijft per competentie wat hij geleerd heeft | OK | `PATCH /evaluations/{id}/rules/{rule_id}` gebruikt `get_current_active_user`; service laag beperkt student tot `student_description`. | Student beschrijving veld zichtbaar in evaluatie formulier. | — |
 | US-07 | Student leest feedback van docent/mentor | PART | `GET /internships/{id}/feedback` retourneert feedback. | Feedback sectie op student dashboard toont berichten. | Feedback is generiek (from_user, to_user, message); niet gekoppeld aan specifieke logboek-week. |
 | US-08 | Student ziet historiek van logboeken | PART | `GET /internships/{id}/logbooks` en `GET .../logbooks/weeks` bestaan, met "missing" markering. | Logboek-tabel in dashboard toont alleen bestaande logboeken; frontend gebruikt de week-overview niet. | Ontbrekende weken worden niet visueel weergegeven in de student UI. |
 | US-14 | Commissie ziet overzicht alle stages en statussen | OK | `GET /internships` en `GET /stats/dashboard`. | Overzicht tabel + statistieken paneel met totalen. | — |
@@ -70,7 +70,7 @@ Datum: 2026-05-27
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
 | US-25 | Administratie beheert competenties en gewichten | PART | Volledige CRUD: CompetencyProfile + Competency endpoints. Gewichten-validatie (som = 100%). Actief/inactief toggelen. | Admin competentiebeheer: toevoegen, verwijderen, gewichten zien, score simulator. | **Geen versiebeheer**: acceptatiecriterium eist dat wijzigingen enkel voor nieuwe stageperiodes gelden en historische evaluaties ongewijzigd blijven. Dit is niet geïmplementeerd. |
-| US-27 | Administratie beheert gebruikers | BUG | `GET /users` (lijst) en `GET /users/{id}` (detail). | Geen admin UI voor gebruikersbeheer. | **Geen POST /users, PATCH /users/{id}, DELETE /users/{id}**. Admin kan geen gebruikers aanmaken, wijzigen of verwijderen. Alleen zelf-registratie via `POST /auth/register`. |
+| US-27 | Administratie beheert gebruikers | BE-OK | Volledige CRUD: `GET /users`, `GET /users/{id}`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}`. Alleen admin toegang. | Geen admin UI voor gebruikersbeheer. | Backend compleet. Frontend moet admin scherm toevoegen voor aanmaken, wijzigen en verwijderen. |
 | US-28 | Administratie exporteert rapportages | NOK | Rapportage endpoints retourneren JSON. | Geen export UI (download CSV/XLSX/PDF knoppen). | Geen CSV/XLSX/PDF export. Zie feature-todo #5. |
 
 ## Overkoepelend
@@ -85,17 +85,17 @@ Datum: 2026-05-27
 
 | Status | Aantal |
 |--------|--------|
-| OK | 11 |
-| BE-OK | 1 |
+| OK | 12 |
+| BE-OK | 2 |
 | PART | 11 |
-| BUG | 2 |
+| BUG | 0 |
 | NOK | 3 |
 
 ## Top prioriteiten (gesorteerd)
 
-1. **US-06 (BUG)** — Student kan eigen competentie-beschrijving niet invullen door router-blokkade
-2. **US-27 (BUG)** — Admin kan geen gebruikers beheren (alleen lezen)
+1. **US-19 (BE-OK)** — Eindoverzicht frontend view toevoegen voor docent
+2. **US-09 (PART)** — Eindrapport daadwerkelijk ophalen en tonen in student view
 3. **US-29 + US-20 (NOK)** — Notificatiesysteem implementeren
-4. **US-19 (BE-OK)** — Eindoverzicht frontend view toevoegen voor docent
-5. **US-09 (PART)** — Eindrapport daadwerkelijk ophalen en tonen in student view
-6. **US-25 (PART)** — Competentieprofiel koppelen aan stage zodat historische evaluaties stabiel blijven
+4. **US-25 (PART)** — Competentieprofiel koppelen aan stage zodat historische evaluaties stabiel blijven
+5. **US-28 (NOK)** — Export rapportages (CSV/XLSX/PDF)
+6. **US-11 (PART)** — Status "In Beoordeling" toevoegen aan proposal lifecycle
