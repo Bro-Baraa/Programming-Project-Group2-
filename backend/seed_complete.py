@@ -26,10 +26,10 @@ def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 # Create tables if they don't exist
-print("📦 Dropping and recreating database tables...")
+print("[INIT] Dropping and recreating database tables...")
 Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
-print("✅ Tables ready!")
+print("[OK] Tables ready!")
 
 # Initialize database session
 db = SessionLocal()
@@ -187,7 +187,7 @@ def create_feedback(db: Session, internship_id: int, from_user_id: int, to_user_
 # SEED DATA DEFINITIONS
 # ============================================================
 
-print("\n🌱 Starting comprehensive database seeding...\n")
+print("\n[SEED] Starting comprehensive database seeding...\n")
 
 # Step 1: Ensure users exist
 print("1. Creating users...")
@@ -237,7 +237,7 @@ for email, defaults in user_defs.items():
     user = get_or_create_user(db, email, defaults)
     users[email] = user
     role_display = defaults["role"].ljust(12)
-    print(f"   {'✅' if email not in [u.email for u in db.query(User).all()] else 'ℹ️ '} {role_display} | {email}")
+    print(f"   {'[OK]' if email not in [u.email for u in db.query(User).all()] else '[INFO]'} {role_display} | {email}")
 
 # Get user IDs for relationships
 admin_id = users["admin@school.be"].id
@@ -263,9 +263,9 @@ if not profile:
     )
     db.add(profile)
     db.flush()
-    print(f"   ✅ Created profile: {profile.name}")
+    print(f"   [OK] Created profile: {profile.name}")
 else:
-    print(f"   ℹ️  Using existing profile: {profile.name}")
+    print(f"   [INFO] Using existing profile: {profile.name}")
 
 # Create competencies if they don't exist
 competencies = db.query(Competency).filter(Competency.profile_id == profile.id).all()
@@ -287,9 +287,9 @@ if not competencies:
         db.add(comp)
     db.flush()
     competencies = db.query(Competency).filter(Competency.profile_id == profile.id).all()
-    print(f"   ✅ Created {len(competencies)} competencies")
+    print(f"   [OK] Created {len(competencies)} competencies")
 else:
-    print(f"   ℹ️  Competencies already exist ({len(competencies)} competencies)")
+    print(f"   [INFO] Competencies already exist ({len(competencies)} competencies)")
 
 # Step 3: Create companies
 print("\n3. Creating companies...")
@@ -341,7 +341,7 @@ companies = {}
 for cdef in company_defs:
     company = get_or_create_company(db, cdef["name"], cdef)
     companies[cdef["name"]] = company
-    print(f"   {'✅' if cdef['name'] not in [c.name for c in db.query(Company).all()] else 'ℹ️ '} {company.name} ({company.sector})")
+    print(f"   {'[OK]' if cdef['name'] not in [c.name for c in db.query(Company).all()] else '[INFO]'} {company.name} ({company.sector})")
 
 # Step 4: Create internships, proposals, agreements, logbooks, evaluations, feedback
 print("\n4. Creating internships and related data...")
@@ -462,7 +462,7 @@ for student_id, configs in all_internship_configs:
         })
         total_internships += 1
         internship_num = i + 1
-        print(f"   ✅ Internship #{internship_num}: {student.first_name} @ {company.name} [{config['status']}]")
+        print(f"   [OK] Internship #{internship_num}: {student.first_name} @ {company.name} [{config['status']}]")
         
         # Create or update proposal
         proposal = get_or_create_proposal(db, internship.id, {
@@ -471,7 +471,7 @@ for student_id, configs in all_internship_configs:
             "feedback": "Goed voorstel, voldoet aan alle criteria." if config["proposal_status"] in ["Goedgekeurd", "In Beoordeling"] else None
         })
         total_proposals += 1
-        print(f"      ✅ Proposal: {proposal.status}")
+        print(f"      [OK] Proposal: {proposal.status}")
         
         # Create or update agreement
         agreement = get_or_create_agreement(db, internship.id, {
@@ -482,7 +482,7 @@ for student_id, configs in all_internship_configs:
             "validated_at": datetime.now() - timedelta(days=2) if config["agreement_status"] == "Gevalideerd" else None
         })
         total_agreements += 1
-        print(f"      ✅ Agreement: {agreement.status} (insurance: {agreement.insurance_verified})")
+        print(f"      [OK] Agreement: {agreement.status} (insurance: {agreement.insurance_verified})")
         
         # Create logbooks if needed
         if config["logbooks"] and internship.start_date and internship.end_date:
@@ -498,7 +498,7 @@ for student_id, configs in all_internship_configs:
                     "submitted_at": datetime.now() - timedelta(days=num_weeks - week) if week <= 5 else None
                 })
                 total_logbooks += 1
-            print(f"      ✅ Logbooks: {num_weeks} weeks created")
+            print(f"      [OK] Logbooks: {num_weeks} weeks created")
         
         # Create intermediate evaluation if needed
         if config.get("evaluation_tussentijds"):
@@ -518,7 +518,7 @@ for student_id, configs in all_internship_configs:
                     "evaluator_feedback": "Sterke prestaties. Blijf verder doen."
                 })
                 total_evaluations += 1
-                print(f"      ✅ Evaluation: {eval_type} (finalized: {evaluation.finalized})")
+                print(f"      [OK] Evaluation: {eval_type} (finalized: {evaluation.finalized})")
         
         # Create final evaluation if needed
         if config.get("evaluation_final"):
@@ -538,7 +538,7 @@ for student_id, configs in all_internship_configs:
                     "evaluator_feedback": "Zeer goede prestaties. Aanbevolen voor toekomstige projecten."
                 })
                 total_evaluations += 1
-                print(f"      ✅ Evaluation: {eval_type} (finalized: {evaluation.finalized})")
+                print(f"      [OK] Evaluation: {eval_type} (finalized: {evaluation.finalized})")
         
         # Create feedback messages if needed
         if config.get("feedback_count", 0) > 0:
@@ -560,13 +560,13 @@ for student_id, configs in all_internship_configs:
                 total_feedback += 1
         
         if config.get("feedback_count", 0) > 0:
-            print(f"      ✅ Feedback: {config['feedback_count']} messages created")
+            print(f"      [OK] Feedback: {config['feedback_count']} messages created")
 
 db.commit()
 
 # Step 5: Summary
 print("\n" + "="*60)
-print("🎉 Seeding complete!")
+print("[DONE] Seeding complete!")
 print("="*60)
 print(f"\nData created:")
 print(f"  Users:                {db.query(User).count()}")
@@ -583,7 +583,7 @@ print(f"  Competencies:         {db.query(Competency).count()}")
 
 db.close()
 
-print("\n📋 Test credentials:")
+print("\n[INFO] Test credentials:")
 print("  " + "-"*56)
 print(f"  {'Role':<12} | {'Email':<28} | {'Password'}")
 print("  " + "-"*56)
@@ -591,7 +591,7 @@ for email, u in user_defs.items():
     print(f"  {u['role']:<12} | {email:<28} | {u['password']}")
 print("  " + "-"*56)
 
-print("\n🚀 Next steps:")
+print("\n[START] Next steps:")
 print("  1. Start backend: uvicorn app.main:app --reload")
 print("  2. Open frontend: http://localhost:8080/index.html")
 print("  3. Login with any account above\n")
