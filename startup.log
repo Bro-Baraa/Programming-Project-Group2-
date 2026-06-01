@@ -22,3 +22,107 @@ Dependencies OK
 sqlite3.OperationalError: no such table: users
 Database leeg of niet gevonden. Seeding met demo-data...
 [CMD] C:\Users\baraa\Programming-Project-Group2-\backend > C:\Users\baraa\Programming-Project-Group2-\backend\.venv\Scripts\python.exe C:\Users\baraa\Programming-Project-Group2-\backend\seed_complete.py
+[EXIT] code=0
+[STDOUT] [INIT] Dropping and recreating database tables...
+[OK] Tables ready!
+
+[SEED] Starting comprehensive database seeding...
+
+1. Creating users...
+   [INFO] admin        | admin@school.be
+   [INFO] student      | student1@school.be
+   [INFO] student      | student2@school.be
+   [INFO] committee    | commissie1@school.be
+   [INFO] teacher      | docent1@school.be
+   [INFO] mentor       | mentor1@school.be
+
+2. Creating competency profile...
+   [OK] Created profile: Toegepaste Informatica 2024-2025
+   [OK] Created 4 competencies
+
+3. Creating companies...
+   [INFO] TechCorp BV (IT)
+   [INFO] DataFlow Solutions (Data & Analytics)
+   [INFO] WebWise Agency (Web Development)
+   [INFO] SecureNet (Cybersecurity)
+   [INFO] CloudScale NV (Cloud Services)
+
+4. Creating internships and related data...
+   [OK] Internship #1: Jan @ TechCorp BV [Lopend]
+      [OK] Proposal: Goedgekeurd
+      [OK] Agreement: Gevalideerd (insurance: True)
+      [OK] Logbooks: 10 weeks created
+      [OK] Evaluation: tussentijds (finalized: True)
+      [OK] Feedback: 3 messages created
+   [OK] Internship #2: Jan @ DataFlow Solutions [Goedgekeurd]
+      [OK] Proposal: Goedgekeurd
+      [OK] Agreement: Overeenkomst Ingediend (insurance: False)
+      [OK] Feedback: 1 messages created
+   [OK] Internship #3: Jan @ WebWise Agency [Ingediend]
+      [OK] Proposal: Ingediend
+      [OK] Agreement: Niet Ingediend (insurance: False)
+   [OK] Internship #1: Marie @ SecureNet [Afgerond]
+      [OK] Proposal: Goedgekeurd
+      [OK] Agreement: Gevalideerd (insurance: True)
+      [OK] Evaluation: tussentijds (finalized: True)
+      [OK] Evaluation: final (finalized: True)
+      [OK] Feedback: 5 messages created
+   [OK] Internship #2: Marie @ CloudScale NV [In Beoordeling]
+      [OK] Proposal: In Beoordeling
+      [OK] Agreement: Niet Ingediend (insurance: False)
+
+============================================================
+[DONE] Seeding complete!
+============================================================
+
+Data created:
+  Users:                6
+  Companies:            5
+  Internships:          5
+  Proposals:            5
+  Agreements:           5
+  Logbook entries:      10
+  Evaluations:          3
+  Evaluation rules:     12
+  Feedback messages:    7
+  Competency profiles:  1
+  Competencies:         4
+
+[INFO] Test credentials:
+  --------------------------------------------------------
+  Role         | Email                        | Password
+  --------------------------------------------------------
+  admin        | admin@school.be              | admin123
+  student      | student1@school.be           | student123
+  student      | student2@school.be           | student123
+  committee    | commissie1@school.be         | commissie123
+  teacher      | docent1@school.be            | docent123
+  mentor       | mentor1@school.be            | mentor123
+  --------------------------------------------------------
+
+[START] Next steps:
+  1. Start backend: uvicorn app.main:app --reload
+  2. Open frontend: http://localhost:8080/index.html
+  3. Login with any account above
+Database gevuld!
+
+Backend starten op http://localhost:8001
+[CMD] C:\Users\baraa\Programming-Project-Group2-\backend > C:\Users\baraa\Programming-Project-Group2-\backend\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8001
+Starting backend process...
+Backend alive after 10s: True
+Frontend starten op http://localhost:8080
+[CMD] C:\Users\baraa\Programming-Project-Group2-\frontend > C:\Users\baraa\Programming-Project-Group2-\backend\.venv\Scripts\python.exe -m http.server 8080
+
+====================================
+✓ Alles draait!
+
+  Frontend:  http://localhost:8080
+  Backend:   http://localhost:8001
+  API docs:  http://localhost:8001/docs
+
+Testaccounts:
+  admin@school.be / admin123
+  student1@school.be / student123
+
+Druk Ctrl+C om te stoppen.
+
