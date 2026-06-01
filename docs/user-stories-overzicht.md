@@ -45,7 +45,7 @@ Datum: 2026-05-27
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-05 | Student vult wekelijks logboek in met taken en reflecties | PART | `POST /logbooks` en `PATCH /logbooks/{id}` werken. Velden: tasks, reflection, issues. | Logboek formulier met week, taken, reflectie, problemen. | Geen expliciete "definitief indienen" actie; generieke PATCH zet `status` op "submitted". Max 1 per week alleen afgedwongen bij create, niet bij update. |
+| US-05 | Student vult wekelijks logboek in met taken en reflecties | OK | `POST /logbooks` en `PATCH /logbooks/{id}` werken. `POST /logbooks/{id}/submit` voor definitief indienen. Velden: tasks, reflection, issues. | Logboek formulier met "Opslaan als Concept" en "Definitief Indienen" knoppen. | — |
 | US-06 | Student beschrijft per competentie wat hij geleerd heeft | OK | `PATCH /evaluations/{id}/rules/{rule_id}` gebruikt `get_current_active_user`; service laag beperkt student tot `student_description`. | Student beschrijving veld zichtbaar in evaluatie formulier. | — |
 | US-07 | Student leest feedback van docent/mentor | PART | `GET /internships/{id}/feedback` retourneert feedback. | Feedback sectie op student dashboard toont berichten. | Feedback is generiek (from_user, to_user, message); niet gekoppeld aan specifieke logboek-week. |
 | US-08 | Student ziet historiek van logboeken | PART | `GET /internships/{id}/logbooks` en `GET .../logbooks/weeks` bestaan, met "missing" markering. | Logboek-tabel in dashboard toont alleen bestaande logboeken; frontend gebruikt de week-overview niet. | Ontbrekende weken worden niet visueel weergegeven in de student UI. |
@@ -87,7 +87,7 @@ Datum: 2026-05-27
 |--------|--------|
 | OK | 14 |
 | BE-OK | 1 |
-| PART | 9 |
+| PART | 8 |
 | BUG | 0 |
 | NOK | 3 |
 
@@ -98,4 +98,4 @@ Datum: 2026-05-27
 3. **US-28 (NOK)** — Export rapportages (CSV/XLSX/PDF)
 4. **US-01 (PART)** — Stagevoorstel-formulier uitbreiden met docent/mentor selectie
 5. **US-27 (BE-OK)** — Admin UI voor gebruikersbeheer (frontend)
-6. **US-05 (PART)** — Logboek definitief indienen actie toevoegen
+6. **US-22 (PART)** — Mentor logboek sign-off endpoint (dedicated)
