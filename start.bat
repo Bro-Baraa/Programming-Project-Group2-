@@ -1,7 +1,7 @@
 @echo off
 REM Easy Windows startup script — starts backend + frontend
 REM Just double-click this file, or run "start" in Command Prompt
-
+REM
 cd /d "%~dp0"
 
 echo ============================================
@@ -23,6 +23,9 @@ where py >nul 2>&1 (
 echo.
 echo ERROR: Python not found. Please install Python from https://python.org
 echo        or add it to your PATH.
+echo.
+echo This script works WITHOUT uv — it will auto-create a regular
+echo Python venv if one doesn't exist. But you DO need Python first.
 echo.
 pause
 

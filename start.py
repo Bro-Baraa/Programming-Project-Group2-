@@ -138,8 +138,12 @@ def detect_python_runner() -> tuple[str, str, bool]:
             print_color(f"Gebruik: {runner}", Colors.BLUE)
             return runner, runner, False
         else:
-            print_color("Gebruik: python3", Colors.BLUE)
-            return "python3", "python3", False
+            if platform.system() == "Windows":
+                runner = sys.executable
+            else:
+                runner = "python3"
+            print_color(f"Gebruik: {runner}", Colors.BLUE)
+            return runner, runner, False
 
 
 def check_dependencies(python_runner: str, use_uv: bool) -> str:
