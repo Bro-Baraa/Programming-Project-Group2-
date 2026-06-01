@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Internship, User
-from app.schemas import ProposalResponse, ProposalUpdate, ProposalCreate
+from app.schemas import ProposalResponse, ProposalUpdate, ProposalCreate, ResubmitRequest
 from app.auth import get_current_active_user, require_committee, require_student
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
@@ -80,7 +80,7 @@ def update_proposal_endpoint(
 @router.post("/{internship_id}/resubmit", response_model=ProposalResponse)
 def resubmit_proposal_endpoint(
     internship_id: int,
-    new_description: str = Body(..., embed=True),
+    data: ResubmitRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_student)
 ):
@@ -89,6 +89,13 @@ def resubmit_proposal_endpoint(
     result = lifecycle.resubmit_proposal(
         internship_id=internship_id,
         actor=current_user,
-        new_description=new_description,
+        new_description=data.new_description,
+        company_name=data.company_name,
+        company_address=data.company_address,
+        company_sector=data.company_sector,
+        contact_person=data.contact_person,
+        contact_email=data.contact_email,
+        start_date=data.start_date,
+        end_date=data.end_date,
     )
     return result.internship.proposal

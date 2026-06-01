@@ -533,41 +533,149 @@ function renderStudentDashboard() {
 }
 
 function wireProposalForm() {
-  const form = document.getElementById('proposal-form');
+  const container = content.querySelector('.panel.card');
+  if (!container) return;
 
-  // Als student al een stage heeft, toon een melding maar behoud formulier
-  if (currentInternship) {
-    const note = document.createElement('div');
-    note.className = 'info-message';
-    note.innerHTML = `
-      <p>Je hebt al een stage ingediend. Je kunt hieronder een <strong>nieuw</strong> stagevoorstel indienen.</p>
-      <a href="?view=dashboard" class="btn">Naar dashboard</a>
-    `;
-    form.parentElement.insertBefore(note, form);
+  // ── No internship yet: show the original creation form ──
+  if (!currentInternship) {
+    const form = document.getElementById('proposal-form');
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      const data = {
+        company_name: document.getElementById('company-name').value,
+        company_address: document.getElementById('company-address').value || null,
+        company_sector: document.getElementById('company-sector').value || null,
+        contact_person: document.getElementById('contact-person').value,
+        contact_email: document.getElementById('contact-email').value,
+        start_date: document.getElementById('start-date').value,
+        end_date: document.getElementById('end-date').value,
+        description: document.getElementById('assignment-desc').value
+      };
+
+      showLoading(submitBtn, 'Indienen...');
+
+      try {
+        await InternshipsAPI.create(data);
+        hideLoading(submitBtn);
+        showToast('Stagevoorstel succesvol ingediend!', 'success');
+        setTimeout(() => window.location.href = '?view=dashboard', 1000);
+      } catch (error) {
+        hideLoading(submitBtn);
+        showToast(error.message, 'error');
+      }
+    });
+    return;
   }
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitBtn = form.querySelector('button[type="submit"]');
+  // ── Student already has an internship: show proposal details ──
+  const proposal = currentInternship.proposal;
+  const company = currentInternship.company || {};
+  const isChangesRequired = currentInternship.status === 'Aanpassingen Vereist';
+  const feedback = proposal?.feedback;
 
-    const data = {
-      company_name: document.getElementById('company-name').value,
-      company_address: document.getElementById('company-address').value || null,
-      company_sector: document.getElementById('company-sector').value || null,
-      contact_person: document.getElementById('contact-person').value,
-      contact_email: document.getElementById('contact-email').value,
-      start_date: document.getElementById('start-date').value,
-      end_date: document.getElementById('end-date').value,
-      description: document.getElementById('assignment-desc').value
-    };
+  container.innerHTML = `
+    <h2>Mijn Stagevoorstel</h2>
+
+    <div class="proposal-summary">
+      <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(currentInternship.status)}">${currentInternship.status}</span></p>
+      <p><strong>Bedrijf:</strong> ${escapeHtml(company.name || 'Onbekend')}</p>
+      ${company.address ? `<p><strong>Adres:</strong> ${escapeHtml(company.address)}</p>` : ''}
+      ${company.sector ? `<p><strong>Sector:</strong> ${escapeHtml(company.sector)}</p>` : ''}
+      <p><strong>Contactpersoon:</strong> ${escapeHtml(company.contact_person || 'Onbekend')}</p>
+      <p><strong>E-mail:</strong> ${escapeHtml(company.contact_email || 'Onbekend')}</p>
+      <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} – ${formatDate(currentInternship.end_date)}</p>
+      <div class="proposal-description">
+        <p><strong>Omschrijving opdracht:</strong></p>
+        <div style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
+          ${escapeHtml(proposal?.description || 'Geen omschrijving beschikbaar.')}
+        </div>
+      </div>
+    </div>
+
+    ${feedback ? `
+      <div class="info-message warning">
+        <p><strong>Feedback van de commissie:</strong></p>
+        <p>${escapeHtml(feedback)}</p>
+      </div>
+    ` : ''}
+
+    ${isChangesRequired ? `
+      <div class="resubmit-section" style="margin-top: 1.5rem;">
+        <h3>Opnieuw indienen</h3>
+        <p class="hint">Pas je voorstel aan op basis van de feedback en dien opnieuw in.</p>
+        <form id="resubmit-form">
+          <div class="row full">
+            <label>Bedrijfsnaam</label>
+            <input type="text" id="resubmit-company-name" value="${escapeHtml(company.name || '')}" />
+          </div>
+          <div class="row full">
+            <label>Adres</label>
+            <input type="text" id="resubmit-company-address" value="${escapeHtml(company.address || '')}" />
+          </div>
+          <div class="row full">
+            <label>Sector</label>
+            <input type="text" id="resubmit-company-sector" value="${escapeHtml(company.sector || '')}" />
+          </div>
+          <div class="row full">
+            <label>Contactpersoon</label>
+            <input type="text" id="resubmit-contact-person" value="${escapeHtml(company.contact_person || '')}" />
+          </div>
+          <div class="row full">
+            <label>E-mail contactpersoon</label>
+            <input type="email" id="resubmit-contact-email" value="${escapeHtml(company.contact_email || '')}" />
+          </div>
+          <div class="row full">
+            <label>Stageperiode</label>
+            <div class="date-range">
+              <input type="date" id="resubmit-start-date" value="${currentInternship.start_date || ''}" />
+              <span>tot</span>
+              <input type="date" id="resubmit-end-date" value="${currentInternship.end_date || ''}" />
+            </div>
+          </div>
+          <div class="row full">
+            <label>Omschrijving opdracht * (min. 20 karakters)</label>
+            <textarea id="resubmit-description" rows="4" required minlength="20">${escapeHtml(proposal?.description || '')}</textarea>
+          </div>
+          <button type="submit" class="btn">Voorstel Opnieuw Indienen</button>
+        </form>
+      </div>
+    ` : `
+      <div class="info-message" style="margin-top: 1rem;">
+        <p>Je voorstel is ${currentInternship.status === 'In Beoordeling' ? 'in beoordeling' : currentInternship.status === 'Goedgekeurd' ? 'goedgekeurd' : 'afgekeurd'}. Je kunt het op dit moment niet meer wijzigen.</p>
+      </div>
+    `}
+  `;
+
+  // Wire resubmit form
+  const resubmitForm = document.getElementById('resubmit-form');
+  resubmitForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = resubmitForm.querySelector('button[type="submit"]');
+    const newDescription = document.getElementById('resubmit-description').value;
+
+    if (!newDescription || newDescription.length < 20) {
+      showToast('Omschrijving moet minstens 20 karakters bevatten', 'error');
+      return;
+    }
 
     showLoading(submitBtn, 'Indienen...');
 
     try {
-      await InternshipsAPI.create(data);
+      await ProposalsAPI.resubmit(currentInternship.id, newDescription, {
+        company_name: document.getElementById('resubmit-company-name').value || undefined,
+        company_address: document.getElementById('resubmit-company-address').value || undefined,
+        company_sector: document.getElementById('resubmit-company-sector').value || undefined,
+        contact_person: document.getElementById('resubmit-contact-person').value || undefined,
+        contact_email: document.getElementById('resubmit-contact-email').value || undefined,
+        start_date: document.getElementById('resubmit-start-date').value || undefined,
+        end_date: document.getElementById('resubmit-end-date').value || undefined,
+      });
       hideLoading(submitBtn);
-      showToast('Stagevoorstel succesvol ingediend!', 'success');
-      setTimeout(() => window.location.href = '?view=dashboard', 1000);
+      showToast('Voorstel succesvol opnieuw ingediend!', 'success');
+      await refreshInternshipData();
+      renderView();
     } catch (error) {
       hideLoading(submitBtn);
       showToast(error.message, 'error');

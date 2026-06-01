@@ -339,6 +339,13 @@ class InternshipLifecycle:
         internship_id: int,
         actor: User,
         new_description: str,
+        company_name: Optional[str] = None,
+        company_address: Optional[str] = None,
+        company_sector: Optional[str] = None,
+        contact_person: Optional[str] = None,
+        contact_email: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
     ) -> ReviewDecision:
         """Student resubmits after 'Aanpassingen Vereist'."""
         self._assert_role(actor, {"student"})
@@ -370,6 +377,25 @@ class InternshipLifecycle:
         internship.proposal.status = "In Beoordeling"
         internship.proposal.submitted_at = self._now()
         internship.status = "In Beoordeling"
+
+        # Update company details if provided
+        if internship.company:
+            if company_name is not None:
+                internship.company.name = company_name
+            if company_address is not None:
+                internship.company.address = company_address
+            if company_sector is not None:
+                internship.company.sector = company_sector
+            if contact_person is not None:
+                internship.company.contact_person = contact_person
+            if contact_email is not None:
+                internship.company.contact_email = contact_email
+
+        # Update internship dates if provided
+        if start_date is not None:
+            internship.start_date = start_date
+        if end_date is not None:
+            internship.end_date = end_date
 
         self.db.commit()
         self.db.refresh(internship)

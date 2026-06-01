@@ -326,10 +326,11 @@ const ProposalsAPI = {
     });
   },
   
-  async resubmit(internshipId, newDescription) {
+  async resubmit(internshipId, newDescription, extra = {}) {
+    const body = { new_description: newDescription, ...extra };
     return apiRequest(`/internships/${internshipId}/resubmit`, {
       method: 'POST',
-      body: JSON.stringify({ new_description: newDescription })
+      body: JSON.stringify(body)
     });
   }
 };
