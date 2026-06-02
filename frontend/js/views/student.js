@@ -778,7 +778,8 @@ async function renderStudentEvaluations() {
 
   try {
     const report = await InternshipsAPI.getFinalReport(currentInternship.id);
-    if (!report || !report.rules || report.rules.length === 0) {
+    const evalData = report?.final_evaluation;
+    if (!evalData || !evalData.rules || evalData.rules.length === 0) {
       finalSummary.innerHTML = `
         <p><strong>Status:</strong> Afwachten</p>
         <p>De finale evaluatie is nog niet ingediend.</p>
@@ -786,10 +787,13 @@ async function renderStudentEvaluations() {
       return;
     }
 
-    const rows = formatReportRows(report.rules);
+    const rows = formatReportRows(evalData.rules);
+    const weightedScore = report.weighted_final_score !== null && report.weighted_final_score !== undefined
+      ? (report.weighted_final_score / 20).toFixed(2)
+      : '-';
 
     finalSummary.innerHTML = `
-      <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${report.weighted_average_score !== null ? report.weighted_average_score.toFixed(2) : '-'} / 5</span></p>
+      <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
       <table style="margin-top: 0.5rem;">
         <thead>
           <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Mijn beschrijving</th><th>Feedback</th></tr>

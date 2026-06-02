@@ -149,19 +149,23 @@ async function renderTeacherFinalReport() {
 
   try {
     const report = await InternshipsAPI.getFinalReport(currentInternship.id);
-    if (!report || !report.rules || report.rules.length === 0) {
+    const evalData = report?.final_evaluation;
+    if (!evalData || !evalData.rules || evalData.rules.length === 0) {
       container.innerHTML = '<p>Geen eindoverzicht beschikbaar. Finaliseer eerst een evaluatie.</p>';
       return;
     }
 
-    const rows = formatReportRows(report.rules);
+    const rows = formatReportRows(evalData.rules);
+    const weightedScore = report.weighted_final_score !== null && report.weighted_final_score !== undefined
+      ? (report.weighted_final_score / 20).toFixed(2)
+      : '-';
 
     container.innerHTML = `
       <div class="panel card" style="margin-top: 1rem;">
         <p><strong>Student:</strong> ${currentInternship.student_name || 'Onbekend'}</p>
         <p><strong>Bedrijf:</strong> ${currentInternship.company_name || 'Onbekend'}</p>
         <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} – ${formatDate(currentInternship.end_date)}</p>
-        <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${report.weighted_average_score !== null ? report.weighted_average_score.toFixed(2) : '-'} / 5</span></p>
+        <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
       </div>
       <table style="margin-top: 1rem;">
         <thead>
