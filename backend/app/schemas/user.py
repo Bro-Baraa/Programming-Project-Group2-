@@ -35,3 +35,12 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class SeedUser(BaseModel):
+    """Test account from seed_data.yaml (used by login page dropdown)."""
+    email: str
+    password: str
+    first_name: str
+    last_name: str
+    role: str

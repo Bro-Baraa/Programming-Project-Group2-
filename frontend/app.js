@@ -141,44 +141,58 @@ function renderLogin() {
     const form = document.getElementById('login-form');
     form?.addEventListener('submit', handleLogin);
     
-    // Quick-login knoppen vullen
+    // Quick-login dropdown vullen vanuit seed data
     const quickLogin = document.getElementById('quick-login');
     if (quickLogin) {
-      const accounts = [
-        { email: 'admin@school.be', password: 'admin123', label: 'Admin' },
-        { email: 'student1@school.be', password: 'student123', label: 'Student' },
-        { email: 'commissie1@school.be', password: 'commissie123', label: 'Commissie' },
-        { email: 'docent1@school.be', password: 'docent123', label: 'Docent' },
-        { email: 'mentor1@school.be', password: 'mentor123', label: 'Mentor' },
-      ];
-      quickLogin.innerHTML = accounts.map(a =>
-        `<button class="quick-login-btn" data-email="${a.email}" data-password="${a.password}">${a.label}</button>`
-      ).join('');
-      quickLogin.querySelectorAll('.quick-login-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          const emailInput = document.getElementById('login-email');
-          const passwordInput = document.getElementById('login-password');
-          if (!emailInput || !passwordInput) {
-            console.error('[DEBUG] Login inputs not found');
+      quickLogin.innerHTML = '<p class="hint">Test accounts laden...</p>';
+      fetch(`${API_BASE_URL}/users/seed`)
+        .then(r => r.ok ? r.json() : [])
+        .then(accounts => {
+          if (!accounts.length) {
+            quickLogin.innerHTML = '<p class="hint">Geen test accounts beschikbaar</p>';
             return;
           }
-          emailInput.value = btn.dataset.email;
-          passwordInput.value = btn.dataset.password;
-          console.log('[DEBUG] Quick-login clicked for:', btn.dataset.email);
-          // Vorige fout wissen
-          const errorEl = document.getElementById('login-error');
-          if (errorEl) {
-            errorEl.textContent = '';
-            errorEl.classList.remove('show');
-          }
-          // Direct handleLogin aanroepen ipv requestSubmit (browser compatibiliteit)
-          handleLogin({
-            preventDefault: () => {},
-            target: form
+          const options = accounts.map(a =>
+            `<option value="${a.email}" data-password="${a.password}">${a.first_name} ${a.last_name} (${a.role})</option>`
+          ).join('');
+          quickLogin.innerHTML = `
+            <label for="quick-login-select" style="display:block; margin-bottom:0.25rem; font-size:0.85rem; color:var(--ink-soft);">Kies een test account:</label>
+            <select id="quick-login-select" style="width:100%; margin-bottom:0.5rem;">
+              <option value="">-- Account selecteren --</option>
+              ${options}
+            </select>
+            <button class="btn" id="quick-login-btn">Inloggen</button>
+          `;
+          document.getElementById('quick-login-btn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            const select = document.getElementById('quick-login-select');
+            const option = select?.selectedOptions[0];
+            if (!option || !option.value) {
+              showToast('Selecteer eerst een account', 'warning');
+              return;
+            }
+            const emailInput = document.getElementById('login-email');
+            const passwordInput = document.getElementById('login-password');
+            if (!emailInput || !passwordInput) {
+              console.error('[DEBUG] Login inputs not found');
+              return;
+            }
+            emailInput.value = option.value;
+            passwordInput.value = option.dataset.password;
+            const errorEl = document.getElementById('login-error');
+            if (errorEl) {
+              errorEl.textContent = '';
+              errorEl.classList.remove('show');
+            }
+            handleLogin({
+              preventDefault: () => {},
+              target: form
+            });
           });
+        })
+        .catch(() => {
+          quickLogin.innerHTML = '<p class="hint">Kon test accounts niet laden</p>';
         });
-      });
     }
   }
 }
@@ -1263,7 +1277,7 @@ function showAgreementDetailPanel(internshipId) {
         <p><strong>Gevalideerd op:</strong> ${formatDate(agreement.validated_at) || 'Nog niet gevalideerd'}</p>
         ${agreement.file_path ? `
         <div style="margin-top: 1rem;">
-          <a href="${AgreementsAPI.download(internship.id)}" target="_blank" class="btn">📄 PDF Downloaden</a>
+          <button class="btn" id="download-agreement-btn" data-internship-id="${internship.id}">📄 PDF Downloaden</button>
         </div>
         ` : ''}
       </div>
@@ -1307,6 +1321,19 @@ function showAgreementDetailPanel(internshipId) {
         });
       }
     }
+
+    // Attach download handler
+    document.getElementById('download-agreement-btn')?.addEventListener('click', async () => {
+      const btn = document.getElementById('download-agreement-btn');
+      showLoading(btn, 'Downloaden...');
+      try {
+        await AgreementsAPI.download(internship.id);
+        hideLoading(btn);
+      } catch (error) {
+        hideLoading(btn);
+        showToast(error.message, 'error');
+      }
+    });
   }).catch(() => {
     detailContainer.innerHTML = '<p class="error">Kon overeenkomstgegevens niet laden.</p>';
   });

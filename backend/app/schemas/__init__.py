@@ -20,6 +20,7 @@ from .user import (
     UserUpdate,
     UserResponse,
     Token,
+    SeedUser,
 )
 from .company import (
     CompanyBase,
@@ -103,6 +104,7 @@ __all__ = [
     "UserUpdate",
     "UserResponse",
     "Token",
+    "SeedUser",
     # Company
     "CompanyBase",
     "CompanyCreate",

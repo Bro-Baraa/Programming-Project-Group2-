@@ -352,6 +352,25 @@ const EvaluationRulesAPI = {
 // Agreements (validate)
 // ============================================
 
+async function downloadFile(url, filename) {
+  const token = getToken();
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.status}`);
+  }
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+}
+
 const AgreementsAPI = {
   validate(internshipId, status, insuranceVerified = null) {
     const body = { status };
@@ -363,7 +382,8 @@ const AgreementsAPI = {
   },
   
   download(internshipId) {
-    return `${API_BASE_URL}/internships/${internshipId}/agreement/download`;
+    const url = `${API_BASE_URL}/internships/${internshipId}/agreement/download`;
+    return downloadFile(url, `stage_overeenkomst_${internshipId}.pdf`);
   }
 };
 

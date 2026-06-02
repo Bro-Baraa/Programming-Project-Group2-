@@ -6,6 +6,7 @@ and to resolve user IDs to names across the app.
 """
 
 from typing import List, Optional, Annotated
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session
@@ -13,11 +14,40 @@ from sqlalchemy import func, or_
 
 from app.database import get_db
 from app.models import User
-from app.schemas import UserResponse, UserCreate, UserUpdate
+from app.schemas import UserResponse, UserCreate, UserUpdate, SeedUser
 from app.auth import get_current_active_user, get_password_hash
 from app.dependencies import pagination
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+def _load_seed_users() -> list[dict]:
+    """Load test accounts from seed_data.yaml for the login page dropdown."""
+    seed_path = Path(__file__).resolve().parents[2] / "seed_data.yaml"
+    try:
+        import yaml
+        with open(seed_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        users = data.get("users", [])
+        return [
+            {
+                "email": u["email"],
+                "password": u["password"],
+                "first_name": u["first_name"],
+                "last_name": u["last_name"],
+                "role": u["role"],
+            }
+            for u in users
+            if "email" in u and "password" in u
+        ]
+    except Exception:
+        return []
+
+
+@router.get("/seed", response_model=list[SeedUser])
+def get_seed_users():
+    """Return test accounts from seed_data.yaml for the quick-login dropdown."""
+    return _load_seed_users()
 
 
 @router.get("", response_model=List[UserResponse])
