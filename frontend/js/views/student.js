@@ -115,6 +115,30 @@ function wireProposalForm() {
   // ── No internship yet: show the original creation form ──
   if (!currentInternship) {
     const form = document.getElementById('proposal-form');
+    const teacherSelect = document.getElementById('teacher-id');
+    const mentorSelect = document.getElementById('mentor-id');
+
+    // Load teachers and mentors into dropdowns
+    async function loadSupervisors() {
+      try {
+        const [teachers, mentors] = await Promise.all([
+          UsersAPI.list('teacher'),
+          UsersAPI.list('mentor')
+        ]);
+        if (teacherSelect) {
+          teacherSelect.innerHTML = '<option value="">-- Kies een docent (optioneel) --</option>' +
+            teachers.map(t => `<option value="${t.id}">${escapeHtml(t.first_name)} ${escapeHtml(t.last_name)}</option>`).join('');
+        }
+        if (mentorSelect) {
+          mentorSelect.innerHTML = '<option value="">-- Kies een mentor (optioneel) --</option>' +
+            mentors.map(m => `<option value="${m.id}">${escapeHtml(m.first_name)} ${escapeHtml(m.last_name)}</option>`).join('');
+        }
+      } catch (error) {
+        console.error('Failed to load supervisors:', error);
+      }
+    }
+    loadSupervisors();
+
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = form.querySelector('button[type="submit"]');
@@ -127,7 +151,9 @@ function wireProposalForm() {
         contact_email: document.getElementById('contact-email').value,
         start_date: document.getElementById('start-date').value,
         end_date: document.getElementById('end-date').value,
-        description: document.getElementById('assignment-desc').value
+        description: document.getElementById('assignment-desc').value,
+        teacher_id: document.getElementById('teacher-id')?.value || null,
+        mentor_id: document.getElementById('mentor-id')?.value || null
       };
 
       showLoading(submitBtn, 'Indienen...');
