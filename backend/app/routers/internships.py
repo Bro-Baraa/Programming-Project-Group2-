@@ -1,14 +1,14 @@
-"""Core internship (stage) CRUD endpoints."""
+"""Kern stage endpoints."""
+from datetime import date
+from pathlib import Path
+from typing import Annotated, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_
-from typing import List, Optional
-from datetime import date
-from pathlib import Path
-from typing import Annotated
 
 from app.database import get_db
-from app.models import User, Internship, Company
+from app.models import Internship, Company, User
 from app.schemas import (
     InternshipCreate,
     InternshipResponse,
@@ -29,7 +29,19 @@ router = APIRouter(prefix="/internships", tags=["internships"])
 _CONFIG = LifecycleConfig(agreements_dir=Path("uploads/agreements"))
 
 
-VALID_STATUSES = {"Ingediend", "In Beoordeling", "Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist", "Overeenkomst Ingediend", "Lopend", "Afgerond"}
+VALID_STATUSES = {
+    "Ingediend", "In Beoordeling", "Goedgekeurd", "Afgekeurd",
+    "Aanpassingen Vereist", "Overeenkomst Ingediend", "Lopend", "Afgerond",
+}
+
+_EAGER_LOADS = [
+    joinedload(Internship.student),
+    joinedload(Internship.company),
+    joinedload(Internship.teacher),
+    joinedload(Internship.mentor),
+    joinedload(Internship.proposal),
+    joinedload(Internship.agreement),
+]
 
 
 @router.get("", response_model=List[InternshipListResponse])
@@ -44,19 +56,7 @@ def list_internships(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """List internships - filtered by role with pagination, search, and sorting.
-
-    Query params:
-    - status: single status or comma-separated (e.g. `Ingediend,Goedgekeurd`)
-    - search: keyword search across student name and company name
-    - start_date_from / start_date_to: date range filter
-    - sort: sort field, prefix with `-` for descending
-    - skip / limit: pagination (default limit=50, max=200)
-
-    Response headers:
-    - X-Total-Count: total matching items (for pagination UI)
-    """
-    # Validate status(es)
+    """Lijst stages op met rol-gebaseerde filtering, paginatie, zoeken en sortering."""
     status_filter = None
     if status:
         statuses = [s.strip() for s in status.split(",")]
@@ -68,39 +68,23 @@ def list_internships(
             )
         status_filter = statuses
 
-    # Base query with eager loads
-    query = db.query(Internship).options(
-        joinedload(Internship.student),
-        joinedload(Internship.company),
-        joinedload(Internship.teacher),
-        joinedload(Internship.mentor),
-        joinedload(Internship.proposal),
-        joinedload(Internship.agreement),
-    )
+    query = db.query(Internship).options(*_EAGER_LOADS)
 
-    # Role-based access filter
     if current_user.role == "student":
         query = query.filter(Internship.student_id == current_user.id)
     elif current_user.role == "mentor":
         query = query.filter(Internship.mentor_id == current_user.id)
     elif current_user.role == "teacher":
         query = query.filter(Internship.teacher_id == current_user.id)
-    # Committee and admin see all
 
-    # Status filter (supports multi-status)
     if status_filter:
-        if len(status_filter) == 1:
-            query = query.filter(Internship.status == status_filter[0])
-        else:
-            query = query.filter(Internship.status.in_(status_filter))
+        query = query.filter(Internship.status.in_(status_filter))
 
-    # Date range filter
     if start_date_from:
         query = query.filter(Internship.start_date >= start_date_from)
     if start_date_to:
         query = query.filter(Internship.start_date <= start_date_to)
 
-    # Search: join with User (student) and Company for name filtering
     if search:
         search_term = f"%{search}%"
         query = query.join(Internship.student).join(Internship.company).filter(
@@ -111,34 +95,25 @@ def list_internships(
             )
         )
 
-    # Count total before pagination
     total_count = query.with_entities(func.count(Internship.id)).scalar()
 
-    # Sorting
     sort_field = sort.lstrip("-") if sort else "created_at"
     sort_desc = sort and sort.startswith("-")
 
-    if sort_field == "created_at":
-        order_col = Internship.created_at
-    elif sort_field == "status":
-        order_col = Internship.status
-    elif sort_field == "start_date":
-        order_col = Internship.start_date
-    elif sort_field == "end_date":
-        order_col = Internship.end_date
-    else:
-        order_col = Internship.created_at
+    order_col = {
+        "created_at": Internship.created_at,
+        "status": Internship.status,
+        "start_date": Internship.start_date,
+        "end_date": Internship.end_date,
+    }.get(sort_field, Internship.created_at)
 
     query = query.order_by(order_col.desc() if sort_desc else order_col.asc())
 
-    # Pagination
     skip = pag.get("skip", 0) if pag else 0
     limit = pag.get("limit", 50) if pag else 50
     internships = query.offset(skip).limit(limit).all()
 
-    # Set total count header for pagination UI
     response.headers["X-Total-Count"] = str(total_count)
-
     return internships
 
 
@@ -148,7 +123,7 @@ def create_internship(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_student),
 ):
-    """US-01: Student submits a new internship proposal."""
+    """US-01: Student dient een nieuw stagevoorstel in."""
     lifecycle = InternshipLifecycle(db, _CONFIG)
     result = lifecycle.submit_internship(
         actor=current_user,
@@ -172,15 +147,14 @@ def get_internship(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get detailed internship information"""
-    internship = db.query(Internship).filter(Internship.id == internship_id).first()
+    """Haalt gedetailleerde stage-informatie op"""
+    internship = db.query(Internship).options(*_EAGER_LOADS).filter(Internship.id == internship_id).first()
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
 
     ensure_internship_access(
         current_user, internship, "Not authorized to view this internship"
     )
-
     return internship
 
 
@@ -191,8 +165,8 @@ def update_internship(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_staff),
 ):
-    """Update internship meta details - staff only (teacher, committee, admin).
-    Status changes must go through the dedicated lifecycle endpoints."""
+    """Werkt stage meta-details bij - alleen staff (docent, commissie, admin).
+    Statuswijzigingen moeten via de lifecycle endpoints."""
     internship = db.query(Internship).filter(Internship.id == internship_id).first()
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
@@ -207,10 +181,8 @@ def update_internship(
         internship.start_date = update.start_date
     if update.end_date is not None:
         internship.end_date = update.end_date
-    # Note: status updates are intentionally ignored here;
-    # use review_proposal, validate_agreement, etc. instead.
+    # Status changes must go through lifecycle endpoints.
 
     db.commit()
     db.refresh(internship)
-
     return internship

@@ -1,10 +1,9 @@
-"""Internship lifecycle deep module.
+"""Stage lifecycle deep module.
 
-Single source of truth for internship status transitions, role-based gatekeeping,
-aggregate persistence, and side effects (file uploads, timestamps).
+Enige bron van waarheid voor statusovergangen, rol-gebaseerde toegang,
+aggregaat-persistentie, en side effects (bestandsuploads, timestamps).
 """
 
-import os
 import shutil
 from dataclasses import dataclass
 from datetime import date, datetime, UTC
@@ -124,7 +123,7 @@ class InternshipLifecycle:
     # ------------------------------------------------------------------
 
     def _validate_supervisor(self, user_id: Optional[int], expected_role: str) -> None:
-        """Validate that the referenced user exists and has the expected role."""
+        """Valideert dat de gerefereerde gebruiker bestaat en de verwachte rol heeft."""
         if user_id is None:
             return
         user = self.db.query(User).filter(User.id == user_id).first()
@@ -136,7 +135,7 @@ class InternshipLifecycle:
         if user.role != expected_role:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"User {user_id} is not a {expected_role} (role: {user.role})",
+                detail=f"User {user_id} is not a {expected_role}",
             )
 
     def submit_internship(
@@ -154,7 +153,7 @@ class InternshipLifecycle:
         teacher_id: Optional[int] = None,
         mentor_id: Optional[int] = None,
     ) -> NewInternship:
-        """Student creates a new Internship + Company + Proposal."""
+        """Student maakt een nieuwe Stage + Bedrijf + Voorstel aan."""
         self._assert_role(actor, {"student"})
 
         self._validate_supervisor(teacher_id, "teacher")
@@ -201,7 +200,7 @@ class InternshipLifecycle:
         decision: str,
         feedback: Optional[str] = None,
     ) -> ReviewDecision:
-        """Committee evaluates a proposal."""
+        """Commissie beoordeelt een voorstel."""
         self._assert_role(actor, {"committee", "admin"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -239,17 +238,11 @@ class InternshipLifecycle:
         filename: str,
         content_type: str,
     ) -> AgreementUpload:
-        """Student uploads a PDF agreement."""
+        """Student uploadt een PDF overeenkomst."""
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
         self._assert_access(actor, internship)
-
-        if internship.student_id != actor.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized",
-            )
 
         self._assert_transition(internship.status, "Overeenkomst Ingediend")
 
@@ -308,17 +301,11 @@ class InternshipLifecycle:
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
     ) -> ReviewDecision:
-        """Student edits their proposal while status is still 'Ingediend'."""
+        """Student wijzigt hun voorstel terwijl status nog 'Ingediend' is."""
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
         self._assert_access(actor, internship)
-
-        if internship.student_id != actor.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized",
-            )
 
         if not internship.proposal:
             raise HTTPException(
@@ -336,7 +323,6 @@ class InternshipLifecycle:
             internship.proposal.description = description
         internship.proposal.submitted_at = self._now()
 
-        # Update company details if provided
         if internship.company:
             if company_name is not None:
                 internship.company.name = company_name
@@ -349,7 +335,6 @@ class InternshipLifecycle:
             if contact_email is not None:
                 internship.company.contact_email = contact_email
 
-        # Update internship dates if provided
         if start_date is not None:
             internship.start_date = start_date
         if end_date is not None:
@@ -366,17 +351,11 @@ class InternshipLifecycle:
         actor: User,
         description: str,
     ) -> ReviewDecision:
-        """Student creates a proposal for an existing internship."""
+        """Student maakt een voorstel aan voor een bestaande stage."""
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
         self._assert_access(actor, internship)
-
-        if internship.student_id != actor.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized",
-            )
 
         if internship.proposal:
             raise HTTPException(
@@ -412,17 +391,11 @@ class InternshipLifecycle:
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
     ) -> ReviewDecision:
-        """Student resubmits after 'Aanpassingen Vereist'."""
+        """Student dient opnieuw in na 'Aanpassingen Vereist'."""
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
         self._assert_access(actor, internship)
-
-        if internship.student_id != actor.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized",
-            )
 
         if not internship.proposal:
             raise HTTPException(
@@ -441,12 +414,11 @@ class InternshipLifecycle:
         internship.proposal.description = new_description
         internship.proposal.status = "In Beoordeling"
         internship.proposal.submitted_at = self._now()
-        internship.proposal.feedback = None  # Clear old feedback
+        internship.proposal.feedback = None
         internship.proposal.revision_count = (internship.proposal.revision_count or 0) + 1
         internship.proposal.resubmitted_at = self._now()
         internship.status = "In Beoordeling"
 
-        # Update company details if provided
         if internship.company:
             if company_name is not None:
                 internship.company.name = company_name
@@ -459,7 +431,6 @@ class InternshipLifecycle:
             if contact_email is not None:
                 internship.company.contact_email = contact_email
 
-        # Update internship dates if provided
         if start_date is not None:
             internship.start_date = start_date
         if end_date is not None:
@@ -475,18 +446,12 @@ class InternshipLifecycle:
         internship_id: int,
         actor: User,
     ) -> Internship:
-        """Student withdraws (deletes) their internship before it is reviewed.
-        Only allowed when status is 'Ingediend'."""
+        """Student trekt (verwijdert) hun stage in voordat het beoordeeld is.
+        Alleen toegestaan als status 'Ingediend' is."""
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
         self._assert_access(actor, internship)
-
-        if internship.student_id != actor.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized",
-            )
 
         if internship.status != "Ingediend":
             raise HTTPException(
@@ -506,7 +471,7 @@ class InternshipLifecycle:
         insurance_verified: Optional[bool] = None,
         agreement_status: str,
     ) -> AgreementUpload:
-        """Committee/admin validates an agreement."""
+        """Commissie/admin valideert een overeenkomst."""
         self._assert_role(actor, {"committee", "admin"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -539,7 +504,7 @@ class InternshipLifecycle:
         return AgreementUpload(internship=internship)
 
     # ------------------------------------------------------------------
-    # Admin escape hatch
+    # Admin override
     # ------------------------------------------------------------------
 
     def force_status(
@@ -550,12 +515,12 @@ class InternshipLifecycle:
         new_status: str,
         reason: str,
     ) -> Internship:
-        """Admin-only override. Skips transition validation."""
+        """Alleen admin. Slaat transitie-validatie over."""
         self._assert_role(actor, {"admin"})
 
         internship = self._get_internship_or_404(internship_id)
 
-        # Audit logging not yet implemented (see docs/feature-todo.md #1)
+        # TODO: audit log reason (see docs/feature-todo.md #1)
         internship.status = new_status
 
         self.db.commit()
