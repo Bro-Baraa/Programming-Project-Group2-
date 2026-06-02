@@ -170,12 +170,20 @@
 
     <template id="student-logboek-template">
       <div class="panel card reveal">
-        <h2>Logboek Invullen</h2>
+        <h2>Logboeken Overzicht</h2>
+        <p class="hint">Klik op een week om het logboek te bewerken of in te vullen.</p>
+        <div id="logbook-week-grid" class="week-grid"></div>
+        <div id="logbook-legend" style="margin-top: 0.75rem; display: flex; gap: 1rem; font-size: 0.8rem;">
+          <span><span class="dot" style="background:var(--good);"></span> Ingediend</span>
+          <span><span class="dot" style="background:var(--warn);"></span> Concept</span>
+          <span><span class="dot" style="background:var(--ink-soft);"></span> Ontbrekend</span>
+        </div>
+      </div>
+
+      <div id="logbook-form-panel" class="panel card reveal" style="display:none;">
+        <h2>Logboek Week <span id="form-week-label">—</span></h2>
         <form id="logbook-form">
-          <div class="row full">
-            <label>Weeknummer *</label>
-            <input type="number" id="log-week" min="1" max="52" required />
-          </div>
+          <input type="hidden" id="log-week" />
           <div class="row full">
             <label>Taken deze week</label>
             <textarea id="log-tasks" rows="3" placeholder="Wat heb je deze week gedaan?"></textarea>
@@ -191,6 +199,7 @@
           <div class="btn-group">
             <button type="submit" class="btn">Opslaan als Concept</button>
             <button type="button" id="submit-logbook" class="btn secondary">Definitief Indienen</button>
+            <button type="button" id="cancel-logbook" class="btn secondary">Annuleren</button>
           </div>
         </form>
       </div>

@@ -815,6 +815,10 @@ function wireProposalForm() {
 function wireLogbookForm() {
   const form = document.getElementById('logbook-form');
   const submitBtn = document.getElementById('submit-logbook');
+  const cancelBtn = document.getElementById('cancel-logbook');
+  const gridEl = document.getElementById('logbook-week-grid');
+  const formPanel = document.getElementById('logbook-form-panel');
+  const formWeekLabel = document.getElementById('form-week-label');
 
   if (!currentInternship) {
     content.innerHTML = `
@@ -839,59 +843,154 @@ function wireLogbookForm() {
     return;
   }
 
-  // Vul weeknummer met volgende beschikbare week
-  const weekInput = document.getElementById('log-week');
-  if (weekInput && currentLogbooks.length > 0) {
-    const maxWeek = Math.max(...currentLogbooks.map(lb => lb.week_number));
-    weekInput.value = maxWeek + 1;
+  let selectedWeek = null;
+  let selectedLogbook = null;
+
+  // ── Build week grid ──
+  function renderWeekGrid() {
+    if (!gridEl) return;
+    const start = currentInternship.start_date ? new Date(currentInternship.start_date) : null;
+    const end = currentInternship.end_date ? new Date(currentInternship.end_date) : null;
+    let totalWeeks = 0;
+    if (start && end && end > start) {
+      const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      totalWeeks = Math.max(1, Math.floor(days / 7) + 1);
+    }
+    if (!totalWeeks) {
+      gridEl.innerHTML = '<p class="hint">Stageperiode niet ingesteld.</p>';
+      return;
+    }
+
+    const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+
+    gridEl.innerHTML = '';
+    for (let w = 1; w <= totalWeeks; w++) {
+      const lb = logbookMap.get(w);
+      let statusClass = 'status-missing';
+      let statusLabel = 'Ontbrekend';
+      if (lb) {
+        if (lb.status === 'submitted') {
+          statusClass = 'status-submitted';
+          statusLabel = lb.mentor_validated ? 'Aftekend' : 'Ingediend';
+        } else {
+          statusClass = 'status-draft';
+          statusLabel = 'Concept';
+        }
+      }
+
+      const cell = document.createElement('div');
+      cell.className = `week-cell ${statusClass}`;
+      cell.dataset.week = w;
+      cell.innerHTML = `
+        <span class="week-number">${w}</span>
+        <span class="week-status">${statusLabel}</span>
+      `;
+      cell.addEventListener('click', () => openWeek(w));
+      gridEl.appendChild(cell);
+    }
   }
 
+  // ── Open a week in the form ──
+  function openWeek(week) {
+    selectedWeek = week;
+    selectedLogbook = currentLogbooks.find(lb => lb.week_number === week) || null;
+
+    // Highlight selected cell
+    gridEl?.querySelectorAll('.week-cell').forEach(c => c.classList.remove('selected'));
+    gridEl?.querySelector(`[data-week="${week}"]`)?.classList.add('selected');
+
+    // Show form panel
+    if (formPanel) formPanel.style.display = 'block';
+    if (formWeekLabel) formWeekLabel.textContent = week;
+
+    document.getElementById('log-week').value = week;
+    document.getElementById('log-tasks').value = selectedLogbook?.tasks || '';
+    document.getElementById('log-reflection').value = selectedLogbook?.reflection || '';
+    document.getElementById('log-issues').value = selectedLogbook?.issues || '';
+
+    // Disable submit if already submitted
+    if (submitBtn) {
+      submitBtn.disabled = selectedLogbook?.status === 'submitted';
+      submitBtn.textContent = selectedLogbook?.status === 'submitted' ? 'Reeds ingediend' : 'Definitief Indienen';
+    }
+  }
+
+  function closeForm() {
+    if (formPanel) formPanel.style.display = 'none';
+    gridEl?.querySelectorAll('.week-cell').forEach(c => c.classList.remove('selected'));
+    selectedWeek = null;
+    selectedLogbook = null;
+  }
+
+  // ── Save as draft ──
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const saveBtn = form.querySelector('button[type="submit"]');
-    const week = document.getElementById('log-week')?.value;
+    const week = parseInt(document.getElementById('log-week').value);
+    const tasks = document.getElementById('log-tasks').value;
+
+    if (!week) {
+      showToast('Selecteer een week', 'error');
+      return;
+    }
 
     showLoading(saveBtn, 'Opslaan...');
 
     try {
-      await InternshipsAPI.createLogbook(currentInternship.id, {
-        week_number: parseInt(week),
-        tasks: document.getElementById('log-tasks').value,
+      const payload = {
+        week_number: week,
+        tasks: tasks,
         reflection: document.getElementById('log-reflection').value,
         issues: document.getElementById('log-issues').value,
         status: 'draft'
-      });
+      };
+
+      if (selectedLogbook) {
+        await InternshipsAPI.updateLogbook(selectedLogbook.id, payload);
+      } else {
+        await InternshipsAPI.createLogbook(currentInternship.id, payload);
+      }
 
       hideLoading(saveBtn);
       showToast('Logboek opgeslagen als concept', 'info');
 
-      // Gegevens verversen
+      // Refresh data and re-render grid
       currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
+      renderWeekGrid();
+      // Re-open same week to update selectedLogbook reference
+      if (selectedWeek) openWeek(selectedWeek);
     } catch (error) {
       hideLoading(saveBtn);
       showToast(error.message, 'error');
     }
   });
 
+  // ── Submit ──
   submitBtn?.addEventListener('click', async () => {
-    const week = document.getElementById('log-week').value;
+    const week = parseInt(document.getElementById('log-week').value);
     const tasks = document.getElementById('log-tasks').value;
 
-    if (!week || !tasks) {
-      showToast('Weeknummer en taken zijn verplicht', 'error');
+    if (!week) {
+      showToast('Selecteer een week', 'error');
+      return;
+    }
+    if (!tasks) {
+      showToast('Taken zijn verplicht', 'error');
+      return;
+    }
+    if (selectedLogbook?.status === 'submitted') {
+      showToast('Logboek is al ingediend', 'error');
       return;
     }
 
     showLoading(submitBtn, 'Indienen...');
 
     try {
-      // Zoek of maak logboek
-      let logbook = currentLogbooks.find(lb => lb.week_number === parseInt(week));
-      
+      // Ensure logbook exists first
+      let logbook = selectedLogbook;
       if (!logbook) {
-        // Maak eerst concept aan
         logbook = await InternshipsAPI.createLogbook(currentInternship.id, {
-          week_number: parseInt(week),
+          week_number: week,
           tasks: tasks,
           reflection: document.getElementById('log-reflection').value,
           issues: document.getElementById('log-issues').value,
@@ -905,13 +1004,21 @@ function wireLogbookForm() {
       hideLoading(submitBtn);
       showToast(`Logboek week ${week} ingediend!`, 'success');
 
-      // Gegevens verversen
+      // Refresh data and re-render grid
       currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
+      renderWeekGrid();
+      if (selectedWeek) openWeek(selectedWeek);
     } catch (error) {
       hideLoading(submitBtn);
       showToast(error.message, 'error');
     }
   });
+
+  // ── Cancel ──
+  cancelBtn?.addEventListener('click', closeForm);
+
+  // ── Initial render ──
+  renderWeekGrid();
 }
 
 function wireAgreementUpload() {

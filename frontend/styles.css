@@ -776,9 +776,73 @@ body.login-active {
   }
 }
 
+/* Week grid for logbooks */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.week-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.4rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+  background: #ffffff;
+  font-size: 0.8rem;
+  min-height: 56px;
+}
+.week-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(18,38,58,0.08);
+}
+.week-cell .week-number {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.15rem;
+}
+.week-cell .week-status {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+.week-cell.status-submitted {
+  background: var(--good-bg);
+  border-color: var(--good);
+}
+.week-cell.status-draft {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+.week-cell.status-missing {
+  background: #f8f9fa;
+  border-color: var(--border);
+  color: var(--ink-soft);
+}
+.week-cell.status-missing:hover {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+.week-cell.selected {
+  outline: 3px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+}
+
 @media (max-width: 980px) {
   .nav-bar { flex-wrap: wrap; gap: 1rem; }
   .two-col { grid-template-columns: 1fr; }
+  .week-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
 
   .toast-notification {
     left: 20px;
