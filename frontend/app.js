@@ -909,6 +909,7 @@ function wireAgreementUpload() {
   }
 
   const agreementStatus = currentInternship.agreement_status;
+  const hint = document.getElementById('agreement-hint');
 
   function setStatusLabel(label, className) {
     if (statusText) {
@@ -916,8 +917,13 @@ function wireAgreementUpload() {
     }
   }
 
+  function setHint(text) {
+    if (hint) hint.textContent = text;
+  }
+
   if (agreementStatus === 'Gevalideerd') {
     setStatusLabel('Gevalideerd', 'status-good');
+    setHint('Je overeenkomst is gevalideerd. De stage is actief.');
     form.innerHTML = `
       <div class="info-message success">
         <p>✓ Je overeenkomst is gevalideerd. De stage is actief.</p>
@@ -928,6 +934,7 @@ function wireAgreementUpload() {
 
   if (agreementStatus === 'Onvolledig') {
     setStatusLabel('Onvolledig', 'status-warn');
+    setHint('De commissie heeft je overeenkomst als onvolledig gemarkeerd. Upload een nieuwe versie.');
     form.insertAdjacentHTML('afterbegin', `
       <div class="info-message warning" style="margin-bottom: 1rem;">
         <p>⚠️ De commissie heeft je overeenkomst als onvolledig gemarkeerd. Upload een nieuwe versie.</p>
@@ -935,6 +942,7 @@ function wireAgreementUpload() {
     `);
   } else if (agreementStatus === 'Ingediend') {
     setStatusLabel('Ingediend', 'status-info');
+    setHint('Je overeenkomst is ingediend en wacht op validatie door de commissie.');
   }
 
   form?.addEventListener('submit', async (e) => {
