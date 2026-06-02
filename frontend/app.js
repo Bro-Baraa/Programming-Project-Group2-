@@ -1260,9 +1260,11 @@ function showAgreementDetailPanel(internshipId) {
         <p><strong>Verzekering:</strong> <span class="status-pill ${insuranceClass}">${insuranceStatus}</span></p>
         <p><strong>Geüpload op:</strong> ${formatDate(agreement.uploaded_at) || 'Onbekend'}</p>
         <p><strong>Gevalideerd op:</strong> ${formatDate(agreement.validated_at) || 'Nog niet gevalideerd'}</p>
+        ${agreement.file_path ? `
         <div style="margin-top: 1rem;">
           <a href="${AgreementsAPI.download(internship.id)}" target="_blank" class="btn">📄 PDF Downloaden</a>
         </div>
+        ` : ''}
       </div>
     `;
 
