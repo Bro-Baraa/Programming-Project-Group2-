@@ -29,8 +29,8 @@ async function renderCompetencyManager() {
   if (profileSelect) {
     profileSelect.innerHTML = competencyProfiles.length
       ? competencyProfiles.map(p =>
-          `<option value="${p.id}" ${p.active ? 'selected' : ''}>${p.name} (${p.academic_year})${p.active ? ' ★' : ''}</option>`
-        ).join('')
+        `<option value="${p.id}" ${p.active ? 'selected' : ''}>${p.name} (${p.academic_year})${p.active ? ' ★' : ''}</option>`
+      ).join('')
       : '<option value="">Geen profielen</option>';
 
     // Auto-select active profile if none selected
@@ -58,6 +58,12 @@ async function renderCompetencyManager() {
     if (!list) return;
 
     let filtered = currentCompetencies;
+<<<<<<< HEAD
+=======
+    if (!compShowInactive) {
+      filtered = filtered.filter(c => c.active);
+    }
+>>>>>>> ca89b4e (fix US-25: competentiebeheer met activatie en aanpassing)
     if (compSearchQuery) {
       const q = compSearchQuery.toLowerCase();
       filtered = filtered.filter(c => c.name.toLowerCase().includes(q));
@@ -90,9 +96,9 @@ async function renderCompetencyManager() {
                 <div class="comp-actions">
                   <button class="btn small" onclick="startCompetencyEdit(${comp.id})">Bewerk</button>
                   ${isInactive
-                    ? `<button class="btn small success" onclick="activateCompetency(${comp.id})">Heractiveer</button>`
-                    : `<button class="btn small secondary" onclick="deactivateCompetency(${comp.id})">Deactiveer</button>`
-                  }
+            ? `<button class="btn small success" onclick="activateCompetency(${comp.id})">Heractiveer</button>`
+            : `<button class="btn small secondary" onclick="deactivateCompetency(${comp.id})">Deactiveer</button>`
+          }
                   <button class="btn small danger" onclick="deleteCompetency(${comp.id})">Verwijder</button>
                 </div>
               </div>
@@ -383,8 +389,12 @@ async function renderCompetencyManager() {
 
 async function loadCompetencies() {
   try {
+<<<<<<< HEAD
     const activeOnly = !compShowInactive;
     currentCompetencies = await CompetenciesAPI.list(selectedProfileId, activeOnly, null, 0, 100);
+=======
+    currentCompetencies = await CompetenciesAPI.list(selectedProfileId, false, null, 0, 100);
+>>>>>>> ca89b4e (fix US-25: competentiebeheer met activatie en aanpassing)
   } catch (error) {
     showToast('Kon competenties niet laden', 'error');
     currentCompetencies = [];
