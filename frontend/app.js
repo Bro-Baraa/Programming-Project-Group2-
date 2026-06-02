@@ -518,12 +518,30 @@ function renderStudentDashboard() {
   }
 }
 
-function wireProposalForm() {
+// Vult de docent- en mentordropdowns met gebruikers uit de backend
+async function addUserDropdowns() {
+  const teachers = await UsersAPI.list('teacher');
+  const mentors = await UsersAPI.list('mentor');
+
+  const teacherSelect = document.getElementById('teacher-select');
+  const mentorSelect = document.getElementById('mentor-select');
+
+  teachers.forEach(t => {
+    teacherSelect.innerHTML += `<option value="${t.id}">${t.first_name} ${t.last_name}</option>`;
+  });
+
+  mentors.forEach(m => {
+    mentorSelect.innerHTML += `<option value="${m.id}">${m.first_name} ${m.last_name}</option>`;
+  });
+}
+
+async function wireProposalForm() {
   const container = content.querySelector('.panel.card');
   if (!container) return;
 
   // ── No internship yet: show the original creation form ──
   if (!currentInternship) {
+    await addUserDropdowns();
     const form = document.getElementById('proposal-form');
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -537,6 +555,8 @@ function wireProposalForm() {
         contact_email: document.getElementById('contact-email').value,
         start_date: document.getElementById('start-date').value,
         end_date: document.getElementById('end-date').value,
+        teacher_id: document.getElementById('teacher-select').value || null,
+        mentor_id: document.getElementById('mentor-select').value || null,
         description: document.getElementById('assignment-desc').value
       };
 

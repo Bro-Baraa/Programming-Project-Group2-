@@ -384,6 +384,17 @@ const AgreementsAPI = {
 };
 
 // ============================================
+// Users
+// ============================================
+
+const UsersAPI = {
+  async list(role) {
+    const params = role ? `?role=${encodeURIComponent(role)}` : '';
+    return apiRequest(`/users${params}`);
+  }
+};
+
+// ============================================
 // Health Check
 // ============================================
 
