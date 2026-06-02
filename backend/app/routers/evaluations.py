@@ -9,6 +9,7 @@ from app.models import Evaluation, User
 from app.schemas import (
     EvaluationResponse,
     EvaluationCreate,
+    EvaluationUpdate,
     EvaluationRuleResponse,
     EvaluationRuleUpdate,
     EvaluationWithScoreResponse,
@@ -55,6 +56,28 @@ def get_evaluation(
 ):
     """Get evaluation with calculated score"""
     return get_evaluation_with_score(db, current_user, evaluation_id)
+
+
+@router.patch("/evaluations/{evaluation_id}", response_model=EvaluationResponse)
+def update_evaluation(
+    evaluation_id: int,
+    update: EvaluationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_staff),
+):
+    """US-18: Update evaluation comments (general remarks)"""
+    evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+    if evaluation.finalized:
+        raise HTTPException(status_code=400, detail="Cannot update finalized evaluation")
+
+    if update.comments is not None:
+        evaluation.comments = update.comments
+
+    db.commit()
+    db.refresh(evaluation)
+    return evaluation
 
 
 @router.patch(

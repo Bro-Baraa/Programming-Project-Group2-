@@ -18,6 +18,12 @@ function wireEvaluationForm() {
     // Gebruik bestaande concept-evaluatie indien aanwezig, anders aanmaken bij opslaan
     const existingEval = evaluations.find(e => !e.finalized);
 
+    // Populate general comments if editing existing evaluation
+    const commentsArea = document.getElementById('eval-comments');
+    if (commentsArea && existingEval) {
+      commentsArea.value = existingEval.comments || '';
+    }
+
     if (container && currentCompetencies.length > 0) {
       container.innerHTML = currentCompetencies.map(comp => {
         // Zoek regel voor deze competentie als evaluatie bestaat
@@ -68,12 +74,19 @@ function wireEvaluationForm() {
       let evaluation = currentEvaluations.find(e => !e.finalized && e.eval_type === evalType);
       if (!evaluation) {
         evaluation = await InternshipsAPI.createEvaluation(currentInternship.id, {
-          eval_type: evalType
+          eval_type: evalType,
+          comments: document.getElementById('eval-comments')?.value || null
         });
         currentEvaluations.push(evaluation);
       }
 
-      // Stap 2: Werk elke regel bij met score, feedback en omschrijving
+      // Stap 2: Update general comments
+      const comments = document.getElementById('eval-comments')?.value || null;
+      if (comments !== null && comments !== (evaluation.comments || '')) {
+        await EvaluationsAPI.update(evaluation.id, { comments });
+      }
+
+      // Stap 3: Werk elke regel bij met score, feedback en omschrijving
       const rows = container.querySelectorAll('.eval-row');
       for (const row of rows) {
         const compId = parseInt(row.dataset.compId);

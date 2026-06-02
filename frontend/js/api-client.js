@@ -395,6 +395,19 @@ const ProposalsAPI = {
 };
 
 // ============================================
+// Evaluations
+// ============================================
+
+const EvaluationsAPI = {
+  update(evaluationId, data) {
+    return apiRequest(`/evaluations/${evaluationId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  }
+};
+
+// ============================================
 // Evaluation Rules
 // ============================================
 
