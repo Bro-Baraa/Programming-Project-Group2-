@@ -388,6 +388,46 @@ const AgreementsAPI = {
 };
 
 // ============================================
+// Users API
+// ============================================
+
+const UsersAPI = {
+  async list(role = null, search = null, activeOnly = true, skip = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (role) params.append('role', role);
+    if (search) params.append('search', search);
+    if (!activeOnly) params.append('active_only', 'false');
+    params.append('skip', String(skip));
+    params.append('limit', String(limit));
+    return apiRequest(`/users?${params.toString()}`);
+  },
+
+  async get(id) {
+    return apiRequest(`/users/${id}`);
+  },
+
+  async create(data) {
+    return apiRequest('/users', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async update(id, data) {
+    return apiRequest(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async delete(id) {
+    return apiRequest(`/users/${id}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
+// ============================================
 // Health Check
 // ============================================
 

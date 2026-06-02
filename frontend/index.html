@@ -507,6 +507,87 @@
     </div>
   </template>
 
+  <template id="admin-gebruikers-template">
+    <div class="panel card reveal">
+      <h2>Gebruikersbeheer</h2>
+      <div class="row compact" style="margin-bottom: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+        <input type="text" id="user-search" placeholder="Zoek op naam of email..." style="flex: 1; min-width: 200px;" />
+        <select id="user-role-filter">
+          <option value="">Alle rollen</option>
+          <option value="student">Student</option>
+          <option value="teacher">Docent</option>
+          <option value="committee">Commissie</option>
+          <option value="mentor">Mentor</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button id="user-search-btn" class="btn">Zoeken</button>
+        <button id="user-create-btn" class="btn success">+ Nieuwe gebruiker</button>
+      </div>
+
+      <div id="user-list-container">
+        <table id="users-table">
+          <thead>
+            <tr>
+              <th>Naam</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Status</th>
+              <th>Acties</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="5">Laden...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="user-pagination" class="row compact" style="margin-top: 1rem; justify-content: center; gap: 0.5rem;"></div>
+    </div>
+
+    <div id="user-form-panel" class="panel card reveal" style="display: none;">
+      <h2 id="user-form-title">Gebruiker aanmaken</h2>
+      <form id="user-form">
+        <input type="hidden" id="user-form-id" />
+        <div class="row full">
+          <label>Voornaam *</label>
+          <input type="text" id="user-first-name" required />
+        </div>
+        <div class="row full">
+          <label>Achternaam *</label>
+          <input type="text" id="user-last-name" required />
+        </div>
+        <div class="row full">
+          <label>E-mail *</label>
+          <input type="email" id="user-email" required />
+        </div>
+        <div class="row full">
+          <label>Rol *</label>
+          <select id="user-role" required>
+            <option value="student">Student</option>
+            <option value="teacher">Docent</option>
+            <option value="committee">Commissie</option>
+            <option value="mentor">Mentor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="row full" id="user-password-row">
+          <label>Wachtwoord *</label>
+          <input type="password" id="user-password" required />
+        </div>
+        <div class="row full">
+          <label>
+            <input type="checkbox" id="user-is-active" checked />
+            Actief
+          </label>
+        </div>
+        <div class="btn-group">
+          <button type="submit" class="btn" id="user-submit-btn">Aanmaken</button>
+          <button type="button" id="user-cancel-btn" class="btn secondary">Annuleren</button>
+        </div>
+      </form>
+    </div>
+  </template>
+
   <script src="js/api-client.js?v=4"></script>
   <script src="js/ui-helpers.js?v=4"></script>
   <script src="js/table-cards.js?v=4"></script>
