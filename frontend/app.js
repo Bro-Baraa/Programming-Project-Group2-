@@ -1714,7 +1714,9 @@ function renderMentorLogbooks() {
       <td>
         ${lb.mentor_validated
           ? '<span class="status-pill status-good">✓ Gevalideerd</span>'
-          : `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`
+          : lb.status === 'submitted'
+            ? `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`
+            : '<span class="status-pill">Concept</span>'
         }
       </td>
     </tr>
@@ -1749,34 +1751,66 @@ async function renderMentorEvaluation() {
   if (!container) return;
 
   if (!currentInternship) {
-    container.innerHTML = '<p>Selecteer een stage via het navigatiemenu.</p>'; 
+    container.innerHTML = '<p>Selecteer een stage via het navigatiemenu.</p>';
     return;
   }
-  const actieveEval = currentEvaluations.find(e => !e.finalized);
+
+  // Zoek actieve evaluatie, anders de meest recente gefinaliseerde
+  let actieveEval = currentEvaluations.find(e => !e.finalized);
+  let isReadOnly = false;
+
   if (!actieveEval) {
-    container.innerHTML = '<p>Geen actieve evaluatie gevonden voor deze stage.</p>';
+    // Geen actieve evaluatie: toon laatste gefinaliseerde (final prefereert boven tussentijds)
+    const finalized = currentEvaluations.filter(e => e.finalized);
+    if (finalized.length > 0) {
+      actieveEval = finalized.find(e => e.eval_type === 'final') || finalized[finalized.length - 1];
+      isReadOnly = true;
+    }
+  }
+
+  if (!actieveEval) {
+    container.innerHTML = '<p>Geen evaluatie gevonden voor deze stage.</p>';
     return;
   }
+
+  const readOnlyAttr = isReadOnly ? 'readonly' : '';
+  const saveBtnHtml = isReadOnly
+    ? '<p class="hint">Deze evaluatie is definitief afgesloten. Feedback kan niet meer worden gewijzigd.</p>'
+    : '<button id="save-mentor-feedback" class="btn">Feedback Opslaan</button>';
 
   container.innerHTML = `
+  <div style="margin-bottom: 1rem;">
+    <span class="status-pill ${isReadOnly ? 'status-good' : 'status-info'}">${isReadOnly ? '✓ Afgeronde evaluatie' : 'Actieve evaluatie'}</span>
+    <span class="hint" style="margin-left: 0.5rem;">${actieveEval.eval_type === 'final' ? 'Finale evaluatie' : 'Tussentijdse evaluatie'}</span>
+  </div>
   ${currentCompetencies.map(comp => {
     const rule = actieveEval.rules?.find(r => r.competency_id === comp.id);
-    return `<label>${comp.name}</label><textarea data-rule-id="${rule?.id ?? ''}" placeholder="Geef hier je feedback..."></textarea>`;
-  }).join('')}<button id="save-mentor-feedback" class="btn">Feedback Opslaan</button>`;
+    const scoreLabel = rule?.score ? `${rule.score}/5` : '-';
+    return `
+      <div class="mentor-eval-row" style="margin-bottom: 1rem;">
+        <label><strong>${comp.name}</strong> (${comp.weight}%)</label>
+        <p style="margin: 0.25rem 0; font-size: 0.9rem; color: var(--ink-soft);">Score: <span class="score-highlight">${scoreLabel}</span></p>
+        <textarea data-rule-id="${rule?.id ?? ''}" placeholder="Geef hier je feedback..." ${readOnlyAttr}>${rule?.evaluator_feedback || ''}</textarea>
+      </div>
+    `;
+  }).join('')}
+  ${saveBtnHtml}`;
 
-  document.getElementById('save-mentor-feedback')?.addEventListener('click', async () => {
-    const textareas = container.querySelectorAll('textarea');
+  if (!isReadOnly) {
+    document.getElementById('save-mentor-feedback')?.addEventListener('click', async () => {
+      const textareas = container.querySelectorAll('textarea');
 
-    for (const textarea of textareas) {
-      const ruleId = textarea.dataset.ruleId;
-      const feedback = textarea.value;
+      for (const textarea of textareas) {
+        const ruleId = textarea.dataset.ruleId;
+        const feedback = textarea.value;
 
-      if (ruleId) {
-      await EvaluationRulesAPI.update(actieveEval.id, ruleId, { evaluator_feedback: feedback });
+        if (ruleId) {
+          await EvaluationRulesAPI.update(actieveEval.id, ruleId, { evaluator_feedback: feedback });
+        }
       }
-    }
-    showToast('Feedback opgeslagen!', 'success');
-  });
+      showToast('Feedback opgeslagen!', 'success');
+    });
+  }
 } 
 
 // Handler voor verwijderen van competentie - beschikbaar in window voor templates

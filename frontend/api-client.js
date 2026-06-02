@@ -7,13 +7,14 @@ const API_BASE_URL = (() => {
   const host = window.location.hostname || 'localhost';
   const port = window.location.port;
 
-  // If served from a single container (Docker/Fly.io), backend is on same origin
-  // If served from separate dev server (start.sh), backend is on port 8001
-  if (port === '8080' || port === '80' || port === '443') {
+  // Production (80/443): backend + frontend served from same origin
+  if (port === '80' || port === '443') {
     return `${window.location.protocol}//${window.location.host}`;
   }
+  // Dev: frontend on 8080 (or file://), backend on 8001
   return `http://${host}:8001`;
 })();
+console.log('[API] API_BASE_URL resolved to:', API_BASE_URL);
 
 // Token storage — wrapped in try/catch for file:// protocol where localStorage may fail
 function getToken() {
