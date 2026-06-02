@@ -1,0 +1,917 @@
+# =============================================================================
+# SEED DATA - Stage Monitoring Tool
+# =============================================================================
+# Dit bestand bevat alle testdata. Je kan het makkelijk bewerken zonder
+# Python code te moeten aanraken.
+#
+# Datums:
+#   - Gebruik een integer voor relatieve dagen vanaf vandaag
+#     (bijv. -120 = 120 dagen geleden, +30 = over 30 dagen)
+#   - Gebruik een string voor absolute datums: "2024-09-01"
+#
+# Verwijzingen:
+#   - Users: verwijs naar email (bijv. "student1@school.be")
+#   - Companies: verwijs naar naam (bijv. "TechCorp BV")
+#   - Evaluators: verwijs naar email van een teacher/mentor
+#
+# =============================================================================
+
+# =============================================================================
+# USERS
+# =============================================================================
+# Rollen: admin, teacher, committee, mentor, student
+users:
+  # --- Admin ---
+  - email: admin@school.be
+    password: admin123
+    first_name: Admin
+    last_name: User
+    role: admin
+    is_active: true
+
+  # --- Teachers ---
+  - email: docent1@school.be
+    password: demo123
+    first_name: Ann
+    last_name: Claessens
+    role: teacher
+    is_active: true
+
+  - email: docent2@school.be
+    password: demo123
+    first_name: Karel
+    last_name: Vermeiren
+    role: teacher
+    is_active: true
+
+  # --- Mentors ---
+  - email: mentor1@school.be
+    password: demo123
+    first_name: Bram
+    last_name: Janssens
+    role: mentor
+    is_active: true
+
+  - email: mentor2@school.be
+    password: demo123
+    first_name: Sofie
+    last_name: De Vries
+    role: mentor
+    is_active: true
+
+  - email: mentor3@school.be
+    password: demo123
+    first_name: Pieter
+    last_name: Maes
+    role: mentor
+    is_active: true
+
+  # --- Committee ---
+  - email: commissie1@school.be
+    password: demo123
+    first_name: Peter
+    last_name: Smit
+    role: committee
+    is_active: true
+
+  - email: commissie2@school.be
+    password: demo123
+    first_name: Elena
+    last_name: Rodriguez
+    role: committee
+    is_active: true
+
+  # --- Students (active) ---
+  - email: student1@school.be
+    password: demo123
+    first_name: Jan
+    last_name: Peeters
+    role: student
+    is_active: true
+
+  - email: student2@school.be
+    password: demo123
+    first_name: Marie
+    last_name: Verhoeven
+    role: student
+    is_active: true
+
+  - email: student3@school.be
+    password: demo123
+    first_name: Luc
+    last_name: Van den Broeck
+    role: student
+    is_active: true
+
+  - email: student4@school.be
+    password: demo123
+    first_name: Emma
+    last_name: Dubois
+    role: student
+    is_active: true
+
+  - email: student5@school.be
+    password: demo123
+    first_name: Thomas
+    last_name: Wouters
+    role: student
+    is_active: true
+
+  - email: student7@school.be
+    password: demo123
+    first_name: Kevin
+    last_name: Hendrickx
+    role: student
+    is_active: true
+
+  - email: student8@school.be
+    password: demo123
+    first_name: Lisa
+    last_name: Jacobs
+    role: student
+    is_active: true
+
+  # --- Student (inactive) ---
+  - email: student6@school.be
+    password: demo123
+    first_name: Sara
+    last_name: Neyens
+    role: student
+    is_active: false
+
+
+# =============================================================================
+# COMPANIES
+# =============================================================================
+# Verwijs naar een mentor via diens email (null = geen mentor)
+companies:
+  - name: TechCorp BV
+    address: Technologielaan 1, 1000 Brussel
+    sector: IT
+    contact_person: Jan De Smet
+    contact_email: j.desmet@techcorp.be
+    mentor: mentor1@school.be
+
+  - name: DataFlow Solutions
+    address: Daalmeersekade 123, 2000 Antwerpen
+    sector: Data & Analytics
+    contact_person: Sophie Willems
+    contact_email: s.willems@dataflow.be
+    mentor: mentor2@school.be
+
+  - name: WebWise Agency
+    address: Koninginnastraat 45, 3000 Leuven
+    sector: Web Development
+    contact_person: Tom Van den Berg
+    contact_email: t.vandenberg@webwise.be
+    mentor: null
+
+  - name: SecureNet
+    address: Wisselstraat 67, 9000 Gent
+    sector: Cybersecurity
+    contact_person: Laura Peeters
+    contact_email: l.peeters@securenet.be
+    mentor: mentor3@school.be
+
+  - name: CloudScale NV
+    address: Avenue de la Renaissance 1, 1050 Brussel
+    sector: Cloud Services
+    contact_person: Mohammed El Amrani
+    contact_email: m.amrani@cloudscale.be
+    mentor: null
+
+  - name: InnovateLab
+    address: Industriepark 12, 3500 Hasselt
+    sector: AI & Machine Learning
+    contact_person: Nina Kowalski
+    contact_email: n.kowalski@innovatelab.be
+    mentor: mentor1@school.be
+
+  - name: MobileFirst
+    address: Grote Markt 8, 2000 Antwerpen
+    sector: Mobile Development
+    contact_person: David Ongena
+    contact_email: d.ongena@mobilefirst.be
+    mentor: mentor2@school.be
+
+  - name: DevOps Masters
+    address: Noorderlaan 99, 2030 Antwerpen
+    sector: DevOps & Infrastructure
+    contact_person: Fatima Al-Hassan
+    contact_email: f.alhassan@devopsmasters.be
+    mentor: null
+
+  - name: GameStudio X
+    address: Gamer Street 42, 8000 Brugge
+    sector: Game Development
+    contact_person: Ruben De Cock
+    contact_email: r.decock@gamestudiox.be
+    mentor: mentor3@school.be
+
+  - name: E-Com Solutions
+    address: E-commerce Boulevard 7, 1000 Brussel
+    sector: E-commerce
+    contact_person: Isabelle Dumont
+    contact_email: i.dumont@ecomsolutions.be
+    mentor: null
+
+
+# =============================================================================
+# COMPETENCY PROFILES
+# =============================================================================
+competency_profiles:
+  - name: Toegepaste Informatica 2024-2025
+    version: "1.0"
+    academic_year: 2024-2025
+    active: true
+    competencies:
+      - name: Analyseren
+        description: Probleemanalyse en requirements bepalen
+        weight: 30.0
+      - name: Ontwerpen
+        description: Technisch ontwerp en architectuur
+        weight: 25.0
+      - name: Realiseren
+        description: Implementatie en coding
+        weight: 25.0
+      - name: Testen
+        description: Kwaliteitsborging en testing
+        weight: 20.0
+
+  - name: Toegepaste Informatica 2023-2024
+    version: "1.0"
+    academic_year: 2023-2024
+    active: false
+    competencies:
+      - name: Analyse
+        description: Probleemanalyse
+        weight: 35.0
+      - name: Ontwerp
+        description: Technisch ontwerp
+        weight: 35.0
+      - name: Realisatie
+        description: Implementatie
+        weight: 30.0
+
+  - name: Multimedia Technologie 2024-2025
+    version: "2.0"
+    academic_year: 2024-2025
+    active: true
+    competencies:
+      - name: Grafisch Ontwerp
+        description: UI/UX design
+        weight: 40.0
+      - name: Multimedia
+        description: Audio/video productie
+        weight: 30.0
+      - name: Webtechnologie
+        description: Frontend development
+        weight: 30.0
+
+
+# =============================================================================
+# INTERNSHIPS
+# =============================================================================
+# Status opties:
+#   Ingediend, In Beoordeling, Goedgekeurd, Afgekeurd,
+#   Aanpassingen Vereist, Overeenkomst Ingediend, Lopend, Afgerond
+#
+# Proposal status opties:
+#   Ingediend, In Beoordeling, Goedgekeurd, Afgekeurd, Aanpassingen Vereist
+#
+# Agreement status opties:
+#   Niet Ingediend, Ingediend, Gevalideerd, Onvolledig
+#
+# Logbook opties:
+#   count: aantal weken
+#   all_submitted: true/false
+#   all_validated: true/false
+#
+# Evaluatie opties:
+#   type: tussentijds, final
+#   status: concept, afgerond
+#   finalized: true/false
+#   score: 1-5 (of null)
+#   evaluator: email van de beoordelaar
+#
+# Documenten:
+#   doc_type: agreement, evaluation, other
+#   file_path: pad naar het bestand
+
+internships:
+  # ==========================================================================
+  # STUDENT 1: Jan Peeters
+  # ==========================================================================
+  - student: student1@school.be
+    company: TechCorp BV
+    teacher: docent1@school.be
+    mentor: mentor1@school.be
+    status: Afgerond
+    start_date: -120
+    end_date: -30
+    proposal:
+      status: Goedgekeurd
+      feedback: Uitstekend voorstel
+      revision_count: 0
+    agreement:
+      status: Gevalideerd
+      insurance: true
+      uploaded_at: -115
+      validated_at: -110
+    logbooks:
+      count: 12
+      all_submitted: true
+      all_validated: true
+    evaluations:
+      - type: tussentijds
+        status: afgerond
+        finalized: true
+        score: 4
+        comments: Sterke start
+        evaluator: docent1@school.be
+      - type: final
+        status: afgerond
+        finalized: true
+        score: 5
+        comments: Uitstekende stage
+        evaluator: docent1@school.be
+    feedback:
+      - from: docent1@school.be
+        to: student1@school.be
+        message: Top werk deze week!
+      - from: student1@school.be
+        to: docent1@school.be
+        message: Bedankt voor de begeleiding
+      - from: mentor1@school.be
+        to: student1@school.be
+        message: Goede technische inzichten
+      - from: student1@school.be
+        to: mentor1@school.be
+        message: Leerrijke ervaring
+      - from: commissie1@school.be
+        to: student1@school.be
+        message: Proficiat met het resultaat
+    documents:
+      - doc_type: agreement
+        file_path: /uploads/agreements/student1_techcorp.pdf
+      - doc_type: evaluation
+        file_path: /uploads/evaluations/student1_tussentijds.pdf
+      - doc_type: evaluation
+        file_path: /uploads/evaluations/student1_final.pdf
+
+  - student: student1@school.be
+    company: DataFlow Solutions
+    teacher: docent1@school.be
+    mentor: null
+    status: Lopend
+    start_date: -30
+    end_date: +60
+    proposal:
+      status: Goedgekeurd
+      feedback: Interessant project
+      revision_count: 1
+      resubmitted_at: -45
+    agreement:
+      status: Gevalideerd
+      insurance: true
+      uploaded_at: -35
+      validated_at: -32
+    logbooks:
+      count: 4
+      all_submitted: true
+      all_validated: false
+    evaluations:
+      - type: tussentijds
+        status: concept
+        finalized: false
+        score: null
+        comments: Nog in opbouw
+        evaluator: docent1@school.be
+    feedback:
+      - from: docent1@school.be
+        to: student1@school.be
+        message: Hoe gaat het met het project?
+    documents: []
+
+  - student: student1@school.be
+    company: WebWise Agency
+    teacher: docent2@school.be
+    mentor: null
+    status: Ingediend
+    start_date: +15
+    end_date: +105
+    proposal:
+      status: Ingediend
+      feedback: null
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback: []
+    documents: []
+
+  # ==========================================================================
+  # STUDENT 2: Marie Verhoeven
+  # ==========================================================================
+  - student: student2@school.be
+    company: SecureNet
+    teacher: docent1@school.be
+    mentor: mentor3@school.be
+    status: Afgerond
+    start_date: -150
+    end_date: -60
+    proposal:
+      status: Goedgekeurd
+      feedback: Zeer goed
+      revision_count: 0
+    agreement:
+      status: Gevalideerd
+      insurance: true
+      uploaded_at: -145
+      validated_at: -140
+    logbooks:
+      count: 10
+      all_submitted: true
+      all_validated: true
+    evaluations:
+      - type: tussentijds
+        status: afgerond
+        finalized: true
+        score: 3
+        comments: Goede middenstand
+        evaluator: docent1@school.be
+      - type: final
+        status: afgerond
+        finalized: true
+        score: 4
+        comments: Goede afgeronde stage
+        evaluator: docent1@school.be
+    feedback:
+      - from: mentor3@school.be
+        to: student2@school.be
+        message: Veel potentieel
+      - from: student2@school.be
+        to: mentor3@school.be
+        message: Bedankt voor de kans
+    documents:
+      - doc_type: agreement
+        file_path: /uploads/agreements/student2_securenet.pdf
+
+  - student: student2@school.be
+    company: CloudScale NV
+    teacher: docent2@school.be
+    mentor: null
+    status: In Beoordeling
+    start_date: +10
+    end_date: +100
+    proposal:
+      status: In Beoordeling
+      feedback: Wordt beoordeeld door commissie
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback: []
+    documents: []
+
+  - student: student2@school.be
+    company: InnovateLab
+    teacher: docent1@school.be
+    mentor: mentor1@school.be
+    status: Overeenkomst Ingediend
+    start_date: +5
+    end_date: +95
+    proposal:
+      status: Goedgekeurd
+      feedback: Gaan met dat project
+      revision_count: 0
+    agreement:
+      status: Ingediend
+      insurance: false
+      uploaded_at: +2
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: docent1@school.be
+        to: student2@school.be
+        message: Overeenkomst ontvangen, wacht op validatie
+    documents:
+      - doc_type: agreement
+        file_path: /uploads/agreements/student2_innovatelab.pdf
+
+  # ==========================================================================
+  # STUDENT 3: Luc Van den Broeck
+  # ==========================================================================
+  - student: student3@school.be
+    company: MobileFirst
+    teacher: docent2@school.be
+    mentor: mentor2@school.be
+    status: Afgekeurd
+    start_date: null
+    end_date: null
+    proposal:
+      status: Afgekeurd
+      feedback: Het project voldoet niet aan de academische vereisten. Te weinig technische diepgang.
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: docent2@school.be
+        to: student3@school.be
+        message: Helaas, zoek een ander project
+      - from: commissie1@school.be
+        to: student3@school.be
+        message: Motivatiebrief ontbreekt
+    documents: []
+
+  - student: student3@school.be
+    company: DevOps Masters
+    teacher: docent2@school.be
+    mentor: null
+    status: Aanpassingen Vereist
+    start_date: +20
+    end_date: +110
+    proposal:
+      status: Aanpassingen Vereist
+      feedback: Voeg een duidelijke planning toe en specifieer de technische requirements.
+      revision_count: 2
+      resubmitted_at: -5
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: docent2@school.be
+        to: student3@school.be
+        message: Graag aanpassingen tegen volgende week
+      - from: student3@school.be
+        to: docent2@school.be
+        message: Werk eraan, komt in orde
+    documents: []
+
+  - student: student3@school.be
+    company: TechCorp BV
+    teacher: docent1@school.be
+    mentor: mentor1@school.be
+    status: Goedgekeurd
+    start_date: +45
+    end_date: +135
+    proposal:
+      status: Goedgekeurd
+      feedback: Goedgekeurd, start voorbereiding
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback: []
+    documents: []
+
+  # ==========================================================================
+  # STUDENT 4: Emma Dubois
+  # ==========================================================================
+  - student: student4@school.be
+    company: GameStudio X
+    teacher: docent1@school.be
+    mentor: mentor3@school.be
+    status: Lopend
+    start_date: -45
+    end_date: +45
+    proposal:
+      status: Goedgekeurd
+      feedback: Fantastisch project
+      revision_count: 0
+    agreement:
+      status: Gevalideerd
+      insurance: true
+      uploaded_at: -50
+      validated_at: -48
+    logbooks:
+      count: 6
+      all_submitted: true
+      all_validated: false
+    evaluations:
+      - type: tussentijds
+        status: afgerond
+        finalized: true
+        score: 5
+        comments: Geweldige prestaties
+        evaluator: docent1@school.be
+    feedback:
+      - from: mentor3@school.be
+        to: student4@school.be
+        message: Je code is echt van hoog niveau
+      - from: student4@school.be
+        to: mentor3@school.be
+        message: Leer veel van het team
+    documents:
+      - doc_type: agreement
+        file_path: /uploads/agreements/student4_gamestudio.pdf
+
+  - student: student4@school.be
+    company: E-Com Solutions
+    teacher: null
+    mentor: null
+    status: Ingediend
+    start_date: null
+    end_date: null
+    proposal:
+      status: Ingediend
+      feedback: null
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback: []
+    documents: []
+
+  # ==========================================================================
+  # STUDENT 5: Thomas Wouters
+  # ==========================================================================
+  - student: student5@school.be
+    company: CloudScale NV
+    teacher: docent2@school.be
+    mentor: null
+    status: Overeenkomst Ingediend
+    start_date: +8
+    end_date: +98
+    proposal:
+      status: Goedgekeurd
+      feedback: Prima
+      revision_count: 1
+      resubmitted_at: -10
+    agreement:
+      status: Ingediend
+      insurance: false
+      uploaded_at: +5
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: docent2@school.be
+        to: student5@school.be
+        message: Overeenkomst ontvangen
+    documents:
+      - doc_type: agreement
+        file_path: /uploads/agreements/student5_cloudscale.pdf
+
+  - student: student5@school.be
+    company: DataFlow Solutions
+    teacher: docent2@school.be
+    mentor: mentor2@school.be
+    status: Afgerond
+    start_date: -90
+    end_date: -10
+    proposal:
+      status: Goedgekeurd
+      feedback: Ok
+      revision_count: 0
+    agreement:
+      status: Gevalideerd
+      insurance: true
+      uploaded_at: -85
+      validated_at: -80
+    logbooks:
+      count: 11
+      all_submitted: true
+      all_validated: true
+    evaluations:
+      - type: tussentijds
+        status: afgerond
+        finalized: true
+        score: 2
+        comments: Heeft moeite met plannen
+        evaluator: docent2@school.be
+      - type: final
+        status: afgerond
+        finalized: true
+        score: 3
+        comments: Voldoende, maar kan beter
+        evaluator: docent2@school.be
+    feedback:
+      - from: docent2@school.be
+        to: student5@school.be
+        message: Werk aan je communicatie
+    documents:
+      - doc_type: agreement
+        file_path: /uploads/agreements/student5_dataflow.pdf
+
+  # ==========================================================================
+  # STUDENT 6: Sara Neyens (inactive)
+  # ==========================================================================
+  - student: student6@school.be
+    company: TechCorp BV
+    teacher: docent1@school.be
+    mentor: mentor1@school.be
+    status: Afgerond
+    start_date: -200
+    end_date: -100
+    proposal:
+      status: Goedgekeurd
+      feedback: OK
+      revision_count: 0
+    agreement:
+      status: Gevalideerd
+      insurance: true
+      uploaded_at: -195
+      validated_at: -190
+    logbooks:
+      count: 8
+      all_submitted: true
+      all_validated: true
+    evaluations:
+      - type: tussentijds
+        status: afgerond
+        finalized: true
+        score: 3
+        comments: Voldoende
+        evaluator: docent1@school.be
+      - type: final
+        status: afgerond
+        finalized: true
+        score: 3
+        comments: Voldoende
+        evaluator: docent1@school.be
+    feedback: []
+    documents: []
+
+  # ==========================================================================
+  # STUDENT 7: Kevin Hendrickx
+  # ==========================================================================
+  - student: student7@school.be
+    company: WebWise Agency
+    teacher: docent2@school.be
+    mentor: null
+    status: Aanpassingen Vereist
+    start_date: +25
+    end_date: +115
+    proposal:
+      status: Aanpassingen Vereist
+      feedback: De scope is te breed. Beperk je tot de core functionaliteit.
+      revision_count: 1
+      resubmitted_at: null
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: docent2@school.be
+        to: student7@school.be
+        message: Graag aanpassingen voor vrijdag
+    documents: []
+
+  - student: student7@school.be
+    company: InnovateLab
+    teacher: docent1@school.be
+    mentor: mentor1@school.be
+    status: Lopend
+    start_date: -15
+    end_date: +75
+    proposal:
+      status: Goedgekeurd
+      feedback: Geweldig
+      revision_count: 0
+    agreement:
+      status: Gevalideerd
+      insurance: true
+      uploaded_at: -18
+      validated_at: -16
+    logbooks:
+      count: 2
+      all_submitted: true
+      all_validated: true
+    evaluations: []
+    feedback:
+      - from: mentor1@school.be
+        to: student7@school.be
+        message: Je hebt een talent voor AI
+    documents:
+      - doc_type: agreement
+        file_path: /uploads/agreements/student7_innovatelab.pdf
+
+  - student: student7@school.be
+    company: E-Com Solutions
+    teacher: docent2@school.be
+    mentor: null
+    status: In Beoordeling
+    start_date: +40
+    end_date: +130
+    proposal:
+      status: In Beoordeling
+      feedback: Wacht op goedkeuring commissie
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: commissie2@school.be
+        to: student7@school.be
+        message: Wij beoordelen dit voorstel
+    documents: []
+
+  # ==========================================================================
+  # STUDENT 8: Lisa Jacobs
+  # ==========================================================================
+  - student: student8@school.be
+    company: SecureNet
+    teacher: docent1@school.be
+    mentor: mentor3@school.be
+    status: Afgekeurd
+    start_date: null
+    end_date: null
+    proposal:
+      status: Afgekeurd
+      feedback: Het bedrijf heeft geen stagebegeleiding. Ook ontbreekt er een duidelijk projectplan.
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: docent1@school.be
+        to: student8@school.be
+        message: Zoek een ander bedrijf
+      - from: student8@school.be
+        to: docent1@school.be
+        message: Begrepen, ik ga op zoek
+    documents: []
+
+  - student: student8@school.be
+    company: MobileFirst
+    teacher: docent2@school.be
+    mentor: mentor2@school.be
+    status: Lopend
+    start_date: -20
+    end_date: +70
+    proposal:
+      status: Goedgekeurd
+      feedback: Goed
+      revision_count: 0
+    agreement:
+      status: Onvolledig
+      insurance: false
+      uploaded_at: -22
+    logbooks:
+      count: 3
+      all_submitted: false
+      all_validated: false
+    evaluations: []
+    feedback:
+      - from: docent2@school.be
+        to: student8@school.be
+        message: Overeenkomst is onvolledig, graag aanvullen
+    documents:
+      - doc_type: agreement
+        file_path: /uploads/agreements/student8_mobilefirst.pdf
+
+  - student: student8@school.be
+    company: DevOps Masters
+    teacher: null
+    mentor: null
+    status: Ingediend
+    start_date: null
+    end_date: null
+    proposal:
+      status: Ingediend
+      feedback: null
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback: []
+    documents: []
+
+  - student: student8@school.be
+    company: CloudScale NV
+    teacher: docent1@school.be
+    mentor: null
+    status: Goedgekeurd
+    start_date: +50
+    end_date: +140
+    proposal:
+      status: Goedgekeurd
+      feedback: Goedgekeurd
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback: []
+    documents: []
