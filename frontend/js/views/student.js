@@ -801,4 +801,45 @@ async function renderStudentEvaluations() {
     console.error('Failed to load final report:', error);
     finalSummary.innerHTML = '<p class="error">Kon eindoverzicht niet laden.</p>';
   }
+
+  // US-06: Student zelfevaluatie — beschrijving per competentie
+  const selfEvalPanel = document.getElementById('student-self-eval-panel');
+  const selfEvalForm = document.getElementById('student-self-eval-form');
+  const saveBtn = document.getElementById('btn-save-self-eval');
+
+  if (selfEvalPanel && selfEvalForm) {
+    const activeEval = currentEvaluations.find(e => !e.finalized);
+    if (activeEval && activeEval.rules && activeEval.rules.length > 0) {
+      selfEvalPanel.style.display = 'block';
+      selfEvalForm.innerHTML = activeEval.rules.map(rule => {
+        const compName = rule.competency?.name || 'Onbekend';
+        return `
+          <div class="row full" style="margin-bottom: 0.75rem;">
+            <label>${compName}</label>
+            <textarea class="student-desc-field" data-rule-id="${rule.id}" data-eval-id="${activeEval.id}" rows="2" placeholder="Beschrijf wat je geleerd hebt...">${rule.student_description || ''}</textarea>
+          </div>
+        `;
+      }).join('');
+
+      saveBtn?.addEventListener('click', async () => {
+        const fields = selfEvalForm.querySelectorAll('.student-desc-field');
+        showLoading(saveBtn, 'Opslaan...');
+        try {
+          for (const field of fields) {
+            const ruleId = parseInt(field.dataset.ruleId);
+            const evalId = parseInt(field.dataset.evalId);
+            const description = field.value || null;
+            await EvaluationRulesAPI.update(evalId, ruleId, { student_description: description });
+          }
+          showToast('Beschrijvingen opgeslagen!', 'success');
+        } catch (error) {
+          showToast(error.message, 'error');
+        } finally {
+          hideLoading(saveBtn);
+        }
+      });
+    } else {
+      selfEvalPanel.style.display = 'none';
+    }
+  }
 }
