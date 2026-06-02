@@ -28,6 +28,7 @@ function getStatusClass(status) {
     'pending': 'status-warn',
     'goedgekeurd': 'status-good',
     'lopend': 'status-good',
+    'afgerond': 'status-good',
     'gevalideerd': 'status-good',
     'approved': 'status-good',
     'afgekeurd': 'status-bad',

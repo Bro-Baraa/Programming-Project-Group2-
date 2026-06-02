@@ -23,6 +23,8 @@ _TRANSITIONS: dict[str, set[str]] = {
     "Aanpassingen Vereist": {"In Beoordeling"},
     "Goedgekeurd": {"Overeenkomst Ingediend"},
     "Overeenkomst Ingediend": {"Lopend", "Overeenkomst Ingediend"},
+    "Lopend": {"Afgerond"},
+    "Afgerond": set(),  # terminal state
 }
 
 
@@ -495,13 +497,46 @@ class InternshipLifecycle:
         agreement.status = agreement_status
 
         if agreement_status == "Gevalideerd":
+            if not agreement.insurance_verified:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Insurance must be verified before validating the agreement",
+                )
             self._assert_transition(internship.status, "Lopend")
             agreement.validated_at = self._now()
             internship.status = "Lopend"
+        elif agreement_status == "Onvolledig" and internship.status == "Lopend":
+            # Revert internship status so student can re-upload
+            self._assert_transition(internship.status, "Overeenkomst Ingediend")
+            internship.status = "Overeenkomst Ingediend"
 
         self.db.commit()
         self.db.refresh(internship)
         return AgreementUpload(internship=internship)
+
+    # ------------------------------------------------------------------
+    # Completion
+    # ------------------------------------------------------------------
+
+    def complete_internship(
+        self,
+        *,
+        internship_id: int,
+        actor: User,
+    ) -> Internship:
+        """Teacher or admin marks an ongoing internship as completed.
+        Only allowed when status is 'Lopend'."""
+        self._assert_role(actor, {"teacher", "committee", "admin"})
+
+        internship = self._get_internship_or_404(internship_id)
+        self._assert_access(actor, internship)
+
+        self._assert_transition(internship.status, "Afgerond")
+        internship.status = "Afgerond"
+
+        self.db.commit()
+        self.db.refresh(internship)
+        return internship
 
     # ------------------------------------------------------------------
     # Admin override

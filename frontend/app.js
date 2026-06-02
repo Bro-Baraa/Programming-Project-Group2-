@@ -493,14 +493,19 @@ function renderStudentDashboard() {
     const companyName = currentInternship.company?.name || 'Onbekend';
     const startDate = formatDate(currentInternship.start_date);
     const endDate = formatDate(currentInternship.end_date);
-    const hasAgreement = currentInternship.agreement_uploaded === true;
+    const agreementStatus = currentInternship.agreement_status || 'Niet Ingediend';
+    const agreementLabel = agreementStatus === 'Niet Ingediend'
+      ? '✗ Nog niet'
+      : agreementStatus === 'Onvolledig'
+        ? '⚠ Onvolledig'
+        : `✓ ${agreementStatus}`;
 
     hero.innerHTML = `
       <h2>Mijn Stage</h2>
       <p><strong>Bedrijf:</strong> ${companyName}</p>
       <p><strong>Periode:</strong> ${startDate} - ${endDate}</p>
       <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(currentInternship.status)}">${currentInternship.status}</span></p>
-      <p><strong>Overeenkomst:</strong> ${hasAgreement ? '✓ Ontvangen' : '✗ Nog niet'}</p>
+      <p><strong>Overeenkomst:</strong> ${agreementLabel}</p>
     `;
   }
 
@@ -700,7 +705,7 @@ function wireProposalForm() {
 
     ${!isIngediend && !isChangesRequired ? `
       <div class="info-message" style="margin-top: 1rem;">
-        <p>Je voorstel is ${currentInternship.status === 'In Beoordeling' ? 'in beoordeling' : currentInternship.status === 'Goedgekeurd' ? 'goedgekeurd' : 'afgekeurd'}. Je kunt het op dit moment niet meer wijzigen.</p>
+        <p>Je voorstel is ${currentInternship.status === 'In Beoordeling' ? 'in beoordeling' : currentInternship.status === 'Afgekeurd' ? 'afgekeurd' : 'goedgekeurd'}. Je kunt het op dit moment niet meer wijzigen.</p>
       </div>
     ` : ''}
   `;
@@ -821,6 +826,19 @@ function wireLogbookForm() {
     return;
   }
 
+  const canLog = currentInternship.status === 'Lopend' || currentInternship.status === 'Afgerond';
+  if (!canLog) {
+    content.innerHTML = `
+      <div class="panel card reveal">
+        <h2>Logboeken</h2>
+        <p>Je kunt pas logboeken invullen als je stage actief is.</p>
+        <p>Huidige status: <strong>${currentInternship.status}</strong></p>
+        <a href="?view=dashboard" class="btn">Naar dashboard</a>
+      </div>
+    `;
+    return;
+  }
+
   // Vul weeknummer met volgende beschikbare week
   const weekInput = document.getElementById('log-week');
   if (weekInput && currentLogbooks.length > 0) {
@@ -910,6 +928,21 @@ function wireAgreementUpload() {
     return;
   }
 
+  const agreementStatus = currentInternship.agreement_status;
+
+  // If agreement is already validated, show success regardless of internship status
+  if (agreementStatus === 'Gevalideerd') {
+    if (statusText) {
+      statusText.innerHTML = `<span class="status-pill status-good">Gevalideerd</span>`;
+    }
+    form.innerHTML = `
+      <div class="info-message success">
+        <p>✓ Je overeenkomst is gevalideerd. De stage is actief.</p>
+      </div>
+    `;
+    return;
+  }
+
   const canUpload = currentInternship.status === 'Goedgekeurd' || currentInternship.status === 'Overeenkomst Ingediend';
 
   if (!canUpload) {
@@ -922,8 +955,6 @@ function wireAgreementUpload() {
     `;
     return;
   }
-
-  const agreementStatus = currentInternship.agreement_status;
   const hint = document.getElementById('agreement-hint');
 
   function setStatusLabel(label, className) {
@@ -934,17 +965,6 @@ function wireAgreementUpload() {
 
   function setHint(text) {
     if (hint) hint.textContent = text;
-  }
-
-  if (agreementStatus === 'Gevalideerd') {
-    setStatusLabel('Gevalideerd', 'status-good');
-    setHint('Je overeenkomst is gevalideerd. De stage is actief.');
-    form.innerHTML = `
-      <div class="info-message success">
-        <p>✓ Je overeenkomst is gevalideerd. De stage is actief.</p>
-      </div>
-    `;
-    return;
   }
 
   if (agreementStatus === 'Onvolledig') {
@@ -1063,15 +1083,21 @@ async function renderCommitteeProposals() {
     const tbody = document.querySelector('#proposals-table tbody');
 
     if (tbody) {
-      tbody.innerHTML = allInternships.map(p => `
+      tbody.innerHTML = allInternships.map(p => {
+        const agreementCell = p.status === 'Afgekeurd'
+          ? '<span class="hint">-</span>'
+          : p.agreement_uploaded
+            ? '<span class="status-pill status-good">Ontvangen</span>'
+            : '<span class="status-pill status-warn">Nog niet</span>';
+        return `
         <tr data-id="${p.id}" class="proposal-row">
           <td>${p.student?.first_name || 'Onbekend'} ${p.student?.last_name || ''}</td>
           <td>${p.company?.name || 'Onbekend'}</td>
           <td>${new Date(p.created_at).toLocaleDateString('nl-BE')}</td>
           <td><span class="status-pill ${getStatusClass(p.status)}">${p.status}</span></td>
-          <td>${p.agreement_uploaded ? '<span class="status-pill status-good">Ontvangen</span>' : '<span class="status-pill status-warn">Nog niet</span>'}</td>
+          <td>${agreementCell}</td>
         </tr>
-      `).join('');
+      `}).join('');
 
       // Klikhandler: selecteer stage en toon detailpaneel
       tbody.querySelectorAll('.proposal-row').forEach(row => {
@@ -1185,7 +1211,7 @@ async function renderCommitteeAgreements() {
     if (tbody) {
       // Filter stages that have an agreement uploaded or are approved (waiting for agreement)
       const stagesWithAgreements = allInternships.filter(
-        i => i.status === 'Goedgekeurd' || i.status === 'Overeenkomst Ingediend' || i.status === 'Lopend' || i.agreement_uploaded
+        i => i.status === 'Goedgekeurd' || i.status === 'Overeenkomst Ingediend' || i.status === 'Lopend' || i.status === 'Afgerond' || i.agreement_uploaded
       );
 
       if (stagesWithAgreements.length === 0) {

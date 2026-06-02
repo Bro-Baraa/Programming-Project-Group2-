@@ -1,4 +1,5 @@
 """Evaluation endpoints."""
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -20,6 +21,7 @@ from app.services.evaluations import (
     update_evaluation_rule as update_evaluation_rule_svc,
     finalize_evaluation as finalize_evaluation_svc,
 )
+from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 
 router = APIRouter(prefix="/internships", tags=["evaluations"])
 
@@ -81,13 +83,22 @@ def finalize_evaluation_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_teacher),
 ):
-    """US-18: Finalize an evaluation - cannot be modified after"""
+    """US-18: Finalize an evaluation - cannot be modified after.
+    If this is a final evaluation, the internship is also marked as completed."""
     evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
 
     # finalize_evaluation_svc returns (Evaluation, dict) tuple
     finalized_eval, score_data = finalize_evaluation_svc(db, evaluation, current_user)
+
+    # Auto-complete internship when final evaluation is finalized
+    if finalized_eval.eval_type == "final":
+        lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+        lifecycle.complete_internship(
+            internship_id=finalized_eval.internship_id,
+            actor=current_user,
+        )
 
     return EvaluationWithScoreResponse(
         **EvaluationResponse.model_validate(finalized_eval).model_dump(),
