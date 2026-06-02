@@ -17,53 +17,43 @@ const API_BASE_URL = (() => {
 console.log('[API] API_BASE_URL resolved to:', API_BASE_URL);
 
 // Token storage — wrapped in try/catch for file:// protocol where localStorage may fail
-function getToken() {
+function safeStorage(key, value = undefined) {
   try {
-    return localStorage.getItem('stageMonitoringToken');
+    if (value === undefined) {
+      return localStorage.getItem(key);
+    }
+    if (value === null) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, value);
+    }
   } catch (e) {
     console.warn('[Auth] localStorage not available:', e.message);
     return null;
   }
 }
 
+function getToken() {
+  return safeStorage('stageMonitoringToken');
+}
+
 function setToken(token) {
-  try {
-    if (token) {
-      localStorage.setItem('stageMonitoringToken', token);
-    } else {
-      localStorage.removeItem('stageMonitoringToken');
-    }
-  } catch (e) {
-    console.warn('[Auth] localStorage not available:', e.message);
-  }
+  safeStorage('stageMonitoringToken', token || null);
 }
 
 function getCurrentUser() {
+  const json = safeStorage('stageMonitoringUser');
+  if (!json) return null;
   try {
-    const userJson = localStorage.getItem('stageMonitoringUser');
-    if (!userJson) return null;
-    try {
-      return JSON.parse(userJson);
-    } catch {
-      localStorage.removeItem('stageMonitoringUser');
-      return null;
-    }
-  } catch (e) {
-    console.warn('[Auth] localStorage not available:', e.message);
+    return JSON.parse(json);
+  } catch {
+    safeStorage('stageMonitoringUser', null);
     return null;
   }
 }
 
 function setCurrentUser(user) {
-  try {
-    if (user) {
-      localStorage.setItem('stageMonitoringUser', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('stageMonitoringUser');
-    }
-  } catch (e) {
-    console.warn('[Auth] localStorage not available:', e.message);
-  }
+  safeStorage('stageMonitoringUser', user ? JSON.stringify(user) : null);
 }
 
 // Generic API request
@@ -89,32 +79,27 @@ async function apiRequest(endpoint, options = {}) {
     delete config.headers['Content-Type'];
   }
   
-  try {
-    const response = await fetch(url, config);
+  const response = await fetch(url, config);
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
     
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
-      
-      // Handle auth errors
-      if (response.status === 401) {
-        setToken(null);
-        setCurrentUser(null);
-        window.location.href = 'index.html?view=login';
-      }
-      
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    // Handle auth errors
+    if (response.status === 401) {
+      setToken(null);
+      setCurrentUser(null);
+      window.location.href = 'index.html?view=login';
     }
     
-    // Handle empty responses
-    if (response.status === 204) {
-      return null;
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+  
+  // Handle empty responses
+  if (response.status === 204) {
+    return null;
+  }
+  
+  return response.json();
 }
 
 // ============================================
@@ -128,8 +113,6 @@ const AuthAPI = {
     formData.append('password', password);
 
     const url = `${API_BASE_URL}/auth/login`;
-    console.log('[DEBUG] Login request to:', url);
-    console.log('[DEBUG] Login email:', email);
 
     let response;
     try {
@@ -166,14 +149,14 @@ const AuthAPI = {
     return data;
   },
   
-  async register(userData) {
+  register(userData) {
     return apiRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData)
     });
   },
   
-  async getMe() {
+  getMe() {
     return apiRequest('/auth/me');
   },
   
@@ -201,23 +184,23 @@ const AuthAPI = {
 // ============================================
 
 const InternshipsAPI = {
-  async list(status = null) {
+  list(status = null) {
     const params = status ? `?status=${encodeURIComponent(status)}` : '';
     return apiRequest(`/internships${params}`);
   },
   
-  async get(id) {
+  get(id) {
     return apiRequest(`/internships/${id}`);
   },
   
-  async create(data) {
+  create(data) {
     return apiRequest('/internships', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
   
-  async uploadAgreement(id, file) {
+  uploadAgreement(id, file) {
     const formData = new FormData();
     formData.append('file', file);
     
@@ -227,55 +210,55 @@ const InternshipsAPI = {
     });
   },
   
-  async getLogbooks(internshipId) {
+  getLogbooks(internshipId) {
     return apiRequest(`/internships/${internshipId}/logbooks`);
   },
   
-  async createLogbook(internshipId, data) {
+  createLogbook(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/logbooks`, {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
   
-  async updateLogbook(logbookId, data) {
+  updateLogbook(logbookId, data) {
     return apiRequest(`/internships/logbooks/${logbookId}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
   },
   
-  async getEvaluations(internshipId) {
+  getEvaluations(internshipId) {
     return apiRequest(`/internships/${internshipId}/evaluations`);
   },
   
-  async createEvaluation(internshipId, data) {
+  createEvaluation(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/evaluations`, {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
 
-  async getFeedback(internshipId) {
+  getFeedback(internshipId) {
     return apiRequest(`/internships/${internshipId}/feedback`);
   },
   
-  async createFeedback(internshipId, data) {
+  createFeedback(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/feedback`, {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
   
-  async getDashboardStats() {
+  getDashboardStats() {
     return apiRequest('/internships/stats/dashboard');
   },
 
-  async getFinalReport(internshipId) {
+  getFinalReport(internshipId) {
     return apiRequest(`/internships/${internshipId}/final-report`);
   },
 
-  async submitLogbook(logbookId) {
+  submitLogbook(logbookId) {
     return apiRequest(`/internships/logbooks/${logbookId}/submit`, {
       method: 'POST'
     });
@@ -287,31 +270,31 @@ const InternshipsAPI = {
 // ============================================
 
 const CompetenciesAPI = {
-  async list(activeOnly = true) {
+  list(activeOnly = true) {
     return apiRequest(`/competencies?active_only=${activeOnly}`);
   },
   
-  async create(data) {
+  create(data) {
     return apiRequest('/competencies', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
   
-  async update(id, data) {
+  update(id, data) {
     return apiRequest(`/competencies/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
   },
   
-  async delete(id) {
+  delete(id) {
     return apiRequest(`/competencies/${id}`, {
       method: 'DELETE'
     });
   },
   
-  async checkWeights() {
+  checkWeights() {
     return apiRequest('/competencies/check-weights');
   }
 };
@@ -321,7 +304,7 @@ const CompetenciesAPI = {
 // ============================================
 
 const ProposalsAPI = {
-  async review(internshipId, status, feedback = null) {
+  review(internshipId, status, feedback = null) {
     const body = { status };
     if (feedback) body.feedback = feedback;
     return apiRequest(`/internships/${internshipId}/proposal`, {
@@ -330,14 +313,14 @@ const ProposalsAPI = {
     });
   },
 
-  async edit(internshipId, data = {}) {
+  edit(internshipId, data = {}) {
     return apiRequest(`/internships/${internshipId}/proposal/edit`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
   },
 
-  async resubmit(internshipId, newDescription, extra = {}) {
+  resubmit(internshipId, newDescription, extra = {}) {
     const body = { new_description: newDescription, ...extra };
     return apiRequest(`/internships/${internshipId}/resubmit`, {
       method: 'POST',
@@ -345,7 +328,7 @@ const ProposalsAPI = {
     });
   },
 
-  async withdraw(internshipId) {
+  withdraw(internshipId) {
     return apiRequest(`/internships/${internshipId}/proposal`, {
       method: 'DELETE'
     });
@@ -357,7 +340,7 @@ const ProposalsAPI = {
 // ============================================
 
 const EvaluationRulesAPI = {
-  async update(evaluationId, ruleId, data) {
+  update(evaluationId, ruleId, data) {
     return apiRequest(`/evaluations/${evaluationId}/rules/${ruleId}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
@@ -370,7 +353,7 @@ const EvaluationRulesAPI = {
 // ============================================
 
 const AgreementsAPI = {
-  async validate(internshipId, status, insuranceVerified = null) {
+  validate(internshipId, status, insuranceVerified = null) {
     const body = { status };
     if (insuranceVerified !== null) body.insurance_verified = insuranceVerified;
     return apiRequest(`/internships/${internshipId}/agreement`, {
@@ -379,7 +362,7 @@ const AgreementsAPI = {
     });
   },
   
-  async download(internshipId) {
+  download(internshipId) {
     return `${API_BASE_URL}/internships/${internshipId}/agreement/download`;
   }
 };

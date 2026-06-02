@@ -49,6 +49,16 @@ def _resolve_user_id(user_lookup: dict, email: str | None) -> int | None:
     return user_lookup[email].id if email else None
 
 
+def _get_or_create(db, model, filters, defaults):
+    existing = db.query(model).filter_by(**filters).first()
+    if existing:
+        return existing
+    obj = model(**defaults)
+    db.add(obj)
+    db.flush()
+    return obj
+
+
 def parse_date(value):
     """
     Parse a date value from YAML.
@@ -93,38 +103,30 @@ def parse_datetime(value):
 # ---------------------------------------------------------------------------
 
 def create_user(db: Session, data: dict) -> User:
-    existing = db.query(User).filter(User.email == data["email"]).first()
-    if existing:
-        return existing
-    user = User(
-        email=data["email"],
-        password_hash=get_password_hash(data["password"]),
-        first_name=data["first_name"],
-        last_name=data["last_name"],
-        role=data["role"],
-        is_active=data.get("is_active", True)
-    )
-    db.add(user)
-    db.flush()
-    return user
+    return _get_or_create(db, User,
+        filters={"email": data["email"]},
+        defaults={
+            "email": data["email"],
+            "password_hash": get_password_hash(data["password"]),
+            "first_name": data["first_name"],
+            "last_name": data["last_name"],
+            "role": data["role"],
+            "is_active": data.get("is_active", True)
+        })
 
 
 def create_company(db: Session, data: dict, user_lookup: dict) -> Company:
-    existing = db.query(Company).filter(Company.name == data["name"]).first()
-    if existing:
-        return existing
     mentor_id = _resolve_user_id(user_lookup, data.get("mentor"))
-    company = Company(
-        name=data["name"],
-        address=data.get("address"),
-        sector=data.get("sector"),
-        contact_person=data.get("contact_person"),
-        contact_email=data.get("contact_email"),
-        mentor_id=mentor_id
-    )
-    db.add(company)
-    db.flush()
-    return company
+    return _get_or_create(db, Company,
+        filters={"name": data["name"]},
+        defaults={
+            "name": data["name"],
+            "address": data.get("address"),
+            "sector": data.get("sector"),
+            "contact_person": data.get("contact_person"),
+            "contact_email": data.get("contact_email"),
+            "mentor_id": mentor_id
+        })
 
 
 def create_competency_profile(db: Session, data: dict) -> CompetencyProfile:
@@ -161,42 +163,30 @@ def create_internship(db: Session, data: dict, user_lookup: dict, company_lookup
     teacher_id = _resolve_user_id(user_lookup, data.get("teacher"))
     mentor_id = _resolve_user_id(user_lookup, data.get("mentor"))
 
-    existing = db.query(Internship).filter(
-        Internship.student_id == student.id,
-        Internship.company_id == company.id
-    ).first()
-    if existing:
-        return existing
-
-    internship = Internship(
-        student_id=student.id,
-        teacher_id=teacher_id,
-        mentor_id=mentor_id,
-        company_id=company.id,
-        start_date=parse_date(data.get("start_date")),
-        end_date=parse_date(data.get("end_date")),
-        status=data["status"]
-    )
-    db.add(internship)
-    db.flush()
-    return internship
+    return _get_or_create(db, Internship,
+        filters={"student_id": student.id, "company_id": company.id},
+        defaults={
+            "student_id": student.id,
+            "teacher_id": teacher_id,
+            "mentor_id": mentor_id,
+            "company_id": company.id,
+            "start_date": parse_date(data.get("start_date")),
+            "end_date": parse_date(data.get("end_date")),
+            "status": data["status"]
+        })
 
 
 def create_proposal(db: Session, internship_id: int, data: dict) -> Proposal:
-    existing = db.query(Proposal).filter(Proposal.internship_id == internship_id).first()
-    if existing:
-        return existing
-    proposal = Proposal(
-        internship_id=internship_id,
-        description=data.get("description", ""),
-        status=data["status"],
-        feedback=data.get("feedback"),
-        revision_count=data.get("revision_count", 0),
-        resubmitted_at=parse_datetime(data.get("resubmitted_at"))
-    )
-    db.add(proposal)
-    db.flush()
-    return proposal
+    return _get_or_create(db, Proposal,
+        filters={"internship_id": internship_id},
+        defaults={
+            "internship_id": internship_id,
+            "description": data.get("description", ""),
+            "status": data["status"],
+            "feedback": data.get("feedback"),
+            "revision_count": data.get("revision_count", 0),
+            "resubmitted_at": parse_datetime(data.get("resubmitted_at"))
+        })
 
 
 def _ensure_fake_file(path: str | None) -> None:
@@ -211,22 +201,18 @@ def _ensure_fake_file(path: str | None) -> None:
 
 
 def create_agreement(db: Session, internship_id: int, data: dict) -> Agreement:
-    existing = db.query(Agreement).filter(Agreement.internship_id == internship_id).first()
-    if existing:
-        return existing
     file_path = data.get("file_path")
     _ensure_fake_file(file_path)
-    agreement = Agreement(
-        internship_id=internship_id,
-        file_path=file_path,
-        insurance_verified=data.get("insurance", False),
-        status=data["status"],
-        uploaded_at=parse_datetime(data.get("uploaded_at")),
-        validated_at=parse_datetime(data.get("validated_at"))
-    )
-    db.add(agreement)
-    db.flush()
-    return agreement
+    return _get_or_create(db, Agreement,
+        filters={"internship_id": internship_id},
+        defaults={
+            "internship_id": internship_id,
+            "file_path": file_path,
+            "insurance_verified": data.get("insurance", False),
+            "status": data["status"],
+            "uploaded_at": parse_datetime(data.get("uploaded_at")),
+            "validated_at": parse_datetime(data.get("validated_at"))
+        })
 
 
 def create_logbook(db: Session, internship_id: int, week: int, data: dict) -> Logbook:

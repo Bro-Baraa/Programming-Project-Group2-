@@ -1251,13 +1251,14 @@ function showAgreementDetailPanel(internshipId) {
       return;
     }
 
-    const insuranceStatus = agreement.insurance_verified ? '✓ Verzekering gecontroleerd' : '✗ Verzekering nog niet gecontroleerd';
-    const insuranceClass = agreement.insurance_verified ? 'status-good' : 'status-warn';
+    const insurance = agreement.insurance_verified
+      ? { text: '✓ Verzekering gecontroleerd', class: 'status-good' }
+      : { text: '✗ Verzekering nog niet gecontroleerd', class: 'status-warn' };
 
     detailContainer.innerHTML = `
       <div class="agreement-info">
         <p><strong>Status overeenkomst:</strong> <span class="status-pill ${getStatusClass(agreement.status)}">${agreement.status}</span></p>
-        <p><strong>Verzekering:</strong> <span class="status-pill ${insuranceClass}">${insuranceStatus}</span></p>
+        <p><strong>Verzekering:</strong> <span class="status-pill ${insurance.class}">${insurance.text}</span></p>
         <p><strong>Geüpload op:</strong> ${formatDate(agreement.uploaded_at) || 'Onbekend'}</p>
         <p><strong>Gevalideerd op:</strong> ${formatDate(agreement.validated_at) || 'Nog niet gevalideerd'}</p>
         ${agreement.file_path ? `
@@ -1708,26 +1709,30 @@ function renderMentorLogbooks() {
     return;
   }
 
-  tbody.innerHTML = currentLogbooks.map(lb => `
-    <tr data-logbook-id="${lb.id}">
-      <td>${lb.week_number}</td>
-      <td>${lb.tasks || '-'}</td>
-      <td>${lb.reflection || '-'}</td>
-      <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
-      <td>
-        <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb.mentor_feedback || ''}</textarea>
-        <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">Opslaan</button>
-      </td>
-      <td>
-        ${lb.mentor_validated
-          ? '<span class="status-pill status-good">✓ Gevalideerd</span>'
-          : lb.status === 'submitted'
-            ? `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`
-            : '<span class="status-pill">Concept</span>'
-        }
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = currentLogbooks.map(lb => {
+    let actionCell;
+    if (lb.mentor_validated) {
+      actionCell = '<span class="status-pill status-good">✓ Gevalideerd</span>';
+    } else if (lb.status === 'submitted') {
+      actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`;
+    } else {
+      actionCell = '<span class="status-pill">Concept</span>';
+    }
+
+    return `
+      <tr data-logbook-id="${lb.id}">
+        <td>${lb.week_number}</td>
+        <td>${lb.tasks || '-'}</td>
+        <td>${lb.reflection || '-'}</td>
+        <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+        <td>
+          <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb.mentor_feedback || ''}</textarea>
+          <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">Opslaan</button>
+        </td>
+        <td>${actionCell}</td>
+      </tr>
+    `;
+  }).join('');
 
   // Validatieknoppen verbinden
   tbody.querySelectorAll('.validate-logbook-btn').forEach(btn => {
