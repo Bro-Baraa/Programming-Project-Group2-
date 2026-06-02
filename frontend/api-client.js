@@ -4,11 +4,14 @@
 // ============================================
 
 const API_BASE_URL = (() => {
-  // Use the same host as the frontend page, but port 8001
-  // This works for localhost:8080 → localhost:8001
-  // and for remote access: framearch-juan:8080 → framearch-juan:8001
-  // Fallback to localhost if opened via file:// (hostname is empty)
   const host = window.location.hostname || 'localhost';
+  const port = window.location.port;
+
+  // If served from a single container (Docker/Fly.io), backend is on same origin
+  // If served from separate dev server (start.sh), backend is on port 8001
+  if (port === '8080' || port === '80' || port === '443') {
+    return `${window.location.protocol}//${window.location.host}`;
+  }
   return `http://${host}:8001`;
 })();
 
