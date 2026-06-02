@@ -316,6 +316,7 @@ internships:
     agreement:
       status: Gevalideerd
       insurance: true
+      file_path: uploads/agreements/student1_techcorp.pdf
       uploaded_at: -115
       validated_at: -110
     logbooks:
@@ -353,11 +354,11 @@ internships:
         message: Proficiat met het resultaat
     documents:
       - doc_type: agreement
-        file_path: /uploads/agreements/student1_techcorp.pdf
+        file_path: uploads/agreements/student1_techcorp.pdf
       - doc_type: evaluation
-        file_path: /uploads/evaluations/student1_tussentijds.pdf
+        file_path: uploads/evaluations/student1_tussentijds.pdf
       - doc_type: evaluation
-        file_path: /uploads/evaluations/student1_final.pdf
+        file_path: uploads/evaluations/student1_final.pdf
 
   - student: student1@school.be
     company: DataFlow Solutions
@@ -374,6 +375,7 @@ internships:
     agreement:
       status: Gevalideerd
       insurance: true
+      file_path: uploads/agreements/student1_dataflow.pdf
       uploaded_at: -35
       validated_at: -32
     logbooks:
@@ -429,6 +431,7 @@ internships:
     agreement:
       status: Gevalideerd
       insurance: true
+      file_path: uploads/agreements/student2_securenet.pdf
       uploaded_at: -145
       validated_at: -140
     logbooks:
@@ -457,7 +460,7 @@ internships:
         message: Bedankt voor de kans
     documents:
       - doc_type: agreement
-        file_path: /uploads/agreements/student2_securenet.pdf
+        file_path: uploads/agreements/student2_securenet.pdf
 
   - student: student2@school.be
     company: CloudScale NV
@@ -492,6 +495,7 @@ internships:
     agreement:
       status: Ingediend
       insurance: false
+      file_path: uploads/agreements/student2_innovatelab.pdf
       uploaded_at: +2
     logbooks: null
     evaluations: []
@@ -501,7 +505,7 @@ internships:
         message: Overeenkomst ontvangen, wacht op validatie
     documents:
       - doc_type: agreement
-        file_path: /uploads/agreements/student2_innovatelab.pdf
+        file_path: uploads/agreements/student2_innovatelab.pdf
 
   # ==========================================================================
   # STUDENT 3: Luc Van den Broeck
@@ -593,6 +597,7 @@ internships:
     agreement:
       status: Gevalideerd
       insurance: true
+      file_path: uploads/agreements/student4_gamestudio.pdf
       uploaded_at: -50
       validated_at: -48
     logbooks:
@@ -615,7 +620,7 @@ internships:
         message: Leer veel van het team
     documents:
       - doc_type: agreement
-        file_path: /uploads/agreements/student4_gamestudio.pdf
+        file_path: uploads/agreements/student4_gamestudio.pdf
 
   - student: student4@school.be
     company: E-Com Solutions
@@ -654,6 +659,7 @@ internships:
     agreement:
       status: Ingediend
       insurance: false
+      file_path: uploads/agreements/student5_cloudscale.pdf
       uploaded_at: +5
     logbooks: null
     evaluations: []
@@ -663,7 +669,7 @@ internships:
         message: Overeenkomst ontvangen
     documents:
       - doc_type: agreement
-        file_path: /uploads/agreements/student5_cloudscale.pdf
+        file_path: uploads/agreements/student5_cloudscale.pdf
 
   - student: student5@school.be
     company: DataFlow Solutions
@@ -679,6 +685,7 @@ internships:
     agreement:
       status: Gevalideerd
       insurance: true
+      file_path: uploads/agreements/student5_dataflow.pdf
       uploaded_at: -85
       validated_at: -80
     logbooks:
@@ -704,7 +711,7 @@ internships:
         message: Werk aan je communicatie
     documents:
       - doc_type: agreement
-        file_path: /uploads/agreements/student5_dataflow.pdf
+        file_path: uploads/agreements/student5_dataflow.pdf
 
   # ==========================================================================
   # STUDENT 6: Sara Neyens (inactive)
@@ -723,6 +730,7 @@ internships:
     agreement:
       status: Gevalideerd
       insurance: true
+      file_path: uploads/agreements/student6_greentech.pdf
       uploaded_at: -195
       validated_at: -190
     logbooks:
@@ -785,6 +793,7 @@ internships:
     agreement:
       status: Gevalideerd
       insurance: true
+      file_path: uploads/agreements/student7_innovatelab.pdf
       uploaded_at: -18
       validated_at: -16
     logbooks:
@@ -798,7 +807,7 @@ internships:
         message: Je hebt een talent voor AI
     documents:
       - doc_type: agreement
-        file_path: /uploads/agreements/student7_innovatelab.pdf
+        file_path: uploads/agreements/student7_innovatelab.pdf
 
   - student: student7@school.be
     company: E-Com Solutions
@@ -864,6 +873,7 @@ internships:
     agreement:
       status: Onvolledig
       insurance: false
+      file_path: uploads/agreements/student8_mobilefirst.pdf
       uploaded_at: -22
     logbooks:
       count: 3
@@ -876,7 +886,7 @@ internships:
         message: Overeenkomst is onvolledig, graag aanvullen
     documents:
       - doc_type: agreement
-        file_path: /uploads/agreements/student8_mobilefirst.pdf
+        file_path: uploads/agreements/student8_mobilefirst.pdf
 
   - student: student8@school.be
     company: DevOps Masters

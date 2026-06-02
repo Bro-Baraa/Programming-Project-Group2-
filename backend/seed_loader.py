@@ -199,13 +199,26 @@ def create_proposal(db: Session, internship_id: int, data: dict) -> Proposal:
     return proposal
 
 
+def _ensure_fake_file(path: str | None) -> None:
+    """Create a minimal fake PDF on disk if the path is set but the file doesn't exist."""
+    if not path:
+        return
+    p = Path(path)
+    if p.exists():
+        return
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_bytes(b"%PDF-1.4 fake pdf content\n%%EOF\n")
+
+
 def create_agreement(db: Session, internship_id: int, data: dict) -> Agreement:
     existing = db.query(Agreement).filter(Agreement.internship_id == internship_id).first()
     if existing:
         return existing
+    file_path = data.get("file_path")
+    _ensure_fake_file(file_path)
     agreement = Agreement(
         internship_id=internship_id,
-        file_path=data.get("file_path"),
+        file_path=file_path,
         insurance_verified=data.get("insurance", False),
         status=data["status"],
         uploaded_at=parse_datetime(data.get("uploaded_at")),
@@ -293,10 +306,12 @@ def create_feedback(db: Session, internship_id: int, from_user_id: int, to_user_
 
 
 def create_document(db: Session, internship_id: int, data: dict) -> Document:
+    file_path = data.get("file_path")
+    _ensure_fake_file(file_path)
     doc = Document(
         internship_id=internship_id,
         doc_type=data.get("doc_type", "other"),
-        file_path=data.get("file_path")
+        file_path=file_path
     )
     db.add(doc)
     db.flush()
