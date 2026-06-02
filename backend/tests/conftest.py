@@ -66,71 +66,28 @@ def _create_test_user(db, email, password, first_name, role):
 
 
 @pytest.fixture
+def test_admin(db):
+    return _create_test_user(db, "admin@test.com", "admin123", "Admin", "admin")
+
+
+@pytest.fixture
 def test_student(db):
-    """Create a test student user."""
-    user = User(
-        email="student@test.com",
-        password_hash=get_password_hash("student123"),
-        first_name="Student",
-        last_name="User",
-        role="student",
-        is_active=True
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    return _create_test_user(db, "student@test.com", "student123", "Student", "student")
 
 
 @pytest.fixture
 def test_teacher(db):
-    """Create a test teacher user."""
-    user = User(
-        email="teacher@test.com",
-        password_hash=get_password_hash("teacher123"),
-        first_name="Teacher",
-        last_name="User",
-        role="teacher",
-        is_active=True
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    return _create_test_user(db, "teacher@test.com", "teacher123", "Teacher", "teacher")
 
 
 @pytest.fixture
 def test_committee(db):
-    """Create a test committee user."""
-    user = User(
-        email="committee@test.com",
-        password_hash=get_password_hash("committee123"),
-        first_name="Committee",
-        last_name="User",
-        role="committee",
-        is_active=True
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    return _create_test_user(db, "committee@test.com", "committee123", "Committee", "committee")
 
 
 @pytest.fixture
 def test_mentor(db):
-    """Create a test mentor user."""
-    user = User(
-        email="mentor@test.com",
-        password_hash=get_password_hash("mentor123"),
-        first_name="Mentor",
-        last_name="User",
-        role="mentor",
-        is_active=True
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    return _create_test_user(db, "mentor@test.com", "mentor123", "Mentor", "mentor")
 
 
 @pytest.fixture

@@ -6,14 +6,6 @@ from collections import defaultdict
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-
-# Configure logging so app-level warnings/info are visible in uvicorn console
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
 from app.routers import (
     auth,
     companies,
@@ -27,6 +19,13 @@ from app.routers import (
     competencies,
     users,
     me,
+)
+
+# Configure logging so app-level warnings/info are visible in uvicorn console
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 
 # Create database tables

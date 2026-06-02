@@ -65,24 +65,6 @@ const content = document.getElementById("content");
 
 // Authenticatie
 
-function checkAuth() {
-  const isLoggedIn = AuthAPI.isLoggedIn();
-  const urlParams = new URLSearchParams(window.location.search);
-  const view = urlParams.get('view');
-  
-  if (!isLoggedIn && view !== 'login') {
-    renderLogin();
-    return false;
-  }
-  
-  if (isLoggedIn) {
-    const user = AuthAPI.getUser();
-    updateUIForUser(user);
-  }
-  
-  return isLoggedIn;
-}
-
 function updateUIForUser(user) {
   const userInfo = document.getElementById('user-info');
   const userName = document.getElementById('user-name');
@@ -717,7 +699,8 @@ function wireProposalForm() {
   editBtn?.addEventListener('click', () => {
     if (editSection) editSection.style.display = 'block';
     editBtn.style.display = 'none';
-    document.getElementById('btn-withdraw-proposal')?.style.display && (document.getElementById('btn-withdraw-proposal').style.display = 'none');
+    const withdrawBtn = document.getElementById('btn-withdraw-proposal');
+    if (withdrawBtn) withdrawBtn.style.display = 'none';
   });
 
   cancelEditBtn?.addEventListener('click', () => {
@@ -984,7 +967,7 @@ async function renderStudentEvaluations() {
   if (tbody && currentEvaluations.length > 0) {
     tbody.innerHTML = currentEvaluations.map(ev => `
       <tr>
-        <td>${ev.eval_type === 'tussentijds' ? 'Tussentijds' : ev.eval_type === 'final' ? 'Final' : ev.eval_type}</td>
+        <td>${getEvalTypeLabel(ev.eval_type)}</td>
         <td>${ev.finalized ? formatDate(ev.finalized_at) : '-'}</td>
         <td>${ev.finalized ? 'Afgerond' : 'In behandeling'}</td>
         <td>${ev.finalized ? '<button class="btn small">Bekijken</button>' : '-'}</td>
