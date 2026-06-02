@@ -269,6 +269,40 @@
       </div>
     </template>
 
+    <template id="commissie-overeenkomsten-template">
+      <div class="panel card reveal">
+        <h2>Overeenkomsten Beoordelen</h2>
+        <p class="hint">Controleer of de overeenkomst is opgeladen en markeer de verzekering als in orde.</p>
+        <table id="agreements-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Bedrijf</th>
+              <th>Stage Status</th>
+              <th>Overeenkomst Status</th>
+              <th>Opgeladen</th>
+              <th>Actie</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6">Laden...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div id="agreement-detail-panel" class="panel card reveal" style="display: none;">
+        <h2>Overeenkomst Detail: <span id="agreement-student-name">Student</span></h2>
+        <p><strong>Bedrijf:</strong> <span id="agreement-company">-</span></p>
+        <p><strong>Stage status:</strong> <span id="agreement-internship-status">-</span></p>
+
+        <div id="agreement-detail-content" style="margin: 1rem 0;">
+          <p>Laden...</p>
+        </div>
+
+        <div id="agreement-actions" style="margin-top: 1rem;"></div>
+      </div>
+    </template>
+
     <template id="commissie-overzicht-template">
       <div class="panel card reveal">
         <h2>Alle Stages - Overzicht</h2>

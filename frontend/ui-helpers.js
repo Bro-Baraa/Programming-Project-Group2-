@@ -28,11 +28,20 @@ function getStatusClass(status) {
     'pending': 'status-warn',
     'goedgekeurd': 'status-good',
     'lopend': 'status-good',
+    'gevalideerd': 'status-good',
     'approved': 'status-good',
     'afgekeurd': 'status-bad',
     'rejected': 'status-bad',
+    'onvolledig': 'status-warn',
+    'niet-ingediend': 'status-warn',
   };
   return map[status.toLowerCase().replace(/\s+/g, '-')] || '';
+}
+
+function getEvalTypeLabel(type) {
+  if (type === 'tussentijds') return 'Tussentijds';
+  if (type === 'final') return 'Final';
+  return type;
 }
 
 function showToast(message, type = "success", duration = 3000) {

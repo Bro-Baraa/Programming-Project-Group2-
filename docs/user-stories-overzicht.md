@@ -38,7 +38,7 @@ Datum: 2026-05-27
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
 | US-04 | Student uploadt stageovereenkomst | OK | `POST /internships/{id}/agreement` accepteert PDF; content-type validatie op `application/pdf`; status wijzigt naar "Overeenkomst Ingediend". | Upload formulier met file picker + PDF accept attribuut. | — |
-| US-13 | Commissie controleert of overeenkomst is opgeladen | PART | `GET /agreement` toont status. `PATCH /agreement` markeert als "Gevalideerd" of "Onvolledig". | Agreement status zichtbaar in commissie overzicht. | Rol "administratie" bestaat niet in het systeem; committee/admin voert deze actie uit. |
+| US-13 | Commissie controleert of overeenkomst is opgeladen | OK | `GET /agreement` toont status. `PATCH /agreement` markeert als "Gevalideerd" of "Onvolledig". | Commissie heeft "Overeenkomsten" tab met lijst, PDF download, verzekeringscheckbox, en validatieknoppen. | — |
 | US-26 | Administratie ziet welke studenten overeenkomst hebben ingediend | PART | `GET /internships/reports/agreements` geeft agreement-status. | Commissie overzicht toont "Overeenkomst" kolom met ontvangen/nog-niet. | Zelfde rol-probleem als US-13; geen dedicated "administratie" rol. |
 
 ## Fase 4: Opvolging
@@ -85,9 +85,9 @@ Datum: 2026-05-27
 
 | Status | Aantal |
 |--------|--------|
-| OK | 14 |
+| OK | 15 |
 | BE-OK | 1 |
-| PART | 8 |
+| PART | 7 |
 | BUG | 0 |
 | NOK | 3 |
 

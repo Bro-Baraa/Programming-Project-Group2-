@@ -69,7 +69,7 @@ _rate_limit = defaultdict(list)
 async def rate_limit(request: Request, call_next):
     path = request.url.path
     if path in ("/auth/login", "/auth/register", "/health"):
-        ip = request.client.host
+        ip = request.client.host if request.client else "unknown"
         now = time.time()
         _rate_limit[ip] = [t for t in _rate_limit[ip] if now - t < 60]
         if len(_rate_limit[ip]) > 10:

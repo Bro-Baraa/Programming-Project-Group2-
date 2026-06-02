@@ -4,7 +4,7 @@
 // Role waarden moeten overeenkomen met backend User.role
 const roleViews = {
   student: ["dashboard", "voorstel", "logboek", "overeenkomst", "evaluaties"],
-  committee: ["voorstellen", "overzicht"],
+  committee: ["voorstellen", "overeenkomsten", "overzicht"],
   teacher: ["opvolging", "evaluatie", "eindoverzicht"],
   mentor: ["validatie", "evaluatie"],
   admin: ["competenties"],
@@ -26,6 +26,7 @@ const templates = {
   "student-overeenkomst": "student-overeenkomst-template",
   "student-evaluaties": "student-evaluatie-template",
   committee: "commissie-template",
+  "committee-overeenkomsten": "commissie-overeenkomsten-template",
   "committee-overzicht": "commissie-overzicht-template",
   teacher: "docent-template",
   "teacher-evaluatie": "docent-evaluatie-template",
@@ -435,6 +436,9 @@ async function wireRoleInteractions(role, view) {
   if (role === 'committee') {
     if (view === 'voorstellen') {
       renderCommitteeProposals();
+    }
+    if (view === 'overeenkomsten') {
+      renderCommitteeAgreements();
     }
     if (view === 'overzicht') {
       renderCommitteeOverview();
@@ -1148,6 +1152,165 @@ async function doReview(internshipId, decision) {
     // Gegevens verversen
     allInternships = await InternshipsAPI.list();
     renderCommitteeProposals();
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+async function renderCommitteeAgreements() {
+  try {
+    const tbody = document.querySelector('#agreements-table tbody');
+
+    if (tbody) {
+      // Filter stages that have an agreement uploaded or are approved (waiting for agreement)
+      const stagesWithAgreements = allInternships.filter(
+        i => i.status === 'Goedgekeurd' || i.status === 'Overeenkomst Ingediend' || i.status === 'Lopend' || i.agreement_uploaded
+      );
+
+      if (stagesWithAgreements.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6">Geen stages met overeenkomsten gevonden.</td></tr>';
+      } else {
+        tbody.innerHTML = stagesWithAgreements.map(i => {
+          const agreementStatus = i.agreement_status || 'Niet Ingediend';
+          const statusClass = getStatusClass(agreementStatus);
+          return `
+            <tr data-id="${i.id}" class="agreement-row">
+              <td>${i.student?.first_name || 'Onbekend'} ${i.student?.last_name || ''}</td>
+              <td>${i.company?.name || 'Onbekend'}</td>
+              <td><span class="status-pill ${getStatusClass(i.status)}">${i.status}</span></td>
+              <td><span class="status-pill ${statusClass}">${agreementStatus}</span></td>
+              <td>${i.agreement_uploaded ? '<span class="status-pill status-good">✓ Ja</span>' : '<span class="status-pill status-warn">✗ Nee</span>'}</td>
+              <td>
+                <button class="btn small view-agreement-btn" data-id="${i.id}">Bekijken</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        // Click handlers for view buttons
+        tbody.querySelectorAll('.view-agreement-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = parseInt(btn.dataset.id);
+            showAgreementDetailPanel(id);
+          });
+        });
+      }
+    }
+
+    // Hide detail panel initially
+    const panel = document.getElementById('agreement-detail-panel');
+    if (panel) panel.style.display = 'none';
+
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+function showAgreementDetailPanel(internshipId) {
+  const internship = allInternships.find(i => i.id === internshipId);
+  if (!internship) return;
+
+  // Update URL
+  selectedInternshipId = internshipId;
+  currentInternship = internship;
+  const url = new URL(window.location.href);
+  url.searchParams.set('internship', internshipId);
+  window.history.replaceState({}, '', url);
+
+  // Show panel
+  const panel = document.getElementById('agreement-detail-panel');
+  if (panel) panel.style.display = 'block';
+
+  // Fill in student info
+  document.getElementById('agreement-student-name').textContent =
+    `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`;
+  document.getElementById('agreement-company').textContent = internship.company?.name || 'Onbekend';
+  document.getElementById('agreement-internship-status').textContent = internship.status;
+
+  // Load agreement details
+  const detailContainer = document.getElementById('agreement-detail-content');
+  detailContainer.innerHTML = '<p>Laden...</p>';
+
+  InternshipsAPI.get(internship.id).then(full => {
+    const agreement = full.agreement;
+    if (!agreement) {
+      detailContainer.innerHTML = `
+        <div class="info-message warning">
+          <p>⚠️ Er is nog geen overeenkomst geüpload voor deze stage.</p>
+        </div>
+      `;
+      document.getElementById('agreement-actions').innerHTML = '';
+      return;
+    }
+
+    const insuranceStatus = agreement.insurance_verified ? '✓ Verzekering gecontroleerd' : '✗ Verzekering nog niet gecontroleerd';
+    const insuranceClass = agreement.insurance_verified ? 'status-good' : 'status-warn';
+
+    detailContainer.innerHTML = `
+      <div class="agreement-info">
+        <p><strong>Status overeenkomst:</strong> <span class="status-pill ${getStatusClass(agreement.status)}">${agreement.status}</span></p>
+        <p><strong>Verzekering:</strong> <span class="status-pill ${insuranceClass}">${insuranceStatus}</span></p>
+        <p><strong>Geüpload op:</strong> ${formatDate(agreement.uploaded_at) || 'Onbekend'}</p>
+        <p><strong>Gevalideerd op:</strong> ${formatDate(agreement.validated_at) || 'Nog niet gevalideerd'}</p>
+        <div style="margin-top: 1rem;">
+          <a href="${AgreementsAPI.download(internship.id)}" target="_blank" class="btn">📄 PDF Downloaden</a>
+        </div>
+      </div>
+    `;
+
+    // Validation actions
+    const actionsDiv = document.getElementById('agreement-actions');
+    if (actionsDiv) {
+      const isValidated = agreement.status === 'Gevalideerd';
+
+      if (isValidated) {
+        actionsDiv.innerHTML = `
+          <div class="info-message success">
+            <p>✓ Deze overeenkomst is gevalideerd. De stage is actief.</p>
+          </div>
+        `;
+      } else {
+        actionsDiv.innerHTML = `
+          <div class="validation-form">
+            <div class="row full" style="margin-bottom: 0.75rem;">
+              <label>
+                <input type="checkbox" id="insurance-check" ${agreement.insurance_verified ? 'checked' : ''} />
+                Verzekering is in orde
+              </label>
+            </div>
+            <div class="btn-group">
+              <button id="btn-validate" class="btn success">✓ Valideren</button>
+              <button id="btn-incomplete" class="btn danger">✗ Onvolledig</button>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('btn-validate')?.addEventListener('click', () => {
+          const insuranceVerified = document.getElementById('insurance-check')?.checked || false;
+          validateAgreement(internship.id, 'Gevalideerd', insuranceVerified);
+        });
+
+        document.getElementById('btn-incomplete')?.addEventListener('click', () => {
+          const insuranceVerified = document.getElementById('insurance-check')?.checked || false;
+          validateAgreement(internship.id, 'Onvolledig', insuranceVerified);
+        });
+      }
+    }
+  }).catch(() => {
+    detailContainer.innerHTML = '<p class="error">Kon overeenkomstgegevens niet laden.</p>';
+  });
+}
+
+async function validateAgreement(internshipId, status, insuranceVerified) {
+  try {
+    await AgreementsAPI.validate(internshipId, status, insuranceVerified);
+    showToast(`Overeenkomst gemarkeerd als ${status.toLowerCase()}!`, 'success');
+    // Refresh data
+    allInternships = await InternshipsAPI.list();
+    renderCommitteeAgreements();
+    // Refresh detail panel
+    showAgreementDetailPanel(internshipId);
   } catch (error) {
     showToast(error.message, 'error');
   }

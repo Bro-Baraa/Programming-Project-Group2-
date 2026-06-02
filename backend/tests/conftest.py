@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
-from app.main import app
+from app.main import app, _rate_limit
 from app.auth import get_password_hash
 from app.models import User, Competency
 
@@ -45,18 +45,18 @@ def db():
 @pytest.fixture(scope="function")
 def client(db):
     """Create a test client with fresh database."""
+    _rate_limit.clear()
     yield TestClient(app)
 
 
-@pytest.fixture
-def test_admin(db):
-    """Create a test admin user."""
+def _create_test_user(db, email, password, first_name, role):
+    """Helper to create a test user with standard boilerplate."""
     user = User(
-        email="admin@test.com",
-        password_hash=get_password_hash("admin123"),
-        first_name="Admin",
+        email=email,
+        password_hash=get_password_hash(password),
+        first_name=first_name,
         last_name="User",
-        role="admin",
+        role=role,
         is_active=True
     )
     db.add(user)
