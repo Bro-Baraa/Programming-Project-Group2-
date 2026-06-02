@@ -883,6 +883,7 @@ function wireLogbookForm() {
 
 function wireAgreementUpload() {
   const form = document.getElementById('agreement-form');
+  const statusText = document.getElementById('agreement-status-text');
 
   if (!currentInternship) {
     content.innerHTML = `
@@ -894,11 +895,12 @@ function wireAgreementUpload() {
     return;
   }
 
-  // Controleer status - alleen toegestaan bij goedkeuring
-  if (currentInternship.status !== 'Goedgekeurd') {
+  const canUpload = currentInternship.status === 'Goedgekeurd' || currentInternship.status === 'Overeenkomst Ingediend';
+
+  if (!canUpload) {
     form.innerHTML = `
       <div class="info-message warning">
-        <p>⚠️ Je stagevoorstel moet eerst goedgekeurd zijn voordat je een overeenkomst kunt uploaden.</p>
+        <p>⚠️ Je kan geen overeenkomst uploaden in deze fase.</p>
         <p>Huidige status: <strong>${currentInternship.status}</strong></p>
         <a href="?view=dashboard" class="btn">Naar dashboard</a>
       </div>
@@ -906,19 +908,33 @@ function wireAgreementUpload() {
     return;
   }
 
-  // Controleer of overeenkomst al bestaat (backend list retourneert agreement_uploaded)
-  const hasAgreement = currentInternship.agreement_uploaded === true;
+  const agreementStatus = currentInternship.agreement_status;
 
-  // Statusweergave bijwerken
-  const statusText = document.getElementById('agreement-status-text');
-  if (hasAgreement && statusText) {
-    statusText.innerHTML = '<span class="status-pill status-good">Ontvangen</span>';
+  function setStatusLabel(label, className) {
+    if (statusText) {
+      statusText.innerHTML = `<span class="status-pill ${className}">${label}</span>`;
+    }
+  }
+
+  if (agreementStatus === 'Gevalideerd') {
+    setStatusLabel('Gevalideerd', 'status-good');
     form.innerHTML = `
       <div class="info-message success">
-        <p>✓ Je overeenkomst is succesvol geüpload!</p>
+        <p>✓ Je overeenkomst is gevalideerd. De stage is actief.</p>
       </div>
     `;
     return;
+  }
+
+  if (agreementStatus === 'Onvolledig') {
+    setStatusLabel('Onvolledig', 'status-warn');
+    form.insertAdjacentHTML('afterbegin', `
+      <div class="info-message warning" style="margin-bottom: 1rem;">
+        <p>⚠️ De commissie heeft je overeenkomst als onvolledig gemarkeerd. Upload een nieuwe versie.</p>
+      </div>
+    `);
+  } else if (agreementStatus === 'Ingediend') {
+    setStatusLabel('Ingediend', 'status-info');
   }
 
   form?.addEventListener('submit', async (e) => {
@@ -949,7 +965,6 @@ function wireAgreementUpload() {
       hideLoading(submitBtn);
       showToast('Overeenkomst succesvol geüpload!', 'success');
 
-      // Vernieuw stagegegevens na upload overeenkomst
       await refreshInternshipData();
 
       if (statusText) {
