@@ -2,6 +2,17 @@
 
 Dit document bevat de features die nog moeten worden geïmplementeerd om de requirements uit `analyse-finaal.md` volledig te ondersteunen.
 
+## Huidige status
+
+Een aantal punten uit de oorspronkelijke analyse zijn al deels of grotendeels aanwezig in de codebase:
+
+- Proposal herindiening bestaat al als MVP via `revision_count` en `resubmitted_at`.
+- Logboek-weken met status `missing` worden al door de backend berekend.
+- Competentiebeheer bestaat al, maar historische snapshotting ontbreekt nog.
+- De evaluatieflow bestaat in de backend, maar de frontend gebruikt foutieve routes en response shapes.
+
+De items hieronder beschrijven dus niet alleen ontbrekende features, maar ook de resterende hiaten die de requirements nog blokkeren.
+
 ## Prioriteit: Hoog
 
 ### 1. Audit Logging
@@ -70,21 +81,21 @@ Notification:
 - [ ] (Optioneel) E-mail wordt verstuurd bij belangrijke wijzigingen
 
 **Triggers (waar moet code aangepast worden):**
-- Proposal status wijziging → notificatie naar student
-- Logbook indiening → notificatie naar docent + mentor
-- Feedback geplaatst → notificatie naar ontvanger
-- Evaluatie gefinaliseerd → notificatie naar student
+- Proposal status wijziging -> notificatie naar student
+- Logbook indiening -> notificatie naar docent + mentor
+- Feedback geplaatst -> notificatie naar ontvanger
+- Evaluatie gefinaliseerd -> notificatie naar student
 
 ---
 
 ## Prioriteit: Medium
 
 ### 3. Competentieprofiel Koppelen aan Stage
-**Status:** Gedeeltelijk (profiel wordt opgehaald, maar niet opgeslagen bij stage)  
+**Status:** Gedeeltelijk: profiel wordt opgehaald, maar niet opgeslagen op stage-niveau  
 **Requirement:** *"Wijzigingen gelden enkel voor nieuwe stageperiodes; historische evaluaties blijven ongewijzigd"*  
 **Gerelateerde user stories:** [US-25](#user-stories-overzicht)
 
-**Probleem:** Als een admin het competentieprofiel wijzigt, gebruiken lopende stages plotseling het nieuwe profiel. Dit mag niet.
+**Probleem:** Als een admin het actieve competentieprofiel wijzigt, gebruiken lopende stages meteen het nieuwe profiel. Dat mag niet.
 
 **Wat moet er gebeuren:**
 - `Internship` model uitbreiden met `competency_profile_id`
@@ -105,9 +116,14 @@ Notification:
 ---
 
 ### 4. Versiegeschiedenis voor Proposals
-**Status:** Niet geïmplementeerd  
+**Status:** Gedeeltelijk (MVP-counter aanwezig, volledige historiek niet)  
 **Requirement:** *"Student kan aanpassen en opnieuw indienen"* bij status "Aanpassingen vereist"  
 **Gerelateerde user stories:** [US-01](#user-stories-overzicht), [US-11](#user-stories-overzicht)
+
+**Huidige stand:**
+- `Proposal` heeft al `revision_count` en `resubmitted_at`.
+- De student kan na "Aanpassingen Vereist" opnieuw indienen.
+- Er is nog geen echte versiehistoriek of vergelijking tussen versies.
 
 **Vraag:** Willen we oude versies bewaren of alleen de laatste?
 
@@ -150,7 +166,7 @@ Notification:
 
 **Technologie opties:**
 - **Excel:** `openpyxl` (Python library)
-- **PDF:** `reportlab` of `WeasyPrint` (HTML → PDF)
+- **PDF:** `reportlab` of `WeasyPrint` (HTML -> PDF)
 
 **Acceptatiecriteria:**
 - [ ] Admin kan dashboard data exporteren naar Excel
@@ -160,11 +176,11 @@ Notification:
 ---
 
 ### 6. "Ontbrekend" Status voor Logboeken
-**Status:**  Gedeeltelijk (kan met query, geen model wijziging nodig)  
+**Status:** Gedeeltelijk: backend berekent missing-weken, frontend toont ze nog niet  
 **Requirement:** *"Niet-ingevulde weken gemarkeerd als 'Ontbrekend'"*  
 **Gerelateerde user stories:** [US-08](#user-stories-overzicht)
 
-**Opmerking:** Dit is geen database wijziging, maar frontend logica.
+**Opmerking:** Dit is geen database wijziging, maar frontend logica. De backend heeft al een week-overzicht en `missing` status.
 
 **Wat moet er gebeuren:**
 - Frontend toont lijst van alle weken in de stageperiode
@@ -182,10 +198,9 @@ Notification:
 
 | Volgorde | Feature | Reden |
 |----------|---------|-------|
-| 1 | **Audit Logging** | Vereist voor acceptatiecriteria (traceerbaarheid) |
+| 1 | **Audit Logging** | Vereist voor traceerbaarheid en auditbaar gedrag |
 | 2 | **Notificatiesysteem** | Veel user stories verwachten dit (US-20, US-29) |
-| 3 | **Competieprofiel koppeling** | Voorkomt data inconsistentie bij profiel wijzigingen |
-| 4 | **Proposal versiegeschiedenis** | Vereist voor volledige herindiening flow |
-| 5 | **Export functionaliteit** | Nice-to-have voor admin rapportage |
-| 6 | **Logboek "ontbrekend"** | UI verbetering, geen database werk |
-
+| 3 | **Competentieprofiel koppeling** | Voorkomt data-inconsistentie bij profielwijzigingen |
+| 4 | **Proposal versiegeschiedenis** | Nodig voor volledige herindiening flow |
+| 5 | **Export functionaliteit** | Rapportage-eis voor administratie |
+| 6 | **Logboek "ontbrekend"** | UI verbetering; backend bestaat al grotendeels |
