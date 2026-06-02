@@ -180,7 +180,7 @@ async function renderTeacherFinalReport() {
 // ============================================
 // Docent & Mentor logboekweergaven
 // ============================================
-function renderTeacherLogbooks() {
+async function renderTeacherLogbooks() {
   const tbody = document.querySelector('#teacher-logbooks-table tbody');
   if (!tbody) return;
 
@@ -189,20 +189,44 @@ function renderTeacherLogbooks() {
     return;
   }
 
-  if (currentLogbooks.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">Geen logboeken gevonden voor deze stage.</td></tr>';
-    return;
+  try {
+    const weeks = await InternshipsAPI.getLogbookWeeks(currentInternship.id);
+    const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+    const rows = weeks.map(w => {
+      if (w.status === 'missing') {
+        return `
+          <tr class="missing-row">
+            <td>${w.week_number}</td>
+            <td colspan="3"><span class="status-pill status-warn">Ontbrekend</span></td>
+            <td>-</td>
+          </tr>
+        `;
+      }
+      const lb = logbookMap.get(w.week_number);
+      return `
+        <tr>
+          <td>${w.week_number}</td>
+          <td>${lb?.tasks || '-'}</td>
+          <td>${lb?.reflection || '-'}</td>
+          <td><span class="status-pill ${getStatusClass(w.status)}">${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+          <td>${w.mentor_validated ? '✓ Gevalideerd' : 'In afwachting'}</td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = rows.join('') || '<tr><td colspan="5">Geen logboekweken gevonden</td></tr>';
+  } catch (error) {
+    console.error('Failed to load week overview:', error);
+    // Fallback to raw logbook list
+    tbody.innerHTML = currentLogbooks.map(lb => `
+      <tr>
+        <td>${lb.week_number}</td>
+        <td>${lb.tasks || '-'}</td>
+        <td>${lb.reflection || '-'}</td>
+        <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+        <td>${lb.mentor_validated ? '✓ Gevalideerd' : 'In afwachting'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="5">Geen logboeken gevonden voor deze stage.</td></tr>';
   }
-
-  tbody.innerHTML = currentLogbooks.map(lb => `
-    <tr>
-      <td>${lb.week_number}</td>
-      <td>${lb.tasks || '-'}</td>
-      <td>${lb.reflection || '-'}</td>
-      <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
-      <td>${lb.mentor_validated ? '✓ Gevalideerd' : 'In afwachting'}</td>
-    </tr>
-  `).join('');
 
   // Feedbackknop verbinden
   const sendBtn = document.getElementById('teacher-send-feedback');

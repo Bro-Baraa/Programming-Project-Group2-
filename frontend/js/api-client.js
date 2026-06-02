@@ -213,6 +213,10 @@ const InternshipsAPI = {
   getLogbooks(internshipId) {
     return apiRequest(`/internships/${internshipId}/logbooks`);
   },
+
+  getLogbookWeeks(internshipId) {
+    return apiRequest(`/internships/${internshipId}/logbooks/weeks`);
+  },
   
   createLogbook(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/logbooks`, {

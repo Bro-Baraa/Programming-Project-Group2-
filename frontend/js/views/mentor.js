@@ -1,4 +1,4 @@
-function renderMentorLogbooks() {
+async function renderMentorLogbooks() {
   const tbody = document.querySelector('#mentor-logbooks-table tbody');
   if (!tbody) return;
 
@@ -7,35 +7,71 @@ function renderMentorLogbooks() {
     return;
   }
 
-  if (currentLogbooks.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6">Geen logboeken gevonden voor deze stage.</td></tr>';
-    return;
+  try {
+    const weeks = await InternshipsAPI.getLogbookWeeks(currentInternship.id);
+    const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+    tbody.innerHTML = weeks.map(w => {
+      if (w.status === 'missing') {
+        return `
+          <tr class="missing-row">
+            <td>${w.week_number}</td>
+            <td colspan="3"><span class="status-pill status-warn">Ontbrekend</span></td>
+            <td>-</td>
+            <td>-</td>
+          </tr>
+        `;
+      }
+      const lb = logbookMap.get(w.week_number);
+      let actionCell;
+      if (w.mentor_validated) {
+        actionCell = '<span class="status-pill status-good">✓ Gevalideerd</span>';
+      } else if (w.status === 'submitted') {
+        actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb?.id}">Valideren</button>`;
+      } else {
+        actionCell = '<span class="status-pill">Concept</span>';
+      }
+
+      return `
+        <tr data-logbook-id="${lb?.id ?? ''}">
+          <td>${w.week_number}</td>
+          <td>${lb?.tasks || '-'}</td>
+          <td>${lb?.reflection || '-'}</td>
+          <td><span class="status-pill ${getStatusClass(w.status)}">${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+          <td>
+            <textarea class="mentor-feedback-input" data-id="${lb?.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb?.mentor_feedback || ''}</textarea>
+            <button class="btn small save-feedback-btn" data-id="${lb?.id}" style="margin-top:0.25rem;">Opslaan</button>
+          </td>
+          <td>${actionCell}</td>
+        </tr>
+      `;
+    }).join('');
+  } catch (error) {
+    console.error('Failed to load week overview:', error);
+    tbody.innerHTML = currentLogbooks.map(lb => {
+      let actionCell;
+      if (lb.mentor_validated) {
+        actionCell = '<span class="status-pill status-good">✓ Gevalideerd</span>';
+      } else if (lb.status === 'submitted') {
+        actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`;
+      } else {
+        actionCell = '<span class="status-pill">Concept</span>';
+      }
+
+      return `
+        <tr data-logbook-id="${lb.id}">
+          <td>${lb.week_number}</td>
+          <td>${lb.tasks || '-'}</td>
+          <td>${lb.reflection || '-'}</td>
+          <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+          <td>
+            <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb.mentor_feedback || ''}</textarea>
+            <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">Opslaan</button>
+          </td>
+          <td>${actionCell}</td>
+        </tr>
+      `;
+    }).join('') || '<tr><td colspan="6">Geen logboeken gevonden voor deze stage.</td></tr>';
   }
-
-  tbody.innerHTML = currentLogbooks.map(lb => {
-    let actionCell;
-    if (lb.mentor_validated) {
-      actionCell = '<span class="status-pill status-good">✓ Gevalideerd</span>';
-    } else if (lb.status === 'submitted') {
-      actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`;
-    } else {
-      actionCell = '<span class="status-pill">Concept</span>';
-    }
-
-    return `
-      <tr data-logbook-id="${lb.id}">
-        <td>${lb.week_number}</td>
-        <td>${lb.tasks || '-'}</td>
-        <td>${lb.reflection || '-'}</td>
-        <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
-        <td>
-          <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb.mentor_feedback || ''}</textarea>
-          <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">Opslaan</button>
-        </td>
-        <td>${actionCell}</td>
-      </tr>
-    `;
-  }).join('');
 
   // Validatieknoppen verbinden
   tbody.querySelectorAll('.validate-logbook-btn').forEach(btn => {

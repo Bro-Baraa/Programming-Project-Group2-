@@ -2,7 +2,7 @@
 // Studentweergaven
 // ============================================
 
-function renderStudentDashboard() {
+async function renderStudentDashboard() {
   if (!currentInternship) {
     content.innerHTML = `
       <div class="panel card reveal">
@@ -36,17 +36,44 @@ function renderStudentDashboard() {
     `;
   }
 
-  // Logboeken tabel bijwerken
+  // Logboeken tabel bijwerken — toon alle weken inclusief ontbrekende (US-08)
   const tbody = document.querySelector('table tbody');
-  if (tbody && currentLogbooks.length > 0) {
-    tbody.innerHTML = currentLogbooks.map(lb => `
-      <tr>
-        <td>${lb.week_number}</td>
-        <td>${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
-        <td>${lb.mentor_validated ? 'Goedgekeurd' : (lb.status === 'submitted' ? 'In afwachting' : '-')}</td>
-        <td>${lb.mentor_feedback ? lb.mentor_feedback : '<span class="hint">-</span>'}</td>
-      </tr>
-    `).join('');
+  if (tbody && currentInternship) {
+    try {
+      const weeks = await InternshipsAPI.getLogbookWeeks(currentInternship.id);
+      const rows = weeks.map(w => {
+        if (w.status === 'missing') {
+          return `
+            <tr class="missing-row">
+              <td>${w.week_number}</td>
+              <td><span class="status-pill status-warn">Ontbrekend</span></td>
+              <td>-</td>
+              <td>-</td>
+            </tr>
+          `;
+        }
+        return `
+          <tr>
+            <td>${w.week_number}</td>
+            <td>${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
+            <td>${w.mentor_validated ? 'Goedgekeurd' : (w.status === 'submitted' ? 'In afwachting' : '-')}</td>
+            <td>${w.mentor_feedback ? w.mentor_feedback : '<span class="hint">-</span>'}</td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = rows.join('') || '<tr><td colspan="4">Geen logboekweken gevonden</td></tr>';
+    } catch (error) {
+      console.error('Failed to load week overview:', error);
+      // Fallback to raw logbook list
+      tbody.innerHTML = currentLogbooks.map(lb => `
+        <tr>
+          <td>${lb.week_number}</td>
+          <td>${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
+          <td>${lb.mentor_validated ? 'Goedgekeurd' : (lb.status === 'submitted' ? 'In afwachting' : '-')}</td>
+          <td>${lb.mentor_feedback ? lb.mentor_feedback : '<span class="hint">-</span>'}</td>
+        </tr>
+      `).join('') || '<tr><td colspan="4">Geen logboeken gevonden</td></tr>';
+    }
   }
 
   // Competentie Progressie bijwerken
