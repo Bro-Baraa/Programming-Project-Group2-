@@ -498,6 +498,7 @@ function renderStudentDashboard() {
         <td>${lb.week_number}</td>
         <td>${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
         <td>${lb.mentor_validated ? 'Goedgekeurd' : (lb.status === 'submitted' ? 'In afwachting' : '-')}</td>
+        <td>${lb.mentor_feedback ? lb.mentor_feedback : '<span class="hint">-</span>'}</td>
       </tr>
     `).join('');
   }
@@ -1696,12 +1697,12 @@ function renderMentorLogbooks() {
   if (!tbody) return;
 
   if (!currentInternship) {
-    tbody.innerHTML = '<tr><td colspan="5">Selecteer een stage via het navigatiemenu.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">Selecteer een stage via het navigatiemenu.</td></tr>';
     return;
   }
 
   if (currentLogbooks.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">Geen logboeken gevonden voor deze stage.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6">Geen logboeken gevonden voor deze stage.</td></tr>';
     return;
   }
 
@@ -1711,6 +1712,10 @@ function renderMentorLogbooks() {
       <td>${lb.tasks || '-'}</td>
       <td>${lb.reflection || '-'}</td>
       <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+      <td>
+        <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb.mentor_feedback || ''}</textarea>
+        <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">Opslaan</button>
+      </td>
       <td>
         ${lb.mentor_validated
           ? '<span class="status-pill status-good">✓ Gevalideerd</span>'
@@ -1737,6 +1742,27 @@ function renderMentorLogbooks() {
         // Vernieuw logboeken
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
         renderMentorLogbooks();
+      } catch (error) {
+        hideLoading(btn);
+        showToast(error.message, 'error');
+      }
+    });
+  });
+
+  // Feedback opslaan knoppen verbinden
+  tbody.querySelectorAll('.save-feedback-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const logbookId = parseInt(btn.dataset.id);
+      const textarea = tbody.querySelector(`.mentor-feedback-input[data-id="${logbookId}"]`);
+      const feedback = textarea?.value || '';
+      showLoading(btn, 'Bezig...');
+      try {
+        await apiRequest(`/internships/logbooks/${logbookId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ mentor_feedback: feedback })
+        });
+        hideLoading(btn);
+        showToast('Feedback opgeslagen!', 'success');
       } catch (error) {
         hideLoading(btn);
         showToast(error.message, 'error');

@@ -69,6 +69,7 @@ def get_week_overview(
                     logbook_id=lb.id,
                     status=lb.status,
                     mentor_validated=lb.mentor_validated,
+                    mentor_feedback=lb.mentor_feedback,
                 )
             )
         else:

@@ -72,10 +72,12 @@ def update_logbook(
         ensure_internship_access(current_user, internship)
         if any([update.tasks, update.reflection, update.issues, update.status]):
             raise HTTPException(
-                status_code=403, detail="Mentors can only validate logbooks"
+                status_code=403, detail="Mentors can only validate logbooks and give feedback"
             )
         if update.mentor_validated is not None:
             logbook.mentor_validated = update.mentor_validated
+        if update.mentor_feedback is not None:
+            logbook.mentor_feedback = update.mentor_feedback
 
     if current_user.role == "teacher":
         ensure_internship_access(current_user, internship)

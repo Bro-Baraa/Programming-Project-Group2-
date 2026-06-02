@@ -568,6 +568,31 @@ class TestLogbooks:
         assert data[0]["week_number"] == 1
         assert data[0]["mentor_validated"] is True
 
+    def test_mentor_can_give_feedback(self, client, auth_headers_mentor, internship_with_logbook, db):
+        """Test mentor can give feedback on a logbook via PATCH endpoint."""
+        from app.models import Logbook
+
+        logbook = Logbook(
+            internship_id=internship_with_logbook.id,
+            week_number=2,
+            tasks="Tasks",
+            reflection="Reflection",
+            status="submitted"
+        )
+        db.add(logbook)
+        db.commit()
+        db.refresh(logbook)
+
+        response = client.patch(
+            f"/internships/logbooks/{logbook.id}",
+            json={"mentor_feedback": "Goed werk deze week!"},
+            headers=auth_headers_mentor
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["mentor_feedback"] == "Goed werk deze week!"
+        assert data["mentor_validated"] is False
+
     def test_student_can_submit_logbook(self, client, auth_headers_student, internship_with_logbook, db):
         """US-05: Student kan logboek definitief indienen via submit endpoint."""
         from app.models import Logbook
