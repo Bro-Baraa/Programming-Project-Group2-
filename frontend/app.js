@@ -522,6 +522,51 @@ function renderStudentDashboard() {
     `).join('');
   }
 
+  // Competentie Progressie bijwerken
+  const competencyPanel = Array.from(document.querySelectorAll('.panel.card')).find(
+    p => p.querySelector('h2')?.textContent === 'Competentie Progressie'
+  );
+  if (competencyPanel) {
+    // Only use finalized evaluations
+    const finalizedEvals = currentEvaluations.filter(ev => ev.finalized);
+    const competencyScores = {};
+
+    finalizedEvals.forEach(ev => {
+      (ev.rules || []).forEach(rule => {
+        const name = rule.competency?.name || 'Onbekend';
+        if (rule.score !== null && rule.score !== undefined) {
+          if (!competencyScores[name]) {
+            competencyScores[name] = { total: 0, count: 0 };
+          }
+          competencyScores[name].total += rule.score;
+          competencyScores[name].count += 1;
+        }
+      });
+    });
+
+    const competencyItems = Object.entries(competencyScores).map(([name, data]) => {
+      const avg = data.total / data.count;
+      const pct = Math.round((avg / 5) * 100);
+      return { name, pct, avg: avg.toFixed(1) };
+    });
+
+    if (competencyItems.length > 0) {
+      competencyPanel.innerHTML = `
+        <h2>Competentie Progressie</h2>
+        ${competencyItems.map(c => `
+          <div class="meter">
+            <span style="width: ${c.pct}%">${escapeHtml(c.name)} ${c.pct}% (${c.avg}/5)</span>
+          </div>
+        `).join('')}
+      `;
+    } else {
+      competencyPanel.innerHTML = `
+        <h2>Competentie Progressie</h2>
+        <p class="hint">Nog geen evaluaties beschikbaar.</p>
+      `;
+    }
+  }
+
   // Feedback sectie bijwerken
   const feedbackDiv = document.getElementById('student-feedback');
   if (feedbackDiv) {
