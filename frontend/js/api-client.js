@@ -269,33 +269,88 @@ const InternshipsAPI = {
 // Competencies API
 // ============================================
 
-const CompetenciesAPI = {
-  list(activeOnly = true) {
-    return apiRequest(`/competencies?active_only=${activeOnly}`);
+// ============================================
+// Competency Profile API
+// ============================================
+
+const CompetencyProfileAPI = {
+  list(activeOnly = false) {
+    return apiRequest(`/competencies/profiles?active_only=${activeOnly}`);
   },
-  
+
+  create(data) {
+    return apiRequest('/competencies/profiles', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  update(id, data) {
+    return apiRequest(`/competencies/profiles/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
+  delete(id) {
+    return apiRequest(`/competencies/profiles/${id}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
+// ============================================
+// Competencies API
+// ============================================
+
+const CompetenciesAPI = {
+  list(profileId = null, activeOnly = true, search = null, skip = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (profileId) params.append('profile_id', String(profileId));
+    params.append('active_only', String(activeOnly));
+    if (search) params.append('search', search);
+    params.append('skip', String(skip));
+    params.append('limit', String(limit));
+    return apiRequest(`/competencies?${params.toString()}`);
+  },
+
   create(data) {
     return apiRequest('/competencies', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
-  
+
+  createBulk(data) {
+    return apiRequest('/competencies/bulk', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
   update(id, data) {
     return apiRequest(`/competencies/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
   },
-  
+
   delete(id) {
     return apiRequest(`/competencies/${id}`, {
       method: 'DELETE'
     });
   },
-  
-  checkWeights() {
-    return apiRequest('/competencies/check-weights');
+
+  deactivate(id) {
+    return apiRequest(`/competencies/${id}/deactivate`, {
+      method: 'POST'
+    });
+  },
+
+  checkWeights(profileId = null) {
+    const params = new URLSearchParams();
+    if (profileId) params.append('profile_id', String(profileId));
+    return apiRequest(`/competencies/check-weights?${params.toString()}`);
   }
 };
 

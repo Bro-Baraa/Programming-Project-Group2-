@@ -482,28 +482,78 @@
   </template>
 
   <template id="admin-template">
+    <div class="competencies-header">
+      <h2>Competentiebeheer</h2>
+      <div class="competencies-actions">
+        <div class="profile-selector-wrapper">
+          <label for="profile-select">Profiel</label>
+          <select id="profile-select">
+            <option value="">Laden...</option>
+          </select>
+        </div>
+        <button id="manage-profiles-btn" class="btn secondary small">Profielen Beheren</button>
+      </div>
+    </div>
+
     <div class="grid two-col reveal">
       <article class="panel card">
-        <h2>Competentiebeheer</h2>
-        <p>Som gewichten moet 100% zijn.</p>
+        <h3>Competenties</h3>
+        <div class="competency-search-bar">
+          <input type="text" id="comp-search" placeholder="Zoek competenties..." />
+          <label class="toggle-inactive">
+            <input type="checkbox" id="show-inactive" /> Toon inactieve
+          </label>
+        </div>
         <form id="competency-form">
-          <div class="row compact" style="margin-bottom: 0.5rem;">
+          <div class="comp-add-row">
             <input type="text" id="comp-name" placeholder="Competentie naam" required />
+            <input type="text" id="comp-desc" placeholder="Beschrijving" />
             <input type="number" id="comp-weight" min="0" max="100" step="1" placeholder="Gewicht %" required />
           </div>
           <button class="btn" type="submit">Competentie toevoegen</button>
         </form>
-        <ul id="competency-list" class="list"></ul>
+        <button id="bulk-add-toggle" class="btn secondary small" style="margin-top: 0.5rem;">+ Bulk toevoegen</button>
+        <div id="bulk-add-panel" class="bulk-add-panel" style="display: none;">
+          <textarea id="bulk-add-text" rows="4" placeholder="Naam | Gewicht | Beschrijving (optioneel)&#10;Analyseren | 30 | Problemen analyseren en structureren&#10;Ontwerpen | 25 | Software-ontwerp maken"></textarea>
+          <button id="bulk-add-btn" class="btn small">Toevoegen</button>
+        </div>
+        <ul id="competency-list" class="list competency-list"></ul>
         <p id="weight-check" class="hint"></p>
       </article>
 
       <article class="panel card">
-        <h2>Finale Score Simulator</h2>
-        <p>Gewogen formule: Σ(score × gewicht)/100</p>
+        <h3>Finale Score Simulator</h3>
+        <p class="hint">Gewogen formule: Σ(score × gewicht)/100</p>
         <div id="score-inputs"></div>
         <button id="calc-score" class="btn" style="margin-top: 1rem;">Bereken eindscore</button>
         <p id="score-result" class="result"></p>
       </article>
+    </div>
+
+    <div class="panel card reveal" style="margin-top: 1rem;">
+      <h3>Gewichtsverdeling</h3>
+      <div id="weight-chart" class="weight-chart"></div>
+    </div>
+
+    <!-- Profile Management Modal -->
+    <div id="profile-modal" class="modal" style="display: none;">
+      <div class="modal-overlay"></div>
+      <div class="modal-card">
+        <h3>Profielen Beheren</h3>
+        <div id="profile-list" class="profile-list"></div>
+        <form id="profile-form" class="profile-form">
+          <div class="row compact">
+            <input type="text" id="profile-name" placeholder="Naam" required />
+            <input type="text" id="profile-version" placeholder="Versie" />
+          </div>
+          <input type="text" id="profile-year" placeholder="Academisch jaar" required />
+          <label>
+            <input type="checkbox" id="profile-active" checked /> Actief
+          </label>
+          <button type="submit" class="btn">Profiel aanmaken</button>
+        </form>
+        <button class="btn secondary" id="close-profile-modal">Sluiten</button>
+      </div>
     </div>
   </template>
 

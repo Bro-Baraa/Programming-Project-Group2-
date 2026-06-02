@@ -1,46 +1,202 @@
-function renderCompetencyManager() {
+// ============================================
+// Admin - Competentiebeheer
+// ============================================
+
+let competencyProfiles = [];
+let selectedProfileId = null;
+let compSearchQuery = '';
+let compShowInactive = false;
+let compEditId = null;
+
+async function renderCompetencyManager() {
   const list = document.getElementById('competency-list');
   const scoreInputs = document.getElementById('score-inputs');
   const weightCheck = document.getElementById('weight-check');
-  
-  function render() {
-    if (!list || !scoreInputs || !weightCheck) return;
-    
-    list.innerHTML = currentCompetencies.map((comp) => `
-      <li>
-        <span class="comp-name">${comp.name}</span>
-        <span class="comp-weight">${comp.weight}%</span>
-        <button class="btn small secondary" onclick="handleDeleteCompetency(${comp.id})" style="margin-left: 0.6rem;">Verwijder</button>
-      </li>
-    `).join('');
-    
-    scoreInputs.innerHTML = currentCompetencies.map(comp => `
+  const profileSelect = document.getElementById('profile-select');
+  const weightChart = document.getElementById('weight-chart');
+  const compSearch = document.getElementById('comp-search');
+  const showInactive = document.getElementById('show-inactive');
+
+  // Load profiles first
+  try {
+    competencyProfiles = await CompetencyProfileAPI.list();
+  } catch (error) {
+    showToast('Kon profielen niet laden', 'error');
+    competencyProfiles = [];
+  }
+
+  // Populate profile selector
+  if (profileSelect) {
+    profileSelect.innerHTML = competencyProfiles.length
+      ? competencyProfiles.map(p =>
+          `<option value="${p.id}" ${p.active ? 'selected' : ''}>${p.name} (${p.academic_year})${p.active ? ' ★' : ''}</option>`
+        ).join('')
+      : '<option value="">Geen profielen</option>';
+
+    // Auto-select active profile if none selected
+    const activeProfile = competencyProfiles.find(p => p.active);
+    if (activeProfile && !selectedProfileId) {
+      selectedProfileId = activeProfile.id;
+      profileSelect.value = activeProfile.id;
+    } else if (selectedProfileId) {
+      profileSelect.value = selectedProfileId;
+    }
+
+    profileSelect.addEventListener('change', async () => {
+      selectedProfileId = parseInt(profileSelect.value) || null;
+      await loadCompetencies();
+      renderCompetencies();
+      renderScoreSimulator();
+      renderWeightChart();
+    });
+  }
+
+  // Load competencies for selected profile
+  await loadCompetencies();
+
+  function renderCompetencies() {
+    if (!list) return;
+
+    let filtered = currentCompetencies;
+    if (compSearchQuery) {
+      const q = compSearchQuery.toLowerCase();
+      filtered = filtered.filter(c => c.name.toLowerCase().includes(q));
+    }
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<li class="comp-empty">Geen competenties gevonden</li>';
+    } else {
+      list.innerHTML = filtered.map(comp => {
+        const isEditing = compEditId === comp.id;
+        const isInactive = !comp.active;
+        return `
+          <li class="comp-item ${isInactive ? 'comp-inactive' : ''}">
+            ${isEditing ? `
+              <div class="comp-edit-row">
+                <input type="text" id="edit-name-${comp.id}" value="${escapeHtml(comp.name)}" />
+                <input type="text" id="edit-desc-${comp.id}" value="${escapeHtml(comp.description || '')}" placeholder="Beschrijving" />
+                <input type="number" id="edit-weight-${comp.id}" value="${comp.weight}" min="0" max="100" />
+                <button class="btn small" onclick="saveCompetencyEdit(${comp.id})">Opslaan</button>
+                <button class="btn small secondary" onclick="cancelCompetencyEdit()">Annuleren</button>
+              </div>
+            ` : `
+              <div class="comp-row">
+                <div class="comp-info">
+                  <span class="comp-name">${escapeHtml(comp.name)}</span>
+                  <span class="comp-weight">${comp.weight}%</span>
+                  ${isInactive ? '<span class="comp-status-badge inactive">Inactief</span>' : ''}
+                </div>
+                ${comp.description ? `<div class="comp-desc">${escapeHtml(comp.description)}</div>` : ''}
+                <div class="comp-actions">
+                  <button class="btn small" onclick="startCompetencyEdit(${comp.id})">Bewerk</button>
+                  ${isInactive
+                    ? `<button class="btn small success" onclick="activateCompetency(${comp.id})">Heractiveer</button>`
+                    : `<button class="btn small secondary" onclick="deactivateCompetency(${comp.id})">Deactiveer</button>`
+                  }
+                  <button class="btn small danger" onclick="deleteCompetency(${comp.id})">Verwijder</button>
+                </div>
+              </div>
+            `}
+          </li>
+        `;
+      }).join('');
+    }
+
+    const total = currentCompetencies.filter(c => c.active).reduce((sum, c) => sum + c.weight, 0);
+    const valid = Math.abs(total - 100) < 0.01;
+    if (weightCheck) {
+      weightCheck.textContent = `Totaal gewicht (actief): ${total}% ${valid ? '✓ OK' : '⚠ Moet 100% zijn'}`;
+      weightCheck.className = `weight-check ${valid ? 'valid' : 'invalid'}`;
+    }
+  }
+
+  function renderScoreSimulator() {
+    if (!scoreInputs) return;
+    const activeComps = currentCompetencies.filter(c => c.active);
+    scoreInputs.innerHTML = activeComps.map(comp => `
       <div class="row score-row">
-        <label>${comp.name} (${comp.weight}%)</label>
+        <label>${escapeHtml(comp.name)} (${comp.weight}%)</label>
         <input type="number" min="1" max="5" value="3" data-comp="${comp.id}" />
       </div>
     `).join('');
-    
-    const total = currentCompetencies.reduce((sum, c) => sum + c.weight, 0);
-    const valid = total === 100;
-    weightCheck.textContent = `Totaal gewicht: ${total}% ${valid ? '✓ OK' : '⚠ Moet 100% zijn'}`;
-    weightCheck.className = `weight-check ${valid ? 'valid' : 'invalid'}`;
   }
-  
-  // Formulier verbinden
+
+  function renderWeightChart() {
+    if (!weightChart) return;
+    const activeComps = currentCompetencies.filter(c => c.active);
+    if (activeComps.length === 0) {
+      weightChart.innerHTML = '<p class="hint">Geen actieve competenties</p>';
+      return;
+    }
+    const total = activeComps.reduce((sum, c) => sum + c.weight, 0);
+    const colors = ['var(--accent)', 'var(--accent-2)', 'var(--good)', 'var(--warn)', 'var(--bad)', '#8b5cf6', '#ec4899', '#14b8a6'];
+    let colorIdx = 0;
+    const segments = activeComps.map(comp => {
+      const pct = total > 0 ? (comp.weight / total) * 100 : 0;
+      const color = colors[colorIdx % colors.length];
+      colorIdx++;
+      return { name: comp.name, pct, color, weight: comp.weight };
+    });
+
+    const barHtml = segments.map(s =>
+      `<div class="chart-segment" style="width: ${s.pct}%; background: ${s.color};" title="${escapeHtml(s.name)}: ${s.weight}% (${s.pct.toFixed(1)}%)"></div>`
+    ).join('');
+
+    const legendHtml = segments.map(s =>
+      `<div class="chart-legend-item">
+        <span class="chart-dot" style="background: ${s.color}"></span>
+        <span class="chart-label">${escapeHtml(s.name)} (${s.weight}%)</span>
+      </div>`
+    ).join('');
+
+    weightChart.innerHTML = `
+      <div class="chart-bar">${barHtml}</div>
+      <div class="chart-legend">${legendHtml}</div>
+    `;
+  }
+
+  // Search
+  compSearch?.addEventListener('input', (e) => {
+    compSearchQuery = e.target.value.trim();
+    renderCompetencies();
+  });
+
+  // Show inactive toggle
+  showInactive?.addEventListener('change', async (e) => {
+    compShowInactive = e.target.checked;
+    await loadCompetencies();
+    renderCompetencies();
+    renderScoreSimulator();
+    renderWeightChart();
+  });
+
+  // Add form
   const form = document.getElementById('competency-form');
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('comp-name').value;
+    const description = document.getElementById('comp-desc').value;
     const weight = parseFloat(document.getElementById('comp-weight').value);
     const submitBtn = form.querySelector('button[type="submit"]');
-    
+
+    if (!selectedProfileId) {
+      showToast('Selecteer eerst een profiel', 'error');
+      return;
+    }
+
     showLoading(submitBtn, 'Toevoegen...');
-    
+
     try {
-      const newComp = await CompetenciesAPI.create({ name, weight });
+      const newComp = await CompetenciesAPI.create({
+        name,
+        description: description || null,
+        weight,
+        profile_id: selectedProfileId
+      });
       currentCompetencies.push(newComp);
-      render();
+      renderCompetencies();
+      renderScoreSimulator();
+      renderWeightChart();
       hideLoading(submitBtn);
       showToast(`Competentie "${name}" toegevoegd`, 'success');
       form.reset();
@@ -49,42 +205,251 @@ function renderCompetencyManager() {
       showToast(error.message, 'error');
     }
   });
-  
-  // Bereken knop
+
+  // Bulk add toggle
+  const bulkToggle = document.getElementById('bulk-add-toggle');
+  const bulkPanel = document.getElementById('bulk-add-panel');
+  bulkToggle?.addEventListener('click', () => {
+    const isHidden = bulkPanel.style.display === 'none';
+    bulkPanel.style.display = isHidden ? 'block' : 'none';
+    bulkToggle.textContent = isHidden ? '− Bulk toevoegen' : '+ Bulk toevoegen';
+  });
+
+  // Bulk add
+  const bulkBtn = document.getElementById('bulk-add-btn');
+  bulkBtn?.addEventListener('click', async () => {
+    const textarea = document.getElementById('bulk-add-text');
+    const text = textarea.value.trim();
+    if (!text) return;
+
+    const lines = text.split('\n').filter(l => l.trim());
+    const competencies = [];
+    for (const line of lines) {
+      const parts = line.split('|').map(p => p.trim());
+      if (parts.length >= 2) {
+        const weight = parseFloat(parts[1]);
+        if (!isNaN(weight)) {
+          competencies.push({
+            name: parts[0],
+            weight,
+            description: parts[2] || null
+          });
+        }
+      }
+    }
+
+    if (competencies.length === 0) {
+      showToast('Geen geldige competenties gevonden', 'error');
+      return;
+    }
+
+    if (!selectedProfileId) {
+      showToast('Selecteer eerst een profiel', 'error');
+      return;
+    }
+
+    showLoading(bulkBtn, 'Toevoegen...');
+    try {
+      const created = await CompetenciesAPI.createBulk({
+        profile_id: selectedProfileId,
+        competencies
+      });
+      currentCompetencies.push(...created);
+      renderCompetencies();
+      renderScoreSimulator();
+      renderWeightChart();
+      hideLoading(bulkBtn);
+      showToast(`${created.length} competenties toegevoegd`, 'success');
+      textarea.value = '';
+      bulkPanel.style.display = 'none';
+      bulkToggle.textContent = '+ Bulk toevoegen';
+    } catch (error) {
+      hideLoading(bulkBtn);
+      showToast(error.message, 'error');
+    }
+  });
+
+  // Score calculator
   const calcBtn = document.getElementById('calc-score');
   calcBtn?.addEventListener('click', () => {
-    const total = currentCompetencies.reduce((sum, c) => sum + c.weight, 0);
-    if (total !== 100) {
+    const activeComps = currentCompetencies.filter(c => c.active);
+    const total = activeComps.reduce((sum, c) => sum + c.weight, 0);
+    if (Math.abs(total - 100) > 0.01) {
       showToast('Gewichten moeten 100% zijn', 'error');
       return;
     }
-    
-    // Bereken gewogen score
+
     let score = 0;
     document.querySelectorAll('#score-inputs input').forEach(input => {
       const compId = parseInt(input.dataset.comp);
-      const comp = currentCompetencies.find(c => c.id === compId);
+      const comp = activeComps.find(c => c.id === compId);
       if (comp) {
-        score += comp.weight * parseInt(input.value);
+        score += comp.weight * parseInt(input.value || 3);
       }
     });
     score = score / 100;
-    
+
     const resultEl = document.getElementById('score-result');
     resultEl.textContent = `Gewogen eindscore: ${score.toFixed(2)} / 5`;
     resultEl.className = 'result success';
-    
     showToast(`Eindscore: ${score.toFixed(2)} / 5`, 'success');
   });
-  
-  render();
+
+  // Profile modal
+  const manageProfilesBtn = document.getElementById('manage-profiles-btn');
+  const profileModal = document.getElementById('profile-modal');
+  const closeProfileModal = document.getElementById('close-profile-modal');
+  const profileForm = document.getElementById('profile-form');
+  const profileList = document.getElementById('profile-list');
+
+  function renderProfileList() {
+    if (!profileList) return;
+    if (competencyProfiles.length === 0) {
+      profileList.innerHTML = '<p class="hint">Geen profielen</p>';
+      return;
+    }
+    profileList.innerHTML = competencyProfiles.map(p => `
+      <div class="profile-item ${p.active ? 'profile-active' : ''}">
+        <div class="profile-info">
+          <strong>${escapeHtml(p.name)}</strong>
+          <span class="profile-meta">${p.version ? 'v' + p.version + ' · ' : ''}${p.academic_year}${p.active ? ' · Actief' : ''}</span>
+        </div>
+        <div class="profile-actions">
+          ${!p.active ? `<button class="btn small" onclick="activateProfile(${p.id})">Activeren</button>` : ''}
+          <button class="btn small danger" onclick="deleteProfile(${p.id})">Verwijder</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  manageProfilesBtn?.addEventListener('click', () => {
+    profileModal.style.display = 'block';
+    renderProfileList();
+  });
+
+  closeProfileModal?.addEventListener('click', () => {
+    profileModal.style.display = 'none';
+  });
+
+  profileModal?.querySelector('.modal-overlay')?.addEventListener('click', () => {
+    profileModal.style.display = 'none';
+  });
+
+  profileForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('profile-name').value;
+    const version = document.getElementById('profile-version').value;
+    const academicYear = document.getElementById('profile-year').value;
+    const active = document.getElementById('profile-active').checked;
+    const submitBtn = profileForm.querySelector('button[type="submit"]');
+
+    showLoading(submitBtn, 'Aanmaken...');
+    try {
+      const profile = await CompetencyProfileAPI.create({
+        name,
+        version: version || '1.0',
+        academic_year: academicYear,
+        active
+      });
+      competencyProfiles.push(profile);
+      if (active) {
+        selectedProfileId = profile.id;
+      }
+      renderProfileList();
+      // Refresh profile selector
+      if (profileSelect) {
+        profileSelect.innerHTML = competencyProfiles.map(p =>
+          `<option value="${p.id}" ${p.id === selectedProfileId ? 'selected' : ''}>${p.name} (${p.academic_year})${p.active ? ' ★' : ''}</option>`
+        ).join('');
+      }
+      await loadCompetencies();
+      renderCompetencies();
+      renderScoreSimulator();
+      renderWeightChart();
+      hideLoading(submitBtn);
+      showToast(`Profiel "${name}" aangemaakt`, 'success');
+      profileForm.reset();
+    } catch (error) {
+      hideLoading(submitBtn);
+      showToast(error.message, 'error');
+    }
+  });
+
+  // Initial render
+  renderCompetencies();
+  renderScoreSimulator();
+  renderWeightChart();
 }
 
-// ============================================
-// Docent eindoverzicht
-// ============================================
-async function handleDeleteCompetency(id) {
-  if (!confirm('Competentie verwijderen?')) return;
+async function loadCompetencies() {
+  try {
+    const activeOnly = !compShowInactive;
+    currentCompetencies = await CompetenciesAPI.list(selectedProfileId, activeOnly, null, 0, 100);
+  } catch (error) {
+    showToast('Kon competenties niet laden', 'error');
+    currentCompetencies = [];
+  }
+}
+
+function startCompetencyEdit(id) {
+  compEditId = id;
+  renderCompetencyManager();
+}
+
+function cancelCompetencyEdit() {
+  compEditId = null;
+  renderCompetencyManager();
+}
+
+async function saveCompetencyEdit(id) {
+  const name = document.getElementById(`edit-name-${id}`).value;
+  const description = document.getElementById(`edit-desc-${id}`).value;
+  const weight = parseFloat(document.getElementById(`edit-weight-${id}`).value);
+
+  try {
+    const updated = await CompetenciesAPI.update(id, {
+      name: name || undefined,
+      description: description || undefined,
+      weight: !isNaN(weight) ? weight : undefined
+    });
+    const idx = currentCompetencies.findIndex(c => c.id === id);
+    if (idx !== -1) currentCompetencies[idx] = updated;
+    compEditId = null;
+    renderCompetencyManager();
+    showToast('Competentie bijgewerkt', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+async function deactivateCompetency(id) {
+  try {
+    await CompetenciesAPI.deactivate(id);
+    const comp = currentCompetencies.find(c => c.id === id);
+    if (comp) comp.active = false;
+    renderCompetencyManager();
+    showToast('Competentie gedeactiveerd', 'info');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+async function activateCompetency(id) {
+  try {
+    await CompetenciesAPI.update(id, { active: true });
+    const comp = currentCompetencies.find(c => c.id === id);
+    if (comp) comp.active = true;
+    renderCompetencyManager();
+    showToast('Competentie heractiveerd', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+async function deleteCompetency(id) {
+  const comp = currentCompetencies.find(c => c.id === id);
+  const name = comp ? comp.name : 'deze competentie';
+  if (!confirm(`Competentie "${name}" definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return;
 
   try {
     await CompetenciesAPI.delete(id);
@@ -95,6 +460,47 @@ async function handleDeleteCompetency(id) {
     showToast(error.message, 'error');
   }
 }
+
+async function activateProfile(id) {
+  try {
+    await CompetencyProfileAPI.update(id, { active: true });
+    competencyProfiles.forEach(p => { p.active = p.id === id; });
+    selectedProfileId = id;
+    renderCompetencyManager();
+    showToast('Profiel geactiveerd', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+async function deleteProfile(id) {
+  const profile = competencyProfiles.find(p => p.id === id);
+  const name = profile ? profile.name : 'dit profiel';
+  if (!confirm(`Profiel "${name}" verwijderen? Alle bijbehorende competenties worden ook verwijderd.`)) return;
+
+  try {
+    await CompetencyProfileAPI.delete(id);
+    competencyProfiles = competencyProfiles.filter(p => p.id !== id);
+    if (selectedProfileId === id) {
+      const active = competencyProfiles.find(p => p.active);
+      selectedProfileId = active ? active.id : (competencyProfiles[0]?.id || null);
+    }
+    renderCompetencyManager();
+    showToast('Profiel verwijderd', 'info');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// Blootstellen aan window voor template onclick-handlers
+window.startCompetencyEdit = startCompetencyEdit;
+window.cancelCompetencyEdit = cancelCompetencyEdit;
+window.saveCompetencyEdit = saveCompetencyEdit;
+window.deactivateCompetency = deactivateCompetency;
+window.activateCompetency = activateCompetency;
+window.deleteCompetency = deleteCompetency;
+window.activateProfile = activateProfile;
+window.deleteProfile = deleteProfile;
 
 // ============================================
 // Admin - Gebruikersbeheer
@@ -363,6 +769,3 @@ function changeUserPage(delta) {
 window.handleEditUser = handleEditUser;
 window.handleDeleteUser = handleDeleteUser;
 window.changeUserPage = changeUserPage;
-
-// Blootstellen aan window voor template onclick-handlers
-window.handleDeleteCompetency = handleDeleteCompetency;
