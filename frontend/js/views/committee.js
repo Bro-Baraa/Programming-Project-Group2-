@@ -136,7 +136,6 @@ async function renderCommitteeAgreements() {
     const tbody = document.querySelector('#agreements-table tbody');
 
     if (tbody) {
-      // Filter stages that have an agreement uploaded or are approved (waiting for agreement)
       const agreementStatuses = ['Goedgekeurd', 'Overeenkomst Ingediend', 'Lopend', 'Afgerond'];
       const stagesWithAgreements = allInternships.filter(
         i => agreementStatuses.includes(i.status) || i.agreement_uploaded
@@ -147,14 +146,13 @@ async function renderCommitteeAgreements() {
       } else {
         tbody.innerHTML = stagesWithAgreements.map(i => {
           const agreementStatus = i.agreement_status || 'Niet Ingediend';
-          const statusClass = getStatusClass(agreementStatus);
           return `
             <tr data-id="${i.id}" class="agreement-row">
               <td>${i.student?.first_name || 'Onbekend'} ${i.student?.last_name || ''}</td>
               <td>${i.company?.name || 'Onbekend'}</td>
               <td><span class="status-pill ${getStatusClass(i.status)}">${i.status}</span></td>
-              <td><span class="status-pill ${statusClass}">${agreementStatus}</span></td>
-              <td>${i.agreement_uploaded ? '<span class="status-pill status-good">✓ Ja</span>' : '<span class="status-pill status-warn">✗ Nee</span>'}</td>
+              <td>${renderAgreementStatusCell(agreementStatus)}</td>
+              <td>${renderAgreementUploadedCell(i.agreement_uploaded)}</td>
               <td>
                 <button class="btn small view-agreement-btn" data-id="${i.id}">Bekijken</button>
               </td>
@@ -162,7 +160,6 @@ async function renderCommitteeAgreements() {
           `;
         }).join('');
 
-        // Click handlers for view buttons
         tbody.querySelectorAll('.view-agreement-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -173,10 +170,8 @@ async function renderCommitteeAgreements() {
       }
     }
 
-    // Hide detail panel initially
     const panel = document.getElementById('agreement-detail-panel');
     if (panel) panel.style.display = 'none';
-
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -186,24 +181,20 @@ function showAgreementDetailPanel(internshipId) {
   const internship = allInternships.find(i => i.id === internshipId);
   if (!internship) return;
 
-  // Update URL
   selectedInternshipId = internshipId;
   currentInternship = internship;
   const url = new URL(window.location.href);
   url.searchParams.set('internship', internshipId);
   window.history.replaceState({}, '', url);
 
-  // Show panel
   const panel = document.getElementById('agreement-detail-panel');
   if (panel) panel.style.display = 'block';
 
-  // Fill in student info
   document.getElementById('agreement-student-name').textContent =
     `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`;
   document.getElementById('agreement-company').textContent = internship.company?.name || 'Onbekend';
   document.getElementById('agreement-internship-status').textContent = internship.status;
 
-  // Load agreement details
   const detailContainer = document.getElementById('agreement-detail-content');
   detailContainer.innerHTML = '<p>Laden...</p>';
 
@@ -219,29 +210,16 @@ function showAgreementDetailPanel(internshipId) {
       return;
     }
 
-    const insurance = agreement.insurance_verified
-      ? { text: '✓ Verzekering gecontroleerd', class: 'status-good' }
-      : { text: '✗ Verzekering nog niet gecontroleerd', class: 'status-warn' };
+    detailContainer.innerHTML = renderAgreementDetailHTML(agreement, {
+      showDownload: true,
+      showInsurance: true,
+      showValidation: true,
+    });
+    attachAgreementDownload(internship.id);
 
-    detailContainer.innerHTML = `
-      <div class="agreement-info">
-        <p><strong>Status overeenkomst:</strong> <span class="status-pill ${getStatusClass(agreement.status)}">${agreement.status}</span></p>
-        <p><strong>Verzekering:</strong> <span class="status-pill ${insurance.class}">${insurance.text}</span></p>
-        <p><strong>Geüpload op:</strong> ${formatDate(agreement.uploaded_at) || 'Onbekend'}</p>
-        <p><strong>Gevalideerd op:</strong> ${formatDate(agreement.validated_at) || 'Nog niet gevalideerd'}</p>
-        ${agreement.file_path ? `
-        <div style="margin-top: 1rem;">
-          <button class="btn" id="download-agreement-btn" data-internship-id="${internship.id}">📄 PDF Downloaden</button>
-        </div>
-        ` : ''}
-      </div>
-    `;
-
-    // Validation actions
     const actionsDiv = document.getElementById('agreement-actions');
     if (actionsDiv) {
       const isValidated = agreement.status === 'Gevalideerd';
-
       if (isValidated) {
         actionsDiv.innerHTML = `
           <div class="info-message success">
@@ -249,21 +227,6 @@ function showAgreementDetailPanel(internshipId) {
           </div>
         `;
       } else {
-        actionsDiv.innerHTML = `
-          <div class="validation-form">
-            <div class="row full" style="margin-bottom: 0.75rem;">
-              <label>
-                <input type="checkbox" id="insurance-check" ${agreement.insurance_verified ? 'checked' : ''} />
-                Verzekering is in orde
-              </label>
-            </div>
-            <div class="btn-group">
-              <button id="btn-validate" class="btn success">✓ Valideren</button>
-              <button id="btn-incomplete" class="btn danger">✗ Onvolledig</button>
-            </div>
-          </div>
-        `;
-
         document.getElementById('btn-validate')?.addEventListener('click', () => {
           const insuranceVerified = document.getElementById('insurance-check')?.checked || false;
           validateAgreement(internship.id, 'Gevalideerd', insuranceVerified);
@@ -275,19 +238,6 @@ function showAgreementDetailPanel(internshipId) {
         });
       }
     }
-
-    // Attach download handler
-    document.getElementById('download-agreement-btn')?.addEventListener('click', async () => {
-      const btn = document.getElementById('download-agreement-btn');
-      showLoading(btn, 'Downloaden...');
-      try {
-        await AgreementsAPI.download(internship.id);
-        hideLoading(btn);
-      } catch (error) {
-        hideLoading(btn);
-        showToast(error.message, 'error');
-      }
-    });
   }).catch(() => {
     detailContainer.innerHTML = '<p class="error">Kon overeenkomstgegevens niet laden.</p>';
   });

@@ -501,11 +501,7 @@
         <div class="competency-search-bar">
           <input type="text" id="comp-search" placeholder="Zoek competenties..." />
           <label class="toggle-inactive">
-<<<<<<< HEAD
-            <input type="checkbox" id="show-inactive" /> Toon inactieve
-=======
             <input type="checkbox" id="show-inactive" checked /> Toon inactieve
->>>>>>> ca89b4e (fix US-25: competentiebeheer met activatie en aanpassing)
           </label>
         </div>
         <form id="competency-form">
@@ -558,6 +554,39 @@
         </form>
         <button class="btn secondary" id="close-profile-modal">Sluiten</button>
       </div>
+    </div>
+  </template>
+
+  <template id="admin-overeenkomsten-template">
+    <div class="panel card reveal">
+      <h2>Overeenkomsten Overzicht</h2>
+      <p class="hint">Overzicht van alle studenten en hun overeenkomststatus. Alleen studenten met een goedgekeurd voorstel worden getoond.</p>
+      <table id="admin-agreements-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Stage Status</th>
+            <th>Overeenkomst Status</th>
+            <th>Opgeladen op</th>
+            <th>Actie</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5">Laden...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="admin-agreement-detail-panel" class="panel card reveal" style="display: none;">
+      <h2>Overeenkomst Detail: <span id="admin-agreement-student-name">Student</span></h2>
+      <p><strong>Stage ID:</strong> <span id="admin-agreement-internship-id">-</span></p>
+      <p><strong>Stage status:</strong> <span id="admin-agreement-internship-status">-</span></p>
+      <div id="admin-agreement-detail-content" style="margin: 1rem 0;">
+        <p>Laden...</p>
+      </div>
+      <div id="admin-agreement-actions" style="margin-top: 1rem;"></div>
     </div>
   </template>
 

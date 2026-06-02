@@ -58,12 +58,9 @@ async function renderCompetencyManager() {
     if (!list) return;
 
     let filtered = currentCompetencies;
-<<<<<<< HEAD
-=======
     if (!compShowInactive) {
       filtered = filtered.filter(c => c.active);
     }
->>>>>>> ca89b4e (fix US-25: competentiebeheer met activatie en aanpassing)
     if (compSearchQuery) {
       const q = compSearchQuery.toLowerCase();
       filtered = filtered.filter(c => c.name.toLowerCase().includes(q));
@@ -389,12 +386,7 @@ async function renderCompetencyManager() {
 
 async function loadCompetencies() {
   try {
-<<<<<<< HEAD
-    const activeOnly = !compShowInactive;
-    currentCompetencies = await CompetenciesAPI.list(selectedProfileId, activeOnly, null, 0, 100);
-=======
     currentCompetencies = await CompetenciesAPI.list(selectedProfileId, false, null, 0, 100);
->>>>>>> ca89b4e (fix US-25: competentiebeheer met activatie en aanpassing)
   } catch (error) {
     showToast('Kon competenties niet laden', 'error');
     currentCompetencies = [];
@@ -776,6 +768,106 @@ function changeUserPage(delta) {
     });
 }
 
+window.handleEditUser = handleEditUser;
+// ============================================
+// Admin - Overeenkomsten Overzicht (US-26)
+// ============================================
+
+let currentAgreements = [];
+
+async function renderAdminAgreements() {
+  const tbody = document.querySelector('#admin-agreements-table tbody');
+  const detailPanel = document.getElementById('admin-agreement-detail-panel');
+
+  if (tbody) tbody.innerHTML = '<tr><td colspan="5">Laden...</td></tr>';
+
+  try {
+    currentAgreements = await ReportsAPI.listAgreements();
+
+    if (tbody) {
+      if (currentAgreements.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">Geen stages met overeenkomsten gevonden.</td></tr>';
+      } else {
+        tbody.innerHTML = currentAgreements.map(item => `
+          <tr data-id="${item.internship_id}" class="admin-agreement-row">
+            <td>${item.student?.first_name || 'Onbekend'} ${item.student?.last_name || ''}</td>
+            <td><span class="status-pill ${getStatusClass(item.status)}">${item.status}</span></td>
+            <td>${renderAgreementStatusCell(item.agreement_status)}</td>
+            <td>${item.uploaded_at ? formatDate(item.uploaded_at) : '-'}</td>
+            <td>
+              <button class="btn small view-admin-agreement-btn" data-id="${item.internship_id}">Bekijken</button>
+            </td>
+          </tr>
+        `).join('');
+
+        tbody.querySelectorAll('.admin-agreement-row').forEach(row => {
+          row.addEventListener('click', (e) => {
+            if (e.target.classList.contains('view-admin-agreement-btn')) return;
+            showAdminAgreementDetail(parseInt(row.dataset.id));
+          });
+        });
+
+        tbody.querySelectorAll('.view-admin-agreement-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showAdminAgreementDetail(parseInt(btn.dataset.id));
+          });
+        });
+      }
+    }
+
+    if (detailPanel) detailPanel.style.display = 'none';
+  } catch (error) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5">Fout: ${error.message}</td></tr>`;
+    showToast(error.message, 'error');
+  }
+}
+
+function showAdminAgreementDetail(internshipId) {
+  const item = currentAgreements.find(a => a.internship_id === internshipId);
+  if (!item) return;
+
+  const detailPanel = document.getElementById('admin-agreement-detail-panel');
+  const content = document.getElementById('admin-agreement-detail-content');
+  const actions = document.getElementById('admin-agreement-actions');
+
+  document.getElementById('admin-agreement-student-name').textContent =
+    `${item.student?.first_name || ''} ${item.student?.last_name || ''}`;
+  document.getElementById('admin-agreement-internship-id').textContent = item.internship_id;
+  document.getElementById('admin-agreement-internship-status').textContent = item.status;
+
+  if (content) {
+    if (item.agreement_status === 'Niet Ingediend') {
+      content.innerHTML = `
+        <div class="info-message warning">
+          <p>⚠️ Er is nog geen overeenkomst ingediend voor deze stage.</p>
+        </div>
+      `;
+    } else {
+      const agreement = {
+        status: item.agreement_status,
+        uploaded_at: item.uploaded_at,
+        validated_at: null,
+        file_path: true,
+        internship_id: item.internship_id,
+      };
+      content.innerHTML = renderAgreementDetailHTML(agreement, { showDownload: true });
+      attachAgreementDownload(internshipId, 'download-agreement-btn');
+    }
+  }
+
+  if (actions) {
+    actions.innerHTML = item.agreement_status === 'Niet Ingediend'
+      ? '<p class="hint">Wacht tot de student een overeenkomst uploadt.</p>'
+      : '';
+  }
+
+  if (detailPanel) detailPanel.style.display = 'block';
+}
+
+// Blootstellen aan window voor template onclick-handlers
+window.renderAdminAgreements = renderAdminAgreements;
+window.showAdminAgreementDetail = showAdminAgreementDetail;
 window.handleEditUser = handleEditUser;
 window.handleDeleteUser = handleDeleteUser;
 window.changeUserPage = changeUserPage;

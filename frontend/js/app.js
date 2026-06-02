@@ -7,7 +7,7 @@ const roleViews = {
   committee: ["voorstellen", "overeenkomsten", "overzicht"],
   teacher: ["opvolging", "evaluatie", "eindoverzicht"],
   mentor: ["validatie", "evaluatie"],
-  admin: ["competenties", "gebruikers"],
+  admin: ["competenties", "overeenkomsten", "gebruikers"],
 };
 
 const roleDisplayNames = {
@@ -34,6 +34,7 @@ const templates = {
   mentor: "mentor-template",
   "mentor-evaluatie": "mentor-evaluatie-template",
   admin: "admin-template",
+  "admin-overeenkomsten": "admin-overeenkomsten-template",
   "admin-gebruikers": "admin-gebruikers-template",
 };
 
@@ -430,6 +431,7 @@ async function wireRoleInteractions(role, view) {
     },
     admin: {
       competenties: renderCompetencyManager,
+      overeenkomsten: renderAdminAgreements,
       gebruikers: renderUserManager,
     },
   };

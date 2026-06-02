@@ -435,10 +435,20 @@ const AgreementsAPI = {
       body: JSON.stringify(body)
     });
   },
-  
+
   download(internshipId) {
     const url = `${API_BASE_URL}/internships/${internshipId}/agreement/download`;
     return downloadFile(url, `stage_overeenkomst_${internshipId}.pdf`);
+  }
+};
+
+// ============================================
+// Reports API
+// ============================================
+
+const ReportsAPI = {
+  listAgreements() {
+    return apiRequest('/internships/reports/agreements');
   }
 };
 
