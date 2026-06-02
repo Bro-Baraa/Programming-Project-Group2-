@@ -1,7 +1,9 @@
 """Stage Monitoring Tool API - FastAPI application."""
 import os
 import logging
-from fastapi import FastAPI
+import time
+from collections import defaultdict
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 
@@ -34,6 +36,9 @@ app = FastAPI(
     title="Stage Monitoring Tool API",
     description="Backend API for the internship/stage monitoring system for Erasmus Hogeschool Brussel",
     version="1.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 # CORS for frontend communication
@@ -57,6 +62,22 @@ app.add_middleware(
     max_age=600,
 )
 
+# Simple in-memory rate limiter
+_rate_limit = defaultdict(list)
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    path = request.url.path
+    if path in ("/auth/login", "/auth/register", "/health"):
+        ip = request.client.host
+        now = time.time()
+        _rate_limit[ip] = [t for t in _rate_limit[ip] if now - t < 60]
+        if len(_rate_limit[ip]) > 10:
+            return Response("Too many requests", status_code=429)
+        _rate_limit[ip].append(now)
+    return await call_next(request)
+
+
 app.include_router(auth)
 app.include_router(companies)
 app.include_router(internships)
@@ -75,7 +96,6 @@ app.include_router(me)
 def root():
     return {
         "message": "Stage Monitoring Tool API",
-        "docs": "/docs",
         "version": "1.0.0",
     }
 
@@ -83,3 +103,8 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots():
+    return Response("User-agent: *\nDisallow: /\n", media_type="text/plain")
