@@ -1,17 +1,11 @@
 """Stage Monitoring Tool API - FastAPI application."""
 import os
 import logging
-from fastapi import FastAPI
+import time
+from collections import defaultdict
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-
-# Configure logging so app-level warnings/info are visible in uvicorn console
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
 from app.routers import (
     auth,
     companies,
@@ -27,6 +21,13 @@ from app.routers import (
     me,
 )
 
+# Configure logging so app-level warnings/info are visible in uvicorn console
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
@@ -34,6 +35,9 @@ app = FastAPI(
     title="Stage Monitoring Tool API",
     description="Backend API for the internship/stage monitoring system for Erasmus Hogeschool Brussel",
     version="1.0.0",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 # CORS for frontend communication
@@ -57,6 +61,22 @@ app.add_middleware(
     max_age=600,
 )
 
+# Simple in-memory rate limiter
+_rate_limit = defaultdict(list)
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    path = request.url.path
+    if path in ("/auth/login", "/auth/register", "/health"):
+        ip = request.client.host if request.client else "unknown"
+        now = time.time()
+        _rate_limit[ip] = [t for t in _rate_limit[ip] if now - t < 60]
+        if len(_rate_limit[ip]) > 10:
+            return Response("Too many requests", status_code=429)
+        _rate_limit[ip].append(now)
+    return await call_next(request)
+
+
 app.include_router(auth)
 app.include_router(companies)
 app.include_router(internships)
@@ -75,7 +95,6 @@ app.include_router(me)
 def root():
     return {
         "message": "Stage Monitoring Tool API",
-        "docs": "/docs",
         "version": "1.0.0",
     }
 
@@ -83,3 +102,8 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots():
+    return Response("User-agent: *\nDisallow: /\n", media_type="text/plain")

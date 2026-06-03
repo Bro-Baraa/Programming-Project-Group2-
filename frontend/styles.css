@@ -776,9 +776,73 @@ body.login-active {
   }
 }
 
+/* Week grid for logbooks */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.week-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.4rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+  background: #ffffff;
+  font-size: 0.8rem;
+  min-height: 56px;
+}
+.week-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(18,38,58,0.08);
+}
+.week-cell .week-number {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.15rem;
+}
+.week-cell .week-status {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+.week-cell.status-submitted {
+  background: var(--good-bg);
+  border-color: var(--good);
+}
+.week-cell.status-draft {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+.week-cell.status-missing {
+  background: #f8f9fa;
+  border-color: var(--border);
+  color: var(--ink-soft);
+}
+.week-cell.status-missing:hover {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+.week-cell.selected {
+  outline: 3px solid var(--accent-2);
+  outline-offset: 2px;
+}
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+}
+
 @media (max-width: 980px) {
   .nav-bar { flex-wrap: wrap; gap: 1rem; }
   .two-col { grid-template-columns: 1fr; }
+  .week-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
 
   .toast-notification {
     left: 20px;
@@ -891,3 +955,404 @@ body.login-active {
 .table-card .status-warn { background: var(--warn-bg); color: var(--warn); }
 .table-card .status-info { background: var(--info-bg); color: var(--accent-2); }
 .table-card .status-bad { background: var(--bad-bg); color: var(--bad); }
+
+/* ============================================
+   Competencies Page
+   ============================================ */
+
+.competencies-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding: 0.8rem 1rem 0;
+}
+
+.competencies-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.competencies-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.profile-selector-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-selector-wrapper label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.profile-selector-wrapper select {
+  width: auto;
+  min-width: 200px;
+  max-width: 320px;
+  font-size: 0.9rem;
+}
+
+.competency-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.competency-search-bar input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.toggle-inactive {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toggle-inactive input {
+  width: auto;
+  margin: 0;
+}
+
+.comp-add-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.comp-add-row input {
+  flex: 1;
+  min-width: 140px;
+}
+
+.comp-add-row input:first-child {
+  flex: 2;
+  min-width: 180px;
+}
+
+.bulk-add-panel {
+  margin: 0.5rem 0;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+}
+
+.bulk-add-panel textarea {
+  font-family: monospace;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.competency-list {
+  margin: 0.7rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.comp-item {
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 0;
+}
+
+.comp-item:last-child {
+  border-bottom: none;
+}
+
+.comp-inactive {
+  opacity: 0.6;
+}
+
+.comp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.comp-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.comp-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ink);
+}
+
+.comp-weight {
+  color: var(--ink-soft);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.comp-desc {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding-left: 0.25rem;
+}
+
+.comp-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+.comp-status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.comp-status-badge.inactive {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.comp-edit-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.comp-edit-row input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.comp-edit-row input:first-child {
+  flex: 2;
+  min-width: 160px;
+}
+
+.comp-empty {
+  color: var(--ink-soft);
+  font-style: italic;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* Weight Chart */
+.weight-chart {
+  margin-top: 0.75rem;
+}
+
+.chart-bar {
+  display: flex;
+  height: 32px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+}
+
+.chart-segment {
+  height: 100%;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.chart-segment:hover {
+  filter: brightness(1.1);
+  transform: scaleY(1.05);
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  justify-content: center;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.chart-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  z-index: 101;
+  animation: rise 0.2s ease both;
+}
+
+.modal-card h3 {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+
+.modal-card .btn {
+  margin-top: 0.75rem;
+}
+
+.modal-card .btn.secondary {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+/* Profile List */
+.profile-list {
+  margin-bottom: 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.profile-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 0.5rem;
+  background: #ffffff;
+}
+
+.profile-item.profile-active {
+  border-color: var(--good);
+  background: var(--good-bg);
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.profile-meta {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.profile-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.profile-form {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+  margin-bottom: 0.75rem;
+}
+
+.profile-form label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.profile-form input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .competencies-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .competencies-actions {
+    justify-content: space-between;
+  }
+
+  .profile-selector-wrapper {
+    flex: 1;
+  }
+
+  .profile-selector-wrapper select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .comp-add-row {
+    flex-direction: column;
+  }
+
+  .comp-add-row input {
+    width: 100%;
+  }
+
+  .comp-edit-row {
+    flex-direction: column;
+  }
+
+  .comp-edit-row input {
+    width: 100%;
+  }
+
+  .chart-legend {
+    justify-content: flex-start;
+  }
+
+  .modal-card {
+    width: 95%;
+    padding: 1rem;
+  }
+}

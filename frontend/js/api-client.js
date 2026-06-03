@@ -4,62 +4,56 @@
 // ============================================
 
 const API_BASE_URL = (() => {
-  // Use the same host as the frontend page, but port 8001
-  // This works for localhost:8080 → localhost:8001
-  // and for remote access: framearch-juan:8080 → framearch-juan:8001
-  // Fallback to localhost if opened via file:// (hostname is empty)
   const host = window.location.hostname || 'localhost';
+  const port = window.location.port;
+
+  // Production (80/443): backend + frontend served from same origin
+  if (port === '80' || port === '443') {
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+  // Dev: frontend on 8080 (or file://), backend on 8001
   return `http://${host}:8001`;
 })();
+console.log('[API] API_BASE_URL resolved to:', API_BASE_URL);
 
 // Token storage — wrapped in try/catch for file:// protocol where localStorage may fail
-function getToken() {
+function safeStorage(key, value = undefined) {
   try {
-    return localStorage.getItem('stageMonitoringToken');
+    if (value === undefined) {
+      return localStorage.getItem(key);
+    }
+    if (value === null) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, value);
+    }
   } catch (e) {
     console.warn('[Auth] localStorage not available:', e.message);
     return null;
   }
 }
 
+function getToken() {
+  return safeStorage('stageMonitoringToken');
+}
+
 function setToken(token) {
-  try {
-    if (token) {
-      localStorage.setItem('stageMonitoringToken', token);
-    } else {
-      localStorage.removeItem('stageMonitoringToken');
-    }
-  } catch (e) {
-    console.warn('[Auth] localStorage not available:', e.message);
-  }
+  safeStorage('stageMonitoringToken', token || null);
 }
 
 function getCurrentUser() {
+  const json = safeStorage('stageMonitoringUser');
+  if (!json) return null;
   try {
-    const userJson = localStorage.getItem('stageMonitoringUser');
-    if (!userJson) return null;
-    try {
-      return JSON.parse(userJson);
-    } catch {
-      localStorage.removeItem('stageMonitoringUser');
-      return null;
-    }
-  } catch (e) {
-    console.warn('[Auth] localStorage not available:', e.message);
+    return JSON.parse(json);
+  } catch {
+    safeStorage('stageMonitoringUser', null);
     return null;
   }
 }
 
 function setCurrentUser(user) {
-  try {
-    if (user) {
-      localStorage.setItem('stageMonitoringUser', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('stageMonitoringUser');
-    }
-  } catch (e) {
-    console.warn('[Auth] localStorage not available:', e.message);
-  }
+  safeStorage('stageMonitoringUser', user ? JSON.stringify(user) : null);
 }
 
 // Generic API request
@@ -85,32 +79,27 @@ async function apiRequest(endpoint, options = {}) {
     delete config.headers['Content-Type'];
   }
   
-  try {
-    const response = await fetch(url, config);
+  const response = await fetch(url, config);
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
     
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
-      
-      // Handle auth errors
-      if (response.status === 401) {
-        setToken(null);
-        setCurrentUser(null);
-        window.location.href = 'index.html?view=login';
-      }
-      
-      throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    // Handle auth errors
+    if (response.status === 401) {
+      setToken(null);
+      setCurrentUser(null);
+      window.location.href = 'index.html?view=login';
     }
     
-    // Handle empty responses
-    if (response.status === 204) {
-      return null;
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
   }
+  
+  // Handle empty responses
+  if (response.status === 204) {
+    return null;
+  }
+  
+  return response.json();
 }
 
 // ============================================
@@ -124,8 +113,6 @@ const AuthAPI = {
     formData.append('password', password);
 
     const url = `${API_BASE_URL}/auth/login`;
-    console.log('[DEBUG] Login request to:', url);
-    console.log('[DEBUG] Login email:', email);
 
     let response;
     try {
@@ -162,14 +149,14 @@ const AuthAPI = {
     return data;
   },
   
-  async register(userData) {
+  register(userData) {
     return apiRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData)
     });
   },
   
-  async getMe() {
+  getMe() {
     return apiRequest('/auth/me');
   },
   
@@ -197,23 +184,23 @@ const AuthAPI = {
 // ============================================
 
 const InternshipsAPI = {
-  async list(status = null) {
+  list(status = null) {
     const params = status ? `?status=${encodeURIComponent(status)}` : '';
     return apiRequest(`/internships${params}`);
   },
   
-  async get(id) {
+  get(id) {
     return apiRequest(`/internships/${id}`);
   },
   
-  async create(data) {
+  create(data) {
     return apiRequest('/internships', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
   
-  async uploadAgreement(id, file) {
+  uploadAgreement(id, file) {
     const formData = new FormData();
     formData.append('file', file);
     
@@ -223,55 +210,59 @@ const InternshipsAPI = {
     });
   },
   
-  async getLogbooks(internshipId) {
+  getLogbooks(internshipId) {
     return apiRequest(`/internships/${internshipId}/logbooks`);
   },
+
+  getLogbookWeeks(internshipId) {
+    return apiRequest(`/internships/${internshipId}/logbooks/weeks`);
+  },
   
-  async createLogbook(internshipId, data) {
+  createLogbook(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/logbooks`, {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
   
-  async updateLogbook(logbookId, data) {
+  updateLogbook(logbookId, data) {
     return apiRequest(`/internships/logbooks/${logbookId}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
   },
   
-  async getEvaluations(internshipId) {
+  getEvaluations(internshipId) {
     return apiRequest(`/internships/${internshipId}/evaluations`);
   },
   
-  async createEvaluation(internshipId, data) {
+  createEvaluation(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/evaluations`, {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
 
-  async getFeedback(internshipId) {
+  getFeedback(internshipId) {
     return apiRequest(`/internships/${internshipId}/feedback`);
   },
   
-  async createFeedback(internshipId, data) {
+  createFeedback(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/feedback`, {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
   
-  async getDashboardStats() {
+  getDashboardStats() {
     return apiRequest('/internships/stats/dashboard');
   },
 
-  async getFinalReport(internshipId) {
+  getFinalReport(internshipId) {
     return apiRequest(`/internships/${internshipId}/final-report`);
   },
 
-  async submitLogbook(logbookId) {
+  submitLogbook(logbookId) {
     return apiRequest(`/internships/logbooks/${logbookId}/submit`, {
       method: 'POST'
     });
@@ -282,33 +273,88 @@ const InternshipsAPI = {
 // Competencies API
 // ============================================
 
-const CompetenciesAPI = {
-  async list(activeOnly = true) {
-    return apiRequest(`/competencies?active_only=${activeOnly}`);
+// ============================================
+// Competency Profile API
+// ============================================
+
+const CompetencyProfileAPI = {
+  list(activeOnly = false) {
+    return apiRequest(`/competencies/profiles?active_only=${activeOnly}`);
   },
-  
-  async create(data) {
+
+  create(data) {
+    return apiRequest('/competencies/profiles', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  update(id, data) {
+    return apiRequest(`/competencies/profiles/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
+  delete(id) {
+    return apiRequest(`/competencies/profiles/${id}`, {
+      method: 'DELETE'
+    });
+  }
+};
+
+// ============================================
+// Competencies API
+// ============================================
+
+const CompetenciesAPI = {
+  list(profileId = null, activeOnly = true, search = null, skip = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (profileId) params.append('profile_id', String(profileId));
+    params.append('active_only', String(activeOnly));
+    if (search) params.append('search', search);
+    params.append('skip', String(skip));
+    params.append('limit', String(limit));
+    return apiRequest(`/competencies?${params.toString()}`);
+  },
+
+  create(data) {
     return apiRequest('/competencies', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
-  
-  async update(id, data) {
+
+  createBulk(data) {
+    return apiRequest('/competencies/bulk', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  update(id, data) {
     return apiRequest(`/competencies/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
   },
-  
-  async delete(id) {
+
+  delete(id) {
     return apiRequest(`/competencies/${id}`, {
       method: 'DELETE'
     });
   },
-  
-  async checkWeights() {
-    return apiRequest('/competencies/check-weights');
+
+  deactivate(id) {
+    return apiRequest(`/competencies/${id}/deactivate`, {
+      method: 'POST'
+    });
+  },
+
+  checkWeights(profileId = null) {
+    const params = new URLSearchParams();
+    if (profileId) params.append('profile_id', String(profileId));
+    return apiRequest(`/competencies/check-weights?${params.toString()}`);
   }
 };
 
@@ -317,7 +363,7 @@ const CompetenciesAPI = {
 // ============================================
 
 const ProposalsAPI = {
-  async review(internshipId, status, feedback = null) {
+  review(internshipId, status, feedback = null) {
     const body = { status };
     if (feedback) body.feedback = feedback;
     return apiRequest(`/internships/${internshipId}/proposal`, {
@@ -326,14 +372,14 @@ const ProposalsAPI = {
     });
   },
 
-  async edit(internshipId, data = {}) {
+  edit(internshipId, data = {}) {
     return apiRequest(`/internships/${internshipId}/proposal/edit`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
   },
 
-  async resubmit(internshipId, newDescription, extra = {}) {
+  resubmit(internshipId, newDescription, extra = {}) {
     const body = { new_description: newDescription, ...extra };
     return apiRequest(`/internships/${internshipId}/resubmit`, {
       method: 'POST',
@@ -341,9 +387,22 @@ const ProposalsAPI = {
     });
   },
 
-  async withdraw(internshipId) {
+  withdraw(internshipId) {
     return apiRequest(`/internships/${internshipId}/proposal`, {
       method: 'DELETE'
+    });
+  }
+};
+
+// ============================================
+// Evaluations
+// ============================================
+
+const EvaluationsAPI = {
+  update(evaluationId, data) {
+    return apiRequest(`/evaluations/${evaluationId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
     });
   }
 };
@@ -353,7 +412,7 @@ const ProposalsAPI = {
 // ============================================
 
 const EvaluationRulesAPI = {
-  async update(evaluationId, ruleId, data) {
+  update(evaluationId, ruleId, data) {
     return apiRequest(`/evaluations/${evaluationId}/rules/${ruleId}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
@@ -365,8 +424,27 @@ const EvaluationRulesAPI = {
 // Agreements (validate)
 // ============================================
 
+async function downloadFile(url, filename) {
+  const token = getToken();
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
+  });
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.status}`);
+  }
+  const blob = await response.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+}
+
 const AgreementsAPI = {
-  async validate(internshipId, status, insuranceVerified = null) {
+  validate(internshipId, status, insuranceVerified = null) {
     const body = { status };
     if (insuranceVerified !== null) body.insurance_verified = insuranceVerified;
     return apiRequest(`/internships/${internshipId}/agreement`, {
@@ -374,9 +452,60 @@ const AgreementsAPI = {
       body: JSON.stringify(body)
     });
   },
-  
-  async download(internshipId) {
-    return `${API_BASE_URL}/internships/${internshipId}/agreement/download`;
+
+  download(internshipId) {
+    const url = `${API_BASE_URL}/internships/${internshipId}/agreement/download`;
+    return downloadFile(url, `stage_overeenkomst_${internshipId}.pdf`);
+  }
+};
+
+// ============================================
+// Reports API
+// ============================================
+
+const ReportsAPI = {
+  listAgreements() {
+    return apiRequest('/internships/reports/agreements');
+  }
+};
+
+// ============================================
+// Users API
+// ============================================
+
+const UsersAPI = {
+  async list(role = null, search = null, activeOnly = true, skip = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (role) params.append('role', role);
+    if (search) params.append('search', search);
+    if (!activeOnly) params.append('active_only', 'false');
+    params.append('skip', String(skip));
+    params.append('limit', String(limit));
+    return apiRequest(`/users?${params.toString()}`);
+  },
+
+  async get(id) {
+    return apiRequest(`/users/${id}`);
+  },
+
+  async create(data) {
+    return apiRequest('/users', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async update(id, data) {
+    return apiRequest(`/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async delete(id) {
+    return apiRequest(`/users/${id}`, {
+      method: 'DELETE'
+    });
   }
 };
 

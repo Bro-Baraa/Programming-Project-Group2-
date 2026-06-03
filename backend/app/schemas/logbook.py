@@ -21,6 +21,7 @@ class LogbookUpdate(BaseModel):
     issues: Optional[str] = None
     status: Optional[str] = None  # draft, submitted
     mentor_validated: Optional[bool] = None
+    mentor_feedback: Optional[str] = None
 
 
 class LogbookResponse(LogbookBase):
@@ -30,6 +31,7 @@ class LogbookResponse(LogbookBase):
     internship_id: int
     status: str
     mentor_validated: bool
+    mentor_feedback: Optional[str] = None
     submitted_at: Optional[datetime] = None
     created_at: datetime
 
@@ -40,3 +42,4 @@ class LogbookWeekStatus(BaseModel):
     logbook_id: Optional[int] = None
     status: str  # missing, draft, submitted
     mentor_validated: bool = False
+    mentor_feedback: Optional[str] = None

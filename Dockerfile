@@ -26,10 +26,6 @@ COPY backend/ ./backend/
 # ── Frontend ──
 COPY frontend/ ./frontend/
 
-# Patch frontend: use same-origin for API calls (Docker mode)
-COPY docker_patch_frontend.py /tmp/docker_patch_frontend.py
-RUN python3 /tmp/docker_patch_frontend.py
-
 # ── Create a Docker-specific main that serves static files ──
 COPY docker_main.py backend/docker_main.py
 

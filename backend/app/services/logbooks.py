@@ -20,6 +20,12 @@ def create_logbook(
     if internship.student_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
+    if internship.status not in ["Lopend", "Afgerond"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Can only create logbooks for ongoing or completed internships"
+        )
+
     if data.week_number < 1:
         raise HTTPException(status_code=400, detail="Week number must be at least 1")
 
@@ -72,10 +78,12 @@ def update_logbook(
         ensure_internship_access(current_user, internship)
         if any([update.tasks, update.reflection, update.issues, update.status]):
             raise HTTPException(
-                status_code=403, detail="Mentors can only validate logbooks"
+                status_code=403, detail="Mentors can only validate logbooks and give feedback"
             )
         if update.mentor_validated is not None:
             logbook.mentor_validated = update.mentor_validated
+        if update.mentor_feedback is not None:
+            logbook.mentor_feedback = update.mentor_feedback
 
     if current_user.role == "teacher":
         ensure_internship_access(current_user, internship)

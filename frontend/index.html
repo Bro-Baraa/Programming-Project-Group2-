@@ -1,247 +1,642 @@
 <!doctype html>
 <html lang="nl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stage Monitoring Tool</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div class="ambient"></div>
-    
-    <header class="topbar">
-      <div class="brand">
-        <h1>Stage Monitoring Tool</h1>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Stage Monitoring Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="ambient"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <h1>Stage Monitoring Tool</h1>
+    </div>
+    <div class="user-info" id="user-info">
+      <div class="user-context" id="internship-selector-wrapper" style="display: none;">
+        <label for="internship-select">Stage</label>
+        <select id="internship-select" aria-label="Kies stage">
+          <option value="">Laden...</option>
+        </select>
       </div>
-      <div class="user-info" id="user-info">
-        <div class="user-context" id="internship-selector-wrapper" style="display: none;">
-          <label for="internship-select">Stage</label>
-          <select id="internship-select" aria-label="Kies stage">
+      <div class="user-badge">
+        <span class="user-name" id="user-name">Gebruiker</span>
+        <span class="user-role" id="user-role">Rol</span>
+      </div>
+      <button class="btn logout" id="logout-btn">Uitloggen</button>
+    </div>
+  </header>
+
+  <nav class="nav-bar" id="nav-panel" style="display: none;">
+    <ul class="nav-tabs" id="view-tabs"></ul>
+  </nav>
+
+  <main id="app" class="layout">
+    <section class="content" id="content"></section>
+  </main>
+
+  <template id="login-template">
+    <div class="login-layout">
+      <div class="login-card">
+        <header class="login-header">
+          <h1>Stage Monitoring Tool</h1>
+          <p class="login-subtitle">Inloggen om verder te gaan</p>
+        </header>
+
+        <form id="login-form" class="login-form" novalidate>
+          <div class="field-group">
+            <label for="login-email">E-mailadres</label>
+            <input type="email" id="login-email" required placeholder="naam@school.be" autocomplete="email" />
+          </div>
+          <div class="field-group">
+            <label for="login-password">Wachtwoord</label>
+            <input type="password" id="login-password" required placeholder="••••••" autocomplete="current-password" />
+          </div>
+          <button type="submit" class="login-btn">Inloggen</button>
+          <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
+        </form>
+
+        <div class="login-divider">
+          <span>of snel inloggen (demo)</span>
+        </div>
+
+        <div class="quick-login" id="quick-login">
+          <!-- Quick login buttons filled by JS -->
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Student Templates -->
+  <template id="student-dashboard-template">
+    <div class="grid two-col reveal">
+      <article class="panel card hero">
+        <h2>Mijn Stage</h2>
+        <p><strong>Bedrijf:</strong> Laden...</p>
+        <p><strong>Periode:</strong> -</p>
+        <p><strong>Status:</strong> -</p>
+        <p><strong>Overeenkomst:</strong> -</p>
+      </article>
+
+      <article class="panel card task-card">
+        <h2>Openstaande Taken</h2>
+        <ul>
+          <li>Gegevens laden...</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="grid two-col reveal">
+      <article class="panel card">
+        <h2>Logboeken Overzicht</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Week</th>
+              <th>Status</th>
+              <th>Mentor</th>
+              <th>Feedback</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="4">Geen logboeken gevonden</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="panel card">
+        <h2>Competentie Progressie</h2>
+        <div class="meter"><span style="width: 80%">Analyseren 80%</span></div>
+        <div class="meter"><span style="width: 60%">Ontwerpen 60%</span></div>
+        <div class="meter"><span style="width: 40%">Realiseren 40%</span></div>
+        <div class="meter"><span style="width: 50%">Testen 50%</span></div>
+      </article>
+    </div>
+
+    <div class="panel card reveal">
+      <h2>Feedback</h2>
+      <div id="student-feedback">
+        <p class="hint">Je hebt nog geen feedback ontvangen.</p>
+      </div>
+    </div>
+  </template>
+
+  <template id="student-voorstel-template">
+    <div class="panel card reveal">
+      <h2>Stagevoorstel Indienen</h2>
+      <form id="proposal-form">
+        <div class="row full">
+          <label>Bedrijfsnaam *</label>
+          <input type="text" id="company-name" placeholder="Naam van het bedrijf" required />
+        </div>
+        <div class="row full">
+          <label>Adres</label>
+          <input type="text" id="company-address" placeholder="Straat en nummer" />
+        </div>
+        <div class="row full">
+          <label>Sector</label>
+          <input type="text" id="company-sector" placeholder="Bijv. IT, Data & Analytics..." />
+        </div>
+        <div class="row full">
+          <label>Contactpersoon *</label>
+          <input type="text" id="contact-person" placeholder="Naam contactpersoon" required />
+        </div>
+        <div class="row full">
+          <label>E-mail contactpersoon *</label>
+          <input type="email" id="contact-email" placeholder="email@bedrijf.be" required />
+        </div>
+        <div class="row full">
+          <label>Stageperiode *</label>
+          <div class="date-range">
+            <input type="date" id="start-date" required />
+            <span>tot</span>
+            <input type="date" id="end-date" required />
+          </div>
+        </div>
+        <div class="row full">
+          <label>Docent begeleider</label>
+          <select id="teacher-id">
+            <option value="">-- Kies een docent (optioneel) --</option>
+          </select>
+        </div>
+        <div class="row full">
+          <label>Stagementor</label>
+          <select id="mentor-id">
+            <option value="">-- Kies een mentor (optioneel) --</option>
+          </select>
+        </div>
+        <div class="row full">
+          <label>Omschrijving opdracht * (min. 20 karakters)</label>
+          <textarea id="assignment-desc" rows="4" placeholder="Beschrijf de stageopdracht in detail..." required
+            minlength="20"></textarea>
+        </div>
+        <button type="submit" class="btn">Voorstel Indienen</button>
+      </form>
+    </div>
+  </template>
+
+  <template id="student-logboek-template">
+    <div class="panel card reveal">
+      <h2>Logboeken Overzicht</h2>
+      <p class="hint">Klik op een week om het logboek te bewerken of in te vullen.</p>
+      <div id="logbook-week-grid" class="week-grid"></div>
+      <div id="logbook-legend" style="margin-top: 0.75rem; display: flex; gap: 1rem; font-size: 0.8rem;">
+        <span><span class="dot" style="background:var(--good);"></span> Ingediend</span>
+        <span><span class="dot" style="background:var(--warn);"></span> Concept</span>
+        <span><span class="dot" style="background:var(--ink-soft);"></span> Ontbrekend</span>
+      </div>
+    </div>
+
+    <div id="logbook-form-panel" class="panel card reveal" style="display:none;">
+      <h2>Logboek Week <span id="form-week-label">—</span></h2>
+      <form id="logbook-form">
+        <input type="hidden" id="log-week" />
+        <div class="row full">
+          <label>Taken deze week</label>
+          <textarea id="log-tasks" rows="3" placeholder="Wat heb je deze week gedaan?"></textarea>
+        </div>
+        <div class="row full">
+          <label>Reflectie</label>
+          <textarea id="log-reflection" rows="3" placeholder="Hoe verliep de week? Wat leerde je?"></textarea>
+        </div>
+        <div class="row full">
+          <label>Problemen / Leerpunten</label>
+          <textarea id="log-issues" rows="2" placeholder="Eventuele problemen of leerpunten"></textarea>
+        </div>
+        <div class="btn-group">
+          <button type="submit" class="btn">Opslaan als Concept</button>
+          <button type="button" id="submit-logbook" class="btn secondary">Definitief Indienen</button>
+          <button type="button" id="cancel-logbook" class="btn secondary">Annuleren</button>
+        </div>
+      </form>
+    </div>
+  </template>
+
+  <template id="student-evaluatie-template">
+    <div class="panel card reveal">
+      <h2>Mijn Evaluaties</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Datum</th>
+            <th>Status</th>
+            <th>Acties</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="4">Geen evaluaties gevonden</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel card reveal" id="student-self-eval-panel" style="display: none;">
+      <h2>Mijn Zelfevaluatie</h2>
+      <p class="hint">Beschrijf per competentie wat je geleerd hebt tijdens deze stage.</p>
+      <div id="student-self-eval-form">
+        <!-- Rendered by JS -->
+      </div>
+      <button id="btn-save-self-eval" class="btn" style="margin-top: 1rem;">Beschrijvingen Opslaan</button>
+    </div>
+    <div class="panel card reveal">
+      <h2>Eindoverzicht</h2>
+      <div id="final-summary">
+        <p>Laden...</p>
+      </div>
+    </div>
+  </template>
+
+  <template id="student-overeenkomst-template">
+    <div class="panel card reveal">
+      <h2>Stageovereenkomst</h2>
+      <p>Upload hier je getekende stageovereenkomst (PDF, max 5MB).</p>
+      <p class="hint" id="agreement-hint">Let op: Je kan pas een overeenkomst uploaden als je stagevoorstel is
+        goedgekeurd.</p>
+
+      <form id="agreement-form">
+        <div class="row full">
+          <label>Selecteer bestand (PDF)</label>
+          <input type="file" id="agreement-file" accept=".pdf" />
+        </div>
+        <button type="submit" class="btn">Uploaden</button>
+      </form>
+
+      <div class="agreement-status">
+        <h3>Huidige status</h3>
+        <p id="agreement-status-text"><span class="status-pill status-warn">Nog niet geüpload</span></p>
+      </div>
+    </div>
+  </template>
+
+  <!-- Commissie Templates -->
+  <template id="commissie-template">
+    <div class="panel card reveal">
+      <h2>Stagevoorstellen Beoordelen</h2>
+      <p class="hint">Klik op een rij om een voorstel te selecteren en te beoordelen.</p>
+      <table id="proposals-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Bedrijf</th>
+            <th>Datum</th>
+            <th>Status</th>
+            <th>Overeenkomst</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5">Laden...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="proposal-detail-panel" class="panel card reveal" style="display: none;">
+      <h2>Beoordeling: <span id="selected-student-name">Student</span></h2>
+      <p><strong>Bedrijf:</strong> <span id="selected-company">-</span></p>
+      <p><strong>Status:</strong> <span id="selected-status">-</span></p>
+      <p><strong>Omschrijving:</strong></p>
+      <div id="selected-description" style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">-</div>
+
+      <div class="btn-group" id="review-actions" style="margin-bottom: 1rem;">
+        <button id="btn-approve" class="btn success">✓ Goedkeuren</button>
+        <button id="btn-reject" class="btn danger">✗ Afkeuren</button>
+        <button id="btn-changes" class="btn secondary">⚠ Aanpassingen Vereist</button>
+      </div>
+
+      <div id="feedback-section">
+        <label>Feedback voor student</label>
+        <textarea id="feedback-box" rows="4" placeholder="Voer hier je feedback in..."></textarea>
+      </div>
+    </div>
+  </template>
+
+  <template id="commissie-overeenkomsten-template">
+    <div class="panel card reveal">
+      <h2>Overeenkomsten Beoordelen</h2>
+      <p class="hint">Controleer of de overeenkomst is opgeladen en markeer de verzekering als in orde.</p>
+      <table id="agreements-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Bedrijf</th>
+            <th>Stage Status</th>
+            <th>Overeenkomst Status</th>
+            <th>Opgeladen</th>
+            <th>Actie</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6">Laden...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="agreement-detail-panel" class="panel card reveal" style="display: none;">
+      <h2>Overeenkomst Detail: <span id="agreement-student-name">Student</span></h2>
+      <p><strong>Bedrijf:</strong> <span id="agreement-company">-</span></p>
+      <p><strong>Stage status:</strong> <span id="agreement-internship-status">-</span></p>
+
+      <div id="agreement-detail-content" style="margin: 1rem 0;">
+        <p>Laden...</p>
+      </div>
+
+      <div id="agreement-actions" style="margin-top: 1rem;"></div>
+    </div>
+  </template>
+
+  <template id="commissie-overzicht-template">
+    <div class="panel card reveal">
+      <h2>Alle Stages - Overzicht</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Bedrijf</th>
+            <th>Periode</th>
+            <th>Status</th>
+            <th>Overeenkomst</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5">Laden...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid two-col">
+      <div class="panel card reveal">
+        <h2>Statistieken</h2>
+        <ul>
+          <li>Laden...</li>
+        </ul>
+      </div>
+      <div class="panel card reveal">
+        <h2>Overeenkomsten</h2>
+        <ul>
+          <li>Laden...</li>
+        </ul>
+      </div>
+    </div>
+  </template>
+
+  <!-- Docent Templates -->
+  <template id="docent-template">
+    <div class="panel card reveal">
+      <h2>Logboeken Opvolging</h2>
+      <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te bekijken.</p>
+      <table id="teacher-logbooks-table">
+        <thead>
+          <tr>
+            <th>Week</th>
+            <th>Taken</th>
+            <th>Reflectie</th>
+            <th>Status</th>
+            <th>Mentor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5">Geen stage geselecteerd</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel card reveal">
+      <h2>Feedback Geven</h2>
+      <div class="row full">
+        <label>Bericht voor student</label>
+        <textarea id="teacher-feedback-msg" rows="3" placeholder="Schrijf je feedback..."></textarea>
+      </div>
+      <button id="teacher-send-feedback" class="btn" style="margin-top: 0.75rem;">Feedback versturen</button>
+    </div>
+  </template>
+
+  <template id="docent-evaluatie-template">
+    <div class="panel card reveal">
+      <h2>Evaluatie Formulier</h2>
+      <form id="eval-form">
+        <div class="eval-type">
+          <label>Type evaluatie</label>
+          <select id="eval-type">
+            <option value="tussentijds">Tussentijds</option>
+            <option value="final">Final</option>
+          </select>
+        </div>
+
+        <h3>Competentie Scores</h3>
+        <div id="eval-competencies">
+          <!-- Rendered by JS -->
+        </div>
+
+        <div class="row full" style="margin-top: 1rem;">
+          <label>Algemene opmerkingen</label>
+          <textarea id="eval-comments" rows="3" placeholder="Algemene feedback voor de student..."></textarea>
+        </div>
+
+        <div class="btn-group">
+          <button type="submit" class="btn">Opslaan als Concept</button>
+          <button type="button" id="finalize-eval" class="btn secondary">Definitief Afsluiten</button>
+        </div>
+      </form>
+    </div>
+  </template>
+
+  <template id="docent-eindoverzicht-template">
+    <div class="panel card reveal">
+      <h2>Eindoverzicht</h2>
+      <p class="hint">Selecteer een stage via het navigatiemenu om het eindoverzicht te bekijken.</p>
+      <div id="final-report-content">
+        <p>Geen stage geselecteerd.</p>
+      </div>
+    </div>
+  </template>
+
+  <!-- Mentor Templates -->
+  <template id="mentor-template">
+    <div class="panel card reveal">
+      <h2>Wekelijkse Validatie</h2>
+      <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te valideren.</p>
+      <table id="mentor-logbooks-table">
+        <thead>
+          <tr>
+            <th>Week</th>
+            <th>Taken</th>
+            <th>Reflectie</th>
+            <th>Status</th>
+            <th>Mentor Feedback</th>
+            <th>Actie</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6">Geen stage geselecteerd</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </template>
+
+  <template id="mentor-evaluatie-template">
+    <div class="panel card reveal">
+      <h2>Feedback per competentie</h2>
+      <div id="mentor-eval-content"></div>
+    </div>
+  </template>
+
+  <template id="admin-template">
+    <div class="competencies-header">
+      <h2>Competentiebeheer</h2>
+      <div class="competencies-actions">
+        <div class="profile-selector-wrapper">
+          <label for="profile-select">Profiel</label>
+          <select id="profile-select">
             <option value="">Laden...</option>
           </select>
         </div>
-        <div class="user-badge">
-          <span class="user-name" id="user-name">Gebruiker</span>
-          <span class="user-role" id="user-role">Rol</span>
+        <button id="manage-profiles-btn" class="btn secondary small">Profielen Beheren</button>
+      </div>
+    </div>
+
+    <div class="grid two-col reveal">
+      <article class="panel card">
+        <h3>Competenties</h3>
+        <div class="competency-search-bar">
+          <input type="text" id="comp-search" placeholder="Zoek competenties..." />
+          <label class="toggle-inactive">
+            <input type="checkbox" id="show-inactive" checked /> Toon inactieve
+          </label>
         </div>
-        <button class="btn logout" id="logout-btn">Uitloggen</button>
-      </div>
-    </header>
-
-    <nav class="nav-bar" id="nav-panel" style="display: none;">
-      <ul class="nav-tabs" id="view-tabs"></ul>
-    </nav>
-
-    <main id="app" class="layout">
-      <section class="content" id="content"></section>
-    </main>
-
-    <!-- Login Template -->
-    <template id="login-template">
-      <div class="login-layout">
-        <div class="login-card">
-          <header class="login-header">
-            <h1>Stage Monitoring Tool</h1>
-            <p class="login-subtitle">Inloggen om verder te gaan</p>
-          </header>
-
-          <form id="login-form" class="login-form" novalidate>
-            <div class="field-group">
-              <label for="login-email">E-mailadres</label>
-              <input type="email" id="login-email" required placeholder="naam@school.be" autocomplete="email" />
-            </div>
-            <div class="field-group">
-              <label for="login-password">Wachtwoord</label>
-              <input type="password" id="login-password" required placeholder="••••••" autocomplete="current-password" />
-            </div>
-            <button type="submit" class="login-btn">Inloggen</button>
-            <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
-          </form>
-
-          <div class="login-divider">
-            <span>of snel inloggen (demo)</span>
+        <form id="competency-form">
+          <div class="comp-add-row">
+            <input type="text" id="comp-name" placeholder="Competentie naam" required />
+            <input type="text" id="comp-desc" placeholder="Beschrijving" />
+            <input type="number" id="comp-weight" min="0" max="100" step="1" placeholder="Gewicht %" required />
           </div>
-
-          <div class="quick-login" id="quick-login">
-            <!-- Quick login buttons filled by JS -->
-          </div>
-        </div>
-      </div>
-    </template>
-
-    <!-- Student Templates -->
-    <template id="student-dashboard-template">
-      <div class="grid two-col reveal">
-        <article class="panel card hero">
-          <h2>Mijn Stage</h2>
-          <p><strong>Bedrijf:</strong> Laden...</p>
-          <p><strong>Periode:</strong> -</p>
-          <p><strong>Status:</strong> -</p>
-          <p><strong>Overeenkomst:</strong> -</p>
-        </article>
-
-        <article class="panel card task-card">
-          <h2>Openstaande Taken</h2>
-          <ul>
-            <li>Gegevens laden...</li>
-          </ul>
-        </article>
-      </div>
-
-      <div class="grid two-col reveal">
-        <article class="panel card">
-          <h2>Logboeken Overzicht</h2>
-          <table>
-            <thead>
-              <tr><th>Week</th><th>Status</th><th>Mentor</th></tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="3">Geen logboeken gevonden</td></tr>
-            </tbody>
-          </table>
-        </article>
-
-        <article class="panel card">
-          <h2>Competentie Progressie</h2>
-          <div class="meter"><span style="width: 80%">Analyseren 80%</span></div>
-          <div class="meter"><span style="width: 60%">Ontwerpen 60%</span></div>
-          <div class="meter"><span style="width: 40%">Realiseren 40%</span></div>
-          <div class="meter"><span style="width: 50%">Testen 50%</span></div>
-        </article>
-      </div>
-
-      <div class="panel card reveal">
-        <h2>Feedback</h2>
-        <div id="student-feedback">
-          <p class="hint">Je hebt nog geen feedback ontvangen.</p>
-        </div>
-      </div>
-    </template>
-
-    <template id="student-voorstel-template">
-      <div class="panel card reveal">
-        <h2>Stagevoorstel Indienen</h2>
-        <form id="proposal-form">
-          <div class="row full">
-            <label>Bedrijfsnaam *</label>
-            <input type="text" id="company-name" placeholder="Naam van het bedrijf" required />
-          </div>
-          <div class="row full">
-            <label>Adres</label>
-            <input type="text" id="company-address" placeholder="Straat en nummer" />
-          </div>
-          <div class="row full">
-            <label>Sector</label>
-            <input type="text" id="company-sector" placeholder="Bijv. IT, Data & Analytics..." />
-          </div>
-          <div class="row full">
-            <label>Contactpersoon *</label>
-            <input type="text" id="contact-person" placeholder="Naam contactpersoon" required />
-          </div>
-          <div class="row full">
-            <label>E-mail contactpersoon *</label>
-            <input type="email" id="contact-email" placeholder="email@bedrijf.be" required />
-          </div>
-          <div class="row full">
-            <label>Stageperiode *</label>
-            <div class="date-range">
-              <input type="date" id="start-date" required />
-              <span>tot</span>
-              <input type="date" id="end-date" required />
-            </div>
-          </div>
-          <div class="row full">
-            <label>Omschrijving opdracht * (min. 20 karakters)</label>
-            <textarea id="assignment-desc" rows="4" placeholder="Beschrijf de stageopdracht in detail..." required minlength="20"></textarea>
-          </div>
-          <button type="submit" class="btn">Voorstel Indienen</button>
+          <button class="btn" type="submit">Competentie toevoegen</button>
         </form>
-      </div>
-    </template>
+        <button id="bulk-add-toggle" class="btn secondary small" style="margin-top: 0.5rem;">+ Bulk toevoegen</button>
+        <div id="bulk-add-panel" class="bulk-add-panel" style="display: none;">
+          <textarea id="bulk-add-text" rows="4" placeholder="Naam | Gewicht | Beschrijving (optioneel)&#10;Analyseren | 30 | Problemen analyseren en structureren&#10;Ontwerpen | 25 | Software-ontwerp maken"></textarea>
+          <button id="bulk-add-btn" class="btn small">Toevoegen</button>
+        </div>
+        <ul id="competency-list" class="list competency-list"></ul>
+        <p id="weight-check" class="hint"></p>
+      </article>
 
-    <template id="student-logboek-template">
-      <div class="panel card reveal">
-        <h2>Logboek Invullen</h2>
-        <form id="logbook-form">
-          <div class="row full">
-            <label>Weeknummer *</label>
-            <input type="number" id="log-week" min="1" max="52" required />
+      <article class="panel card">
+        <h3>Finale Score Simulator</h3>
+        <p class="hint">Gewogen formule: Σ(score × gewicht)/100</p>
+        <div id="score-inputs"></div>
+        <button id="calc-score" class="btn" style="margin-top: 1rem;">Bereken eindscore</button>
+        <p id="score-result" class="result"></p>
+      </article>
+    </div>
+
+    <div class="panel card reveal" style="margin-top: 1rem;">
+      <h3>Gewichtsverdeling</h3>
+      <div id="weight-chart" class="weight-chart"></div>
+    </div>
+
+    <!-- Profile Management Modal -->
+    <div id="profile-modal" class="modal" style="display: none;">
+      <div class="modal-overlay"></div>
+      <div class="modal-card">
+        <h3>Profielen Beheren</h3>
+        <div id="profile-list" class="profile-list"></div>
+        <form id="profile-form" class="profile-form">
+          <div class="row compact">
+            <input type="text" id="profile-name" placeholder="Naam" required />
+            <input type="text" id="profile-version" placeholder="Versie" />
           </div>
-          <div class="row full">
-            <label>Taken deze week</label>
-            <textarea id="log-tasks" rows="3" placeholder="Wat heb je deze week gedaan?"></textarea>
-          </div>
-          <div class="row full">
-            <label>Reflectie</label>
-            <textarea id="log-reflection" rows="3" placeholder="Hoe verliep de week? Wat leerde je?"></textarea>
-          </div>
-          <div class="row full">
-            <label>Problemen / Leerpunten</label>
-            <textarea id="log-issues" rows="2" placeholder="Eventuele problemen of leerpunten"></textarea>
-          </div>
-          <div class="btn-group">
-            <button type="submit" class="btn">Opslaan als Concept</button>
-            <button type="button" id="submit-logbook" class="btn secondary">Definitief Indienen</button>
-          </div>
+          <input type="text" id="profile-year" placeholder="Academisch jaar" required />
+          <label>
+            <input type="checkbox" id="profile-active" checked /> Actief
+          </label>
+          <button type="submit" class="btn">Profiel aanmaken</button>
         </form>
+        <button class="btn secondary" id="close-profile-modal">Sluiten</button>
       </div>
-    </template>
+    </div>
+  </template>
 
-    <template id="student-evaluatie-template">
-      <div class="panel card reveal">
-        <h2>Mijn Evaluaties</h2>
-        <table>
+  <template id="admin-overeenkomsten-template">
+    <div class="panel card reveal">
+      <h2>Overeenkomsten Overzicht</h2>
+      <p class="hint">Overzicht van alle studenten en hun overeenkomststatus. Alleen studenten met een goedgekeurd voorstel worden getoond.</p>
+      <table id="admin-agreements-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Stage Status</th>
+            <th>Overeenkomst Status</th>
+            <th>Opgeladen op</th>
+            <th>Actie</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5">Laden...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div id="admin-agreement-detail-panel" class="panel card reveal" style="display: none;">
+      <h2>Overeenkomst Detail: <span id="admin-agreement-student-name">Student</span></h2>
+      <p><strong>Stage ID:</strong> <span id="admin-agreement-internship-id">-</span></p>
+      <p><strong>Stage status:</strong> <span id="admin-agreement-internship-status">-</span></p>
+      <div id="admin-agreement-detail-content" style="margin: 1rem 0;">
+        <p>Laden...</p>
+      </div>
+      <div id="admin-agreement-actions" style="margin-top: 1rem;"></div>
+    </div>
+  </template>
+
+  <template id="admin-gebruikers-template">
+    <div class="panel card reveal">
+      <h2>Gebruikersbeheer</h2>
+      <div class="row compact" style="margin-bottom: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+        <input type="text" id="user-search" placeholder="Zoek op naam of email..." style="flex: 1; min-width: 200px;" />
+        <select id="user-role-filter">
+          <option value="">Alle rollen</option>
+          <option value="student">Student</option>
+          <option value="teacher">Docent</option>
+          <option value="committee">Commissie</option>
+          <option value="mentor">Mentor</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button id="user-search-btn" class="btn">Zoeken</button>
+        <button id="user-create-btn" class="btn success">+ Nieuwe gebruiker</button>
+      </div>
+
+      <div id="user-list-container">
+        <table id="users-table">
           <thead>
-            <tr><th>Type</th><th>Datum</th><th>Status</th><th>Acties</th></tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="4">Geen evaluaties gevonden</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="panel card reveal">
-        <h2>Eindoverzicht</h2>
-        <div id="final-summary">
-          <p>Laden...</p>
-        </div>
-      </div>
-    </template>
-
-    <template id="student-overeenkomst-template">
-      <div class="panel card reveal">
-        <h2>Stageovereenkomst</h2>
-        <p>Upload hier je getekende stageovereenkomst (PDF, max 5MB).</p>
-        <p class="hint">Let op: Je kan pas een overeenkomst uploaden als je stagevoorstel is goedgekeurd.</p>
-        
-        <form id="agreement-form">
-          <div class="row full">
-            <label>Selecteer bestand (PDF)</label>
-            <input type="file" id="agreement-file" accept=".pdf" />
-          </div>
-          <button type="submit" class="btn">Uploaden</button>
-        </form>
-        
-        <div class="agreement-status">
-          <h3>Huidige status</h3>
-          <p id="agreement-status-text"><span class="status-pill status-warn">Nog niet geüpload</span></p>
-        </div>
-      </div>
-    </template>
-
-    <!-- Commissie Templates -->
-    <template id="commissie-template">
-      <div class="panel card reveal">
-        <h2>Stagevoorstellen Beoordelen</h2>
-        <p class="hint">Klik op een rij om een voorstel te selecteren en te beoordelen.</p>
-        <table id="proposals-table">
-          <thead>
-            <tr><th>Student</th><th>Bedrijf</th><th>Datum</th><th>Status</th><th>Overeenkomst</th></tr>
+            <tr>
+              <th>Naam</th>
+              <th>Email</th>
+              <th>Rol</th>
+              <th>Status</th>
+              <th>Acties</th>
+            </tr>
           </thead>
           <tbody>
             <tr><td colspan="5">Laden...</td></tr>
@@ -249,173 +644,62 @@
         </table>
       </div>
 
-      <div id="proposal-detail-panel" class="panel card reveal" style="display: none;">
-        <h2>Beoordeling: <span id="selected-student-name">Student</span></h2>
-        <p><strong>Bedrijf:</strong> <span id="selected-company">-</span></p>
-        <p><strong>Status:</strong> <span id="selected-status">-</span></p>
-        <p><strong>Omschrijving:</strong></p>
-        <div id="selected-description" style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">-</div>
+      <div id="user-pagination" class="row compact" style="margin-top: 1rem; justify-content: center; gap: 0.5rem;"></div>
+    </div>
 
-        <div class="btn-group" id="review-actions" style="margin-bottom: 1rem;">
-          <button id="btn-approve" class="btn success">✓ Goedkeuren</button>
-          <button id="btn-reject" class="btn danger">✗ Afkeuren</button>
-          <button id="btn-changes" class="btn secondary">⚠ Aanpassingen Vereist</button>
-        </div>
-
-        <div id="feedback-section">
-          <label>Feedback voor student</label>
-          <textarea id="feedback-box" rows="4" placeholder="Voer hier je feedback in..."></textarea>
-        </div>
-      </div>
-    </template>
-
-    <template id="commissie-overzicht-template">
-      <div class="panel card reveal">
-        <h2>Alle Stages - Overzicht</h2>
-        <table>
-          <thead>
-            <tr><th>Student</th><th>Bedrijf</th><th>Periode</th><th>Status</th><th>Overeenkomst</th></tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="5">Laden...</td></tr>
-          </tbody>
-        </table>
-      </div>
-      
-      <div class="grid two-col">
-        <div class="panel card reveal">
-          <h2>Statistieken</h2>
-          <ul>
-            <li>Laden...</li>
-          </ul>
-        </div>
-        <div class="panel card reveal">
-          <h2>Overeenkomsten</h2>
-          <ul>
-            <li>Laden...</li>
-          </ul>
-        </div>
-      </div>
-    </template>
-
-    <!-- Docent Templates -->
-    <template id="docent-template">
-      <div class="panel card reveal">
-        <h2>Logboeken Opvolging</h2>
-        <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te bekijken.</p>
-        <table id="teacher-logbooks-table">
-          <thead>
-            <tr><th>Week</th><th>Taken</th><th>Reflectie</th><th>Status</th><th>Mentor</th></tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="5">Geen stage geselecteerd</td></tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="panel card reveal">
-        <h2>Feedback Geven</h2>
+    <div id="user-form-panel" class="panel card reveal" style="display: none;">
+      <h2 id="user-form-title">Gebruiker aanmaken</h2>
+      <form id="user-form">
+        <input type="hidden" id="user-form-id" />
         <div class="row full">
-          <label>Bericht voor student</label>
-          <textarea id="teacher-feedback-msg" rows="3" placeholder="Schrijf je feedback..."></textarea>
+          <label>Voornaam *</label>
+          <input type="text" id="user-first-name" required />
         </div>
-        <button id="teacher-send-feedback" class="btn" style="margin-top: 0.75rem;">Feedback versturen</button>
-      </div>
-    </template>
-
-    <template id="docent-evaluatie-template">
-      <div class="panel card reveal">
-        <h2>Evaluatie Formulier</h2>
-        <form id="eval-form">
-          <div class="eval-type">
-            <label>Type evaluatie</label>
-            <select id="eval-type">
-              <option value="tussentijds">Tussentijds</option>
-              <option value="final">Final</option>
-            </select>
-          </div>
-          
-          <h3>Competentie Scores</h3>
-          <div id="eval-competencies">
-            <!-- Rendered by JS -->
-          </div>
-          
-          <div class="row full" style="margin-top: 1rem;">
-            <label>Algemene opmerkingen</label>
-            <textarea id="eval-comments" rows="3" placeholder="Algemene feedback voor de student..."></textarea>
-          </div>
-          
-          <div class="btn-group">
-            <button type="submit" class="btn">Opslaan als Concept</button>
-            <button type="button" id="finalize-eval" class="btn secondary">Definitief Afsluiten</button>
-          </div>
-        </form>
-      </div>
-    </template>
-
-    <!-- Mentor Templates -->
-    <template id="mentor-template">
-      <div class="panel card reveal">
-        <h2>Wekelijkse Validatie</h2>
-        <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te valideren.</p>
-        <table id="mentor-logbooks-table">
-          <thead>
-            <tr><th>Week</th><th>Taken</th><th>Reflectie</th><th>Status</th><th>Actie</th></tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="5">Geen stage geselecteerd</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </template>
-
-    <template id="docent-eindoverzicht-template">
-      <div class="panel card reveal">
-        <h2>Eindoverzicht</h2>
-        <p class="hint">Selecteer een stage via het navigatiemenu om het eindoverzicht te bekijken.</p>
-        <div id="final-report-content">
-          <p>Geen stage geselecteerd.</p>
+        <div class="row full">
+          <label>Achternaam *</label>
+          <input type="text" id="user-last-name" required />
         </div>
-      </div>
-    </template>
+        <div class="row full">
+          <label>E-mail *</label>
+          <input type="email" id="user-email" required />
+        </div>
+        <div class="row full">
+          <label>Rol *</label>
+          <select id="user-role" required>
+            <option value="student">Student</option>
+            <option value="teacher">Docent</option>
+            <option value="committee">Commissie</option>
+            <option value="mentor">Mentor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="row full" id="user-password-row">
+          <label>Wachtwoord *</label>
+          <input type="password" id="user-password" required />
+        </div>
+        <div class="row full">
+          <label>
+            <input type="checkbox" id="user-is-active" checked />
+            Actief
+          </label>
+        </div>
+        <div class="btn-group">
+          <button type="submit" class="btn" id="user-submit-btn">Aanmaken</button>
+          <button type="button" id="user-cancel-btn" class="btn secondary">Annuleren</button>
+        </div>
+      </form>
+    </div>
+  </template>
 
-    <template id="mentor-evaluatie-template">
-      <div class="panel card reveal">
-        <h2>Feedback per competentie</h2>
-        <div id="mentor-eval-content"></div>
-      </div>
-    </template>
+  <script src="js/api-client.js?v=4"></script>
+  <script src="js/ui-helpers.js?v=4"></script>
+  <script src="js/table-cards.js?v=4"></script>
+  <script src="js/views/student.js?v=4"></script>
+  <script src="js/views/committee.js?v=4"></script>
+  <script src="js/views/teacher.js?v=4"></script>
+  <script src="js/views/mentor.js?v=4"></script>
+  <script src="js/views/admin.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
+</body>
 
-    <!-- Admin Templates -->
-    <template id="admin-template">
-      <div class="grid two-col reveal">
-        <article class="panel card">
-          <h2>Competentiebeheer</h2>
-          <p>Som gewichten moet 100% zijn.</p>
-          <form id="competency-form">
-            <div class="row compact" style="margin-bottom: 0.5rem;">
-              <input type="text" id="comp-name" placeholder="Competentie naam" required />
-              <input type="number" id="comp-weight" min="0" max="100" step="1" placeholder="Gewicht %" required />
-            </div>
-            <button class="btn" type="submit">Competentie toevoegen</button>
-          </form>
-          <ul id="competency-list" class="list"></ul>
-          <p id="weight-check" class="hint"></p>
-        </article>
-
-        <article class="panel card">
-          <h2>Finale Score Simulator</h2>
-          <p>Gewogen formule: Σ(score × gewicht)/100</p>
-          <div id="score-inputs"></div>
-          <button id="calc-score" class="btn" style="margin-top: 1rem;">Bereken eindscore</button>
-          <p id="score-result" class="result"></p>
-        </article>
-      </div>
-    </template>
-
-    <script src="api-client.js"></script>
-    <script src="ui-helpers.js"></script>
-    <script src="table-cards.js"></script>
-    <script src="app.js"></script>
-  </body>
 </html>

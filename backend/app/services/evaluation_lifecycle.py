@@ -8,7 +8,7 @@ from app.models import Evaluation, EvaluationRule, Competency
 
 def ensure_internship_is_evaluable(internship) -> None:
     """Guard that evaluations can be created for the internship status."""
-    if internship.status not in ["Lopend", "Afgerond", "Overeenkomst Ingediend"]:
+    if internship.status not in ["Lopend", "Afgerond"]:
         raise HTTPException(
             status_code=400, detail="Can only evaluate ongoing or completed internships"
         )

@@ -1,8 +1,8 @@
-"""Agreement (Overeenkomst) endpoints."""
+"""Overeenkomst endpoints."""
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
 from app.models import Internship, User
@@ -25,9 +25,9 @@ def upload_agreement_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_student),
 ):
-    """US-04: Student uploads internship agreement (PDF only).
+    """US-04: Student uploadt stageovereenkomst (enkel PDF).
 
-    Only allowed when proposal is approved (Goedgekeurd).
+    Alleen toegestaan als het voorstel goedgekeurd is.
     """
     lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
     result = lifecycle.upload_agreement(
@@ -40,22 +40,27 @@ def upload_agreement_endpoint(
     return result.internship.agreement
 
 
+def _get_internship_with_agreement(db: Session, internship_id: int) -> Internship:
+    """Haalt stage op met overeenkomst eager-loaded, of geeft 404."""
+    internship = db.query(Internship).options(
+        joinedload(Internship.agreement),
+    ).filter(Internship.id == internship_id).first()
+    if not internship:
+        raise HTTPException(status_code=404, detail="Internship not found")
+    return internship
+
+
 @router.get("/{internship_id}/agreement", response_model=AgreementResponse)
 def get_agreement(
     internship_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get agreement details"""
-    internship = db.query(Internship).filter(Internship.id == internship_id).first()
-    if not internship:
-        raise HTTPException(status_code=404, detail="Internship not found")
-
+    """Haalt overeenkomst details op"""
+    internship = _get_internship_with_agreement(db, internship_id)
     ensure_internship_access(current_user, internship)
-
     if not internship.agreement:
         raise HTTPException(status_code=404, detail="Agreement not found")
-
     return internship.agreement
 
 
@@ -65,16 +70,9 @@ def download_agreement(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Download the uploaded agreement PDF.
-
-    Returns the raw PDF file with appropriate Content-Type and filename header.
-    """
-    internship = db.query(Internship).filter(Internship.id == internship_id).first()
-    if not internship:
-        raise HTTPException(status_code=404, detail="Internship not found")
-
+    """Downloadt de geüploade overeenkomst PDF."""
+    internship = _get_internship_with_agreement(db, internship_id)
     ensure_internship_access(current_user, internship)
-
     if not internship.agreement:
         raise HTTPException(status_code=404, detail="Agreement not found")
 
@@ -96,9 +94,9 @@ def validate_agreement_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_committee_or_admin),
 ):
-    """US-13, US-26: Committee/admin validates agreement.
+    """US-13, US-26: Commissie/admin valideert overeenkomst.
 
-    Status: Gevalideerd or Onvolledig.
+    Status: Gevalideerd of Onvolledig.
     """
     lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
     result = lifecycle.validate_agreement(

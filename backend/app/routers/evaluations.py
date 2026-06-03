@@ -1,4 +1,5 @@
 """Evaluation endpoints."""
+from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -8,6 +9,7 @@ from app.models import Evaluation, User
 from app.schemas import (
     EvaluationResponse,
     EvaluationCreate,
+    EvaluationUpdate,
     EvaluationRuleResponse,
     EvaluationRuleUpdate,
     EvaluationWithScoreResponse,
@@ -20,6 +22,7 @@ from app.services.evaluations import (
     update_evaluation_rule as update_evaluation_rule_svc,
     finalize_evaluation as finalize_evaluation_svc,
 )
+from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 
 router = APIRouter(prefix="/internships", tags=["evaluations"])
 
@@ -55,6 +58,28 @@ def get_evaluation(
     return get_evaluation_with_score(db, current_user, evaluation_id)
 
 
+@router.patch("/evaluations/{evaluation_id}", response_model=EvaluationResponse)
+def update_evaluation(
+    evaluation_id: int,
+    update: EvaluationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_staff),
+):
+    """US-18: Update evaluation comments (general remarks)"""
+    evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+    if evaluation.finalized:
+        raise HTTPException(status_code=400, detail="Cannot update finalized evaluation")
+
+    if update.comments is not None:
+        evaluation.comments = update.comments
+
+    db.commit()
+    db.refresh(evaluation)
+    return evaluation
+
+
 @router.patch(
     "/evaluations/{evaluation_id}/rules/{rule_id}", response_model=EvaluationRuleResponse
 )
@@ -81,13 +106,22 @@ def finalize_evaluation_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_teacher),
 ):
-    """US-18: Finalize an evaluation - cannot be modified after"""
+    """US-18: Finalize an evaluation - cannot be modified after.
+    If this is a final evaluation, the internship is also marked as completed."""
     evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
 
     # finalize_evaluation_svc returns (Evaluation, dict) tuple
     finalized_eval, score_data = finalize_evaluation_svc(db, evaluation, current_user)
+
+    # Auto-complete internship when final evaluation is finalized
+    if finalized_eval.eval_type == "final":
+        lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+        lifecycle.complete_internship(
+            internship_id=finalized_eval.internship_id,
+            actor=current_user,
+        )
 
     return EvaluationWithScoreResponse(
         **EvaluationResponse.model_validate(finalized_eval).model_dump(),

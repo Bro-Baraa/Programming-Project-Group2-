@@ -132,6 +132,7 @@ class Logbook(Base):
     issues = Column(Text, nullable=True)
     status = Column(String, default="draft")  # draft, submitted
     mentor_validated = Column(Boolean, default=False)
+    mentor_feedback = Column(Text, nullable=True)
     submitted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

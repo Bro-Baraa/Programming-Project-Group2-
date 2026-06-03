@@ -531,7 +531,7 @@ class TestLogbooks:
         assert "already exists" in response.json()["detail"]
 
     def test_mentor_validates_logbook(self, client, auth_headers_student, auth_headers_mentor, internship_with_logbook, db):
-        """Test mentor can validate logbook."""
+        """Test mentor can validate logbook via PATCH endpoint."""
         from app.models import Logbook
         
         # Create logbook directly in db (submitted status so mentor can validate)
@@ -546,11 +546,18 @@ class TestLogbooks:
         db.commit()
         db.refresh(logbook)
         
-        # Note: Looking at the router, mentors set mentor_validated directly
-        # but the LogbookUpdate schema doesn't include this field.
-        # The router handles this separately for mentors.
-        # For now, test that mentor can access the endpoint
-        # and that the logbook exists
+        # Mentor validates the logbook
+        response = client.patch(
+            f"/internships/logbooks/{logbook.id}",
+            json={"mentor_validated": True},
+            headers=auth_headers_mentor
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["mentor_validated"] is True
+        assert data["week_number"] == 1
+        
+        # Verify mentor can list logbooks
         response = client.get(
             f"/internships/{internship_with_logbook.id}/logbooks",
             headers=auth_headers_mentor
@@ -559,6 +566,32 @@ class TestLogbooks:
         data = response.json()
         assert len(data) == 1
         assert data[0]["week_number"] == 1
+        assert data[0]["mentor_validated"] is True
+
+    def test_mentor_can_give_feedback(self, client, auth_headers_mentor, internship_with_logbook, db):
+        """Test mentor can give feedback on a logbook via PATCH endpoint."""
+        from app.models import Logbook
+
+        logbook = Logbook(
+            internship_id=internship_with_logbook.id,
+            week_number=2,
+            tasks="Tasks",
+            reflection="Reflection",
+            status="submitted"
+        )
+        db.add(logbook)
+        db.commit()
+        db.refresh(logbook)
+
+        response = client.patch(
+            f"/internships/logbooks/{logbook.id}",
+            json={"mentor_feedback": "Goed werk deze week!"},
+            headers=auth_headers_mentor
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["mentor_feedback"] == "Goed werk deze week!"
+        assert data["mentor_validated"] is False
 
     def test_student_can_submit_logbook(self, client, auth_headers_student, internship_with_logbook, db):
         """US-05: Student kan logboek definitief indienen via submit endpoint."""
