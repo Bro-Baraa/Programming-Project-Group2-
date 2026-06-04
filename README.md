@@ -232,6 +232,7 @@ FRONTEND_ORIGINS=http://localhost:8080
 | Evaluations | `GET /internships/{id}/evaluations`, `POST /internships/{id}/evaluations`, `POST /evaluations/{id}/finalize` |
 | Competencies | `GET /competencies`, `POST /competencies/profiles`, `POST /competencies` |
 | Feedback | `GET /internships/{id}/feedback`, `POST /internships/{id}/feedback` |
+| Audit | `GET /audit` |
 | Dashboard | `GET /me/dashboard`, `GET /internships/stats/dashboard` |
 | Users | `GET /users`, `GET /users/{id}` |
 
@@ -246,3 +247,4 @@ Zie `/docs` (lokaal) voor de volledige lijst.
 - PDFs worden opgeslagen in `uploads/agreements/`
 - JWT tokens verlopen na 24 uur
 - SQLite is de standaard database (geen setup nodig). Voor PostgreSQL/MySQL: pas `SQLALCHEMY_DATABASE_URL` in `app/database.py` aan.
+- Alle belangrijke acties worden gelogd in de `audit_logs` tabel en zijn raadpleegbaar via `GET /audit` (enkel admin). Zie `backend/README.md` voor de volledige lijst van events.

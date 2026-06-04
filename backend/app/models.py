@@ -24,6 +24,7 @@ class User(Base):
     feedback_sent = relationship("Feedback", foreign_keys="Feedback.from_user_id", back_populates="from_user")
     feedback_received = relationship("Feedback", foreign_keys="Feedback.to_user_id", back_populates="to_user")
     companies_as_mentor = relationship("Company", foreign_keys="Company.mentor_id", back_populates="mentor")
+    audit_logs = relationship("AuditLog", foreign_keys="AuditLog.user_id", back_populates="user")
 
 
 class Company(Base):
@@ -238,3 +239,20 @@ class Feedback(Base):
     internship = relationship("Internship", back_populates="feedbacks")
     from_user = relationship("User", foreign_keys=[from_user_id], back_populates="feedback_sent")
     to_user = relationship("User", foreign_keys=[to_user_id], back_populates="feedback_received")
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable: system events
+    user_email = Column(String, nullable=True)   # snapshot so log survives user deletion
+    user_role = Column(String, nullable=True)
+    action = Column(String, nullable=False)       # e.g. "login", "proposal.submit", "agreement.validate"
+    entity_type = Column(String, nullable=True)   # e.g. "internship", "user", "proposal"
+    entity_id = Column(Integer, nullable=True)    # PK of the affected record
+    detail = Column(Text, nullable=True)          # human-readable extra context
+    ip_address = Column(String, nullable=True)
+
+    user = relationship("User", foreign_keys=[user_id], back_populates="audit_logs")

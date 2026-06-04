@@ -626,6 +626,43 @@
     </div>
   </template>
 
+  <template id="admin-auditlog-template">
+    <div class="panel card reveal">
+      <h2>Audit Log</h2>
+      <p class="hint">Overzicht van alle acties in het systeem. Enkel zichtbaar voor admins.</p>
+
+      <div class="row compact" style="margin-bottom: 1rem; gap: 0.5rem; flex-wrap: wrap;">
+        <input type="text" id="audit-search-email" placeholder="Filter op e-mail..." style="flex: 1; min-width: 180px;" />
+        <input type="text" id="audit-search-action" placeholder="Filter op actie (bijv. login)..." style="flex: 1; min-width: 180px;" />
+        <select id="audit-entity-filter">
+          <option value="">Alle entiteiten</option>
+          <option value="user">Gebruiker</option>
+          <option value="internship">Stage</option>
+        </select>
+        <button id="audit-search-btn" class="btn">Zoeken</button>
+        <button id="audit-reset-btn" class="btn secondary">Reset</button>
+      </div>
+
+      <table id="audit-table">
+        <thead>
+          <tr>
+            <th>Tijdstip</th>
+            <th>Gebruiker</th>
+            <th>Rol</th>
+            <th>Actie</th>
+            <th>Detail</th>
+            <th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6">Laden...</td></tr>
+        </tbody>
+      </table>
+
+      <div id="audit-pagination" class="row compact" style="margin-top: 1rem; justify-content: center; gap: 0.5rem;"></div>
+    </div>
+  </template>
+
   <template id="admin-gebruikers-template">
     <div class="panel card reveal">
       <h2>Gebruikersbeheer</h2>
@@ -715,7 +752,7 @@
   <script src="js/views/committee.js?v=4"></script>
   <script src="js/views/teacher.js?v=4"></script>
   <script src="js/views/mentor.js?v=4"></script>
-  <script src="js/views/admin.js?v=4"></script>
+  <script src="js/views/admin.js?v=5"></script>
   <script src="js/app.js?v=4"></script>
 </body>
 

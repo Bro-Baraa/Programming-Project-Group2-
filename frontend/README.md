@@ -46,7 +46,7 @@ Inloggen met JWT-token. Testaccounts:
 | **Stagecommissie** | Voorstellen beoordelen (goedkeuren/afkeuren/aanpassingen), Overzicht met statistieken |
 | **Docent** | Logboeken opvolgen, Feedback geven, Evaluaties invullen (scores per competentie) |
 | **Stagementor** | Logboeken valideren (aftekenen) |
-| **Administratie** | Competentiebeheer + gewichten |
+| **Administratie** | Competentiebeheer + gewichten, Overeenkomsten overzicht, Gebruikersbeheer, **Audit log** |
 
 ## API-Integratie
 

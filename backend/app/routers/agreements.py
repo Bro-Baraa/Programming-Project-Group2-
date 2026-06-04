@@ -14,6 +14,7 @@ from app.auth import (
 )
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/internships", tags=["agreements"])
 
@@ -37,6 +38,7 @@ def upload_agreement_endpoint(
         filename=file.filename,
         content_type=file.content_type,
     )
+    log_event(db, "agreement.upload", user=current_user, entity_type="internship", entity_id=internship_id, detail="Overeenkomst geüpload")
     return result.internship.agreement
 
 
@@ -105,4 +107,5 @@ def validate_agreement_endpoint(
         insurance_verified=update.insurance_verified,
         agreement_status=update.status,
     )
+    log_event(db, "agreement.validate", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Overeenkomst gevalideerd: {update.status}")
     return result.internship.agreement

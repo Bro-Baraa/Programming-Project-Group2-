@@ -14,6 +14,7 @@ This package provides schemas organized by domain:
 """
 
 # Re-export all schemas for backward compatibility
+from .audit import AuditLogResponse
 from .user import (
     UserBase,
     UserCreate,
@@ -169,4 +170,6 @@ __all__ = [
     "UserDashboardStats",
     "DashboardAlert",
     "MeDashboardResponse",
+    # Audit
+    "AuditLogResponse",
 ]

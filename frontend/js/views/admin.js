@@ -871,3 +871,100 @@ window.showAdminAgreementDetail = showAdminAgreementDetail;
 window.handleEditUser = handleEditUser;
 window.handleDeleteUser = handleDeleteUser;
 window.changeUserPage = changeUserPage;
+
+// ============================================
+// Admin - Audit Log (US-30)
+// ============================================
+
+let auditSkip = 0;
+const auditLimit = 50;
+let auditFilters = { action: '', user_email: '', entity_type: '' };
+
+async function renderAuditLog() {
+  const tbody = document.querySelector('#audit-table tbody');
+  const pagination = document.getElementById('audit-pagination');
+
+  async function loadLogs() {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6">Laden...</td></tr>';
+    try {
+      const logs = await AuditAPI.list(
+        auditFilters.action || null,
+        auditFilters.user_email || null,
+        auditFilters.entity_type || null,
+        auditSkip,
+        auditLimit
+      );
+      renderLogs(logs);
+    } catch (error) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7">Fout: ${error.message}</td></tr>`;
+    }
+  }
+
+  function renderLogs(logs) {
+    if (!tbody) return;
+    if (logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">Geen events gevonden.</td></tr>';
+      if (pagination) pagination.innerHTML = '';
+      return;
+    }
+
+    tbody.innerHTML = logs.map(log => {
+      const ts = new Date(log.timestamp).toLocaleString('nl-BE', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      const actionClass = log.action.startsWith('login') ? 'status-good'
+        : log.action.includes('delete') ? 'status-bad'
+        : log.action.includes('review') || log.action.includes('validate') ? 'status-warn'
+        : '';
+      return `
+      <tr>
+      <td style="white-space:nowrap;font-size:0.8rem;">${ts}</td>
+      <td>${escapeHtml(log.user_email || '-')}</td>
+      <td>${log.user_role ? `<span class="status-pill">${escapeHtml(log.user_role)}</span>` : '-'}</td>
+      <td><span class="status-pill ${actionClass}">${escapeHtml(log.action)}</span></td>
+      <td style="font-size:0.85rem;">${escapeHtml(log.detail || '-')}</td>
+      <td style="font-size:0.75rem;color:var(--ink-soft);">${escapeHtml(log.ip_address || '-')}</td>
+      </tr>
+      `;
+    }).join('');
+
+    if (pagination) {
+      pagination.innerHTML = `
+        <button class="btn small" ${auditSkip === 0 ? 'disabled' : ''} onclick="changeAuditPage(-1)">← Vorige</button>
+        <span style="align-self:center;">Pagina ${Math.floor(auditSkip / auditLimit) + 1}</span>
+        <button class="btn small" ${logs.length < auditLimit ? 'disabled' : ''} onclick="changeAuditPage(1)">Volgende →</button>
+      `;
+    }
+  }
+
+  // Filter handlers
+  document.getElementById('audit-search-btn')?.addEventListener('click', () => {
+    auditFilters.action = document.getElementById('audit-search-action')?.value.trim() || '';
+    auditFilters.user_email = document.getElementById('audit-search-email')?.value.trim() || '';
+    auditFilters.entity_type = document.getElementById('audit-entity-filter')?.value || '';
+    auditSkip = 0;
+    loadLogs();
+  });
+
+  document.getElementById('audit-reset-btn')?.addEventListener('click', () => {
+    auditFilters = { action: '', user_email: '', entity_type: '' };
+    const emailEl = document.getElementById('audit-search-email');
+    const actionEl = document.getElementById('audit-search-action');
+    const entityEl = document.getElementById('audit-entity-filter');
+    if (emailEl) emailEl.value = '';
+    if (actionEl) actionEl.value = '';
+    if (entityEl) entityEl.value = '';
+    auditSkip = 0;
+    loadLogs();
+  });
+
+  loadLogs();
+}
+
+function changeAuditPage(delta) {
+  auditSkip = Math.max(0, auditSkip + delta * auditLimit);
+  renderAuditLog();
+}
+
+window.changeAuditPage = changeAuditPage;

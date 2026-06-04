@@ -9,6 +9,7 @@ from app.schemas import ProposalResponse, ProposalUpdate, ProposalCreate, Resubm
 from app.auth import get_current_active_user, require_committee, require_student
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/internships", tags=["proposals"])
 
@@ -31,6 +32,7 @@ def create_proposal_endpoint(
         actor=current_user,
         description=data.description,
     )
+    log_event(db, "proposal.submit", user=current_user, entity_type="internship", entity_id=internship_id, detail="Voorstel ingediend")
     return result.internship.proposal
 
 
@@ -74,6 +76,7 @@ def update_proposal_endpoint(
         decision=update_data.status,
         feedback=update_data.feedback,
     )
+    log_event(db, "proposal.review", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Voorstel beoordeeld: {update_data.status}")
     return result.internship.proposal
 
 
@@ -98,6 +101,7 @@ def edit_proposal_endpoint(
         start_date=data.start_date,
         end_date=data.end_date,
     )
+    log_event(db, "proposal.edit", user=current_user, entity_type="internship", entity_id=internship_id, detail="Voorstel bewerkt")
     return result.internship.proposal
 
 
@@ -122,6 +126,7 @@ def resubmit_proposal_endpoint(
         start_date=data.start_date,
         end_date=data.end_date,
     )
+    log_event(db, "proposal.resubmit", user=current_user, entity_type="internship", entity_id=internship_id, detail="Voorstel herindienen")
     return result.internship.proposal
 
 
@@ -137,4 +142,5 @@ def withdraw_proposal_endpoint(
         internship_id=internship_id,
         actor=current_user,
     )
+    log_event(db, "proposal.withdraw", user=current_user, entity_type="internship", entity_id=internship_id, detail="Voorstel ingetrokken")
     return {"detail": "Voorstel succesvol ingetrokken"}

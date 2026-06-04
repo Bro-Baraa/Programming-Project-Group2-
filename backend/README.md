@@ -35,6 +35,7 @@ python seed_complete.py  # uitgebreidere testdata
 | Evaluations | `GET /internships/{id}/evaluations`, `POST /internships/{id}/evaluations`, `POST /evaluations/{id}/finalize` |
 | Competencies | `GET /competencies`, `POST /competencies/profiles`, `POST /competencies` |
 | Feedback | `GET /internships/{id}/feedback`, `POST /internships/{id}/feedback` |
+| Audit | `GET /audit` |
 | Dashboard | `GET /me/dashboard`, `GET /internships/stats/dashboard` |
 | Users | `GET /users`, `GET /users/{id}` |
 
@@ -60,6 +61,7 @@ backend/
 │   │   ├── competencies*.py
 │   │   ├── feedback.py
 │   │   ├── users.py
+│   │   ├── audit.py
 │   │   ├── me.py
 │   │   └── reports.py
 │   ├── schemas/             # Pydantic schemas per domein
@@ -99,3 +101,37 @@ pytest
 - Een stage kan pas naar "Lopend" als de overeenkomst is gevalideerd
 - PDFs worden opgeslagen in `uploads/agreements/`
 - JWT tokens verlopen na 24 uur
+
+## Audit Log
+
+Alle belangrijke acties worden automatisch gelogd in de `audit_logs` tabel en zijn raadpleegbaar via `GET /audit` (enkel admin).
+
+| Actie | Wanneer |
+|---|---|
+| `login` | Gebruiker logt in |
+| `internship.create` | Student dient stage in |
+| `proposal.submit` | Student dient voorstel in |
+| `proposal.edit` | Student bewerkt voorstel |
+| `proposal.resubmit` | Student herindient voorstel |
+| `proposal.review` | Commissie beoordeelt voorstel |
+| `proposal.withdraw` | Student trekt voorstel in |
+| `agreement.upload` | Student uploadt overeenkomst |
+| `agreement.validate` | Commissie/admin valideert overeenkomst |
+| `logbook.create` | Student maakt logboek aan |
+| `logbook.submit` | Student dient logboek definitief in |
+| `logbook.validate` | Mentor valideert logboek |
+| `evaluation.create` | Docent maakt evaluatie aan |
+| `evaluation.finalize` | Docent finaliseert evaluatie |
+| `competency.create` | Admin maakt competentie aan |
+| `competency.update` | Admin wijzigt competentie |
+| `competency.delete` | Admin verwijdert competentie |
+| `competency.deactivate` | Admin deactiveert competentie |
+| `user.create` | Admin maakt gebruiker aan |
+| `user.update` | Admin wijzigt gebruiker |
+| `user.delete` | Admin verwijdert gebruiker |
+
+Nieuwe events toevoegen via `app/services/audit.py`:
+```python
+from app.services.audit import log_event
+log_event(db, "mijn.actie", user=current_user, entity_type="internship", entity_id=id, detail="Omschrijving")
+```

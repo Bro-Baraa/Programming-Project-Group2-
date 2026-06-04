@@ -17,6 +17,7 @@ from app.models import User
 from app.schemas import UserResponse, UserCreate, UserUpdate, SeedUser
 from app.auth import get_current_active_user, get_password_hash
 from app.dependencies import pagination
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -138,6 +139,7 @@ def create_user(
     db.add(user)
     db.commit()
     db.refresh(user)
+    log_event(db, "user.create", user=current_user, entity_type="user", entity_id=user.id, detail=f"Gebruiker aangemaakt: {user.email} ({user.role})")
     return user
 
 
@@ -166,6 +168,7 @@ def update_user(
 
     db.commit()
     db.refresh(user)
+    log_event(db, "user.update", user=current_user, entity_type="user", entity_id=user.id, detail=f"Gebruiker gewijzigd: {user.email}")
     return user
 
 
@@ -182,4 +185,5 @@ def delete_user(
 
     db.delete(user)
     db.commit()
+    log_event(db, "user.delete", user=current_user, entity_type="user", entity_id=user_id, detail=f"Gebruiker verwijderd: {user.email}")
     return None

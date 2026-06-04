@@ -22,6 +22,7 @@ from app.auth import (
 )
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.audit import log_event
 from app.dependencies import pagination, search_query
 
 router = APIRouter(prefix="/internships", tags=["internships"])
@@ -138,6 +139,7 @@ def create_internship(
         teacher_id=data.teacher_id,
         mentor_id=data.mentor_id,
     )
+    log_event(db, "internship.create", user=current_user, entity_type="internship", entity_id=result.internship.id, detail="Stage ingediend")
     return result.internship
 
 

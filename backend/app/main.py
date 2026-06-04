@@ -20,6 +20,7 @@ from app.routers import (
     users,
     me,
     notifications,
+    audit,
 )
 
 # Configure logging so app-level warnings/info are visible in uvicorn console
@@ -63,14 +64,25 @@ app.add_middleware(
 )
 
 # Simple in-memory rate limiter
-_rate_limit = defaultdict(list)
+_rate_limit: dict[str, list] = defaultdict(list)
+_last_cleanup = time.time()
 
 @app.middleware("http")
 async def rate_limit(request: Request, call_next):
+    global _last_cleanup
     path = request.url.path
     if path in ("/auth/login", "/auth/register", "/health"):
         ip = request.client.host if request.client else "unknown"
         now = time.time()
+
+        # Cleanup verlopen entries elke 5 minuten om geheugenlek te voorkomen
+        if now - _last_cleanup > 300:
+            cutoff = now - 60
+            stale = [k for k, v in _rate_limit.items() if not [t for t in v if t > cutoff]]
+            for k in stale:
+                del _rate_limit[k]
+            _last_cleanup = now
+
         _rate_limit[ip] = [t for t in _rate_limit[ip] if now - t < 60]
         if len(_rate_limit[ip]) > 10:
             return Response("Too many requests", status_code=429)
@@ -91,6 +103,7 @@ app.include_router(competencies)
 app.include_router(users)
 app.include_router(notifications)
 app.include_router(me)
+app.include_router(audit)
 
 
 @app.get("/")

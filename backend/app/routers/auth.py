@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserResponse, Token
 from app.auth import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, get_current_active_user, require_admin
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
@@ -43,6 +44,7 @@ def login(
         )
 
     logger.info("[LOGIN SUCCESS] %s (id=%s, role=%s)", user.email, user.id, user.role)
+    log_event(db, "login", user=user, entity_type="user", entity_id=user.id, detail="Succesvol ingelogd")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires

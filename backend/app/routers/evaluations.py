@@ -23,6 +23,7 @@ from app.services.evaluations import (
     finalize_evaluation as finalize_evaluation_svc,
 )
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/internships", tags=["evaluations"])
 
@@ -45,7 +46,9 @@ def create_evaluation(
     current_user: User = Depends(require_teacher),
 ):
     """US-17, US-18: Teacher creates an evaluation (tussentijds or final)"""
-    return create_evaluation_svc(db, current_user, internship_id, data)
+    result = create_evaluation_svc(db, current_user, internship_id, data)
+    log_event(db, "evaluation.create", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Evaluatie aangemaakt: {data.eval_type}")
+    return result
 
 
 @router.get("/evaluations/{evaluation_id}", response_model=EvaluationWithScoreResponse)
@@ -122,6 +125,8 @@ def finalize_evaluation_endpoint(
             internship_id=finalized_eval.internship_id,
             actor=current_user,
         )
+
+    log_event(db, "evaluation.finalize", user=current_user, entity_type="internship", entity_id=finalized_eval.internship_id, detail=f"Evaluatie gefinaliseerd: {finalized_eval.eval_type}")
 
     return EvaluationWithScoreResponse(
         **EvaluationResponse.model_validate(finalized_eval).model_dump(),

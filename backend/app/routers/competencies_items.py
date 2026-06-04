@@ -16,6 +16,7 @@ from app.schemas import (
     CompetencyWithProfileResponse,
 )
 from app.dependencies import pagination
+from app.services.audit import log_event
 
 router = APIRouter()
 
@@ -90,6 +91,7 @@ def create_competency(
     db.add(competency)
     db.commit()
     db.refresh(competency)
+    log_event(db, "competency.create", user=current_user, entity_type="competency", entity_id=competency.id, detail=f"Competentie aangemaakt: {competency.name}")
     return competency
 
 
@@ -187,6 +189,7 @@ def update_competency(
 
     db.commit()
     db.refresh(competency)
+    log_event(db, "competency.update", user=current_user, entity_type="competency", entity_id=competency.id, detail=f"Competentie gewijzigd: {competency.name}")
     return competency
 
 
@@ -210,6 +213,7 @@ def delete_competency(
 
     db.delete(competency)
     db.commit()
+    log_event(db, "competency.delete", user=current_user, entity_type="competency", entity_id=competency_id, detail=f"Competentie verwijderd: {competency.name}")
     return None
 
 
@@ -227,4 +231,5 @@ def deactivate_competency(
     competency.active = False
     db.commit()
     db.refresh(competency)
+    log_event(db, "competency.deactivate", user=current_user, entity_type="competency", entity_id=competency_id, detail=f"Competentie gedeactiveerd: {competency.name}")
     return competency

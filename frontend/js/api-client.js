@@ -56,6 +56,9 @@ function setCurrentUser(user) {
   safeStorage('stageMonitoringUser', user ? JSON.stringify(user) : null);
 }
 
+// 401 redirect guard — voorkomt meerdere redirects tegelijk
+let _redirectingToLogin = false;
+
 // Generic API request
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -86,9 +89,13 @@ async function apiRequest(endpoint, options = {}) {
     
     // Handle auth errors
     if (response.status === 401) {
-      setToken(null);
-      setCurrentUser(null);
-      window.location.href = 'index.html?view=login';
+      if (!_redirectingToLogin) {
+        _redirectingToLogin = true;
+        setToken(null);
+        setCurrentUser(null);
+        window.location.href = 'index.html?view=login';
+      }
+      throw new Error('Sessie verlopen, opnieuw inloggen...');
     }
     
     throw new Error(error.detail || `HTTP error! status: ${response.status}`);
@@ -506,6 +513,22 @@ const UsersAPI = {
     return apiRequest(`/users/${id}`, {
       method: 'DELETE'
     });
+  }
+};
+
+// ============================================
+// Audit Log API
+// ============================================
+
+const AuditAPI = {
+  list(action = null, userEmail = null, entityType = null, skip = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (action) params.append('action', action);
+    if (userEmail) params.append('user_email', userEmail);
+    if (entityType) params.append('entity_type', entityType);
+    params.append('skip', String(skip));
+    params.append('limit', String(limit));
+    return apiRequest(`/audit?${params.toString()}`);
   }
 };
 

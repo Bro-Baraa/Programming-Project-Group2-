@@ -15,6 +15,7 @@ from app.auth import get_current_active_user, require_student
 from app.services.common import ensure_internship_access
 from app.services.logbooks import create_logbook as create_logbook_svc, update_logbook as update_logbook_svc
 from app.services.notifications import notify
+from app.services.audit import log_event
 
 router = APIRouter(prefix="/internships", tags=["logbooks"])
 
@@ -98,7 +99,9 @@ def create_logbook(
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
 
-    return create_logbook_svc(db, internship, current_user, data)
+    result = create_logbook_svc(db, internship, current_user, data)
+    log_event(db, "logbook.create", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Logboek week {data.week_number} aangemaakt")
+    return result
 
 
 @router.patch("/logbooks/{logbook_id}", response_model=LogbookResponse)
@@ -113,7 +116,10 @@ def update_logbook(
     if not logbook:
         raise HTTPException(status_code=404, detail="Logbook not found")
 
-    return update_logbook_svc(db, logbook, current_user, update)
+    result = update_logbook_svc(db, logbook, current_user, update)
+    if current_user.role == "mentor" and update.mentor_validated:
+        log_event(db, "logbook.validate", user=current_user, entity_type="internship", entity_id=logbook.internship_id, detail=f"Logboek week {logbook.week_number} gevalideerd")
+    return result
 
 
 @router.post("/logbooks/{logbook_id}/submit", response_model=LogbookResponse)
@@ -136,7 +142,6 @@ def submit_logbook(
     logbook.status = "submitted"
     from datetime import datetime, UTC
     logbook.submitted_at = datetime.now(UTC)
-
     db.commit()
     db.refresh(logbook)
 
@@ -149,8 +154,9 @@ def submit_logbook(
             user_id=internship.mentor_id,
             message=f"{student_name} heeft logboek week {logbook.week_number} ingediend.",
             internship_id=internship.id,
-            link_view="validatie",  # sends mentor to their validation tab
+            link_view="validatie",
         )
         db.commit()
 
+    log_event(db, "logbook.submit", user=current_user, entity_type="internship", entity_id=logbook.internship_id, detail=f"Logboek week {logbook.week_number} definitief ingediend")
     return logbook
