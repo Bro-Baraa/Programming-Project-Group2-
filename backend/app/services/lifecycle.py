@@ -220,6 +220,7 @@ class InternshipLifecycle:
         actor: User,
         decision: str,
         feedback: Optional[str] = None,
+        teacher_id: Optional[int] = None,
     ) -> ReviewDecision:
         """Commissie beoordeelt een voorstel."""
         self._assert_role(actor, {"committee", "admin"})
@@ -240,6 +241,15 @@ class InternshipLifecycle:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Feedback is required when requesting changes",
             )
+
+        if decision == "Goedgekeurd":
+            if not teacher_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Een docent moet worden aangeduid bij goedkeuring",
+                )
+            self._validate_supervisor(teacher_id, "teacher")
+            internship.teacher_id = teacher_id
 
         internship.status = decision
         internship.proposal.status = decision

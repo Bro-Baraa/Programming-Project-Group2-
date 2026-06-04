@@ -65,7 +65,7 @@ def update_proposal_endpoint(
     """US-11, US-12: Committee evaluates proposal.
 
     Status transitions:
-    - Goedgekeurd: Proposal approved, student can upload agreement
+    - Goedgekeurd: Proposal approved — teacher_id is required
     - Afgekeurd: Proposal rejected
     - Aanpassingen Vereist: Feedback required, student must revise
     """
@@ -75,6 +75,7 @@ def update_proposal_endpoint(
         actor=current_user,
         decision=update_data.status,
         feedback=update_data.feedback,
+        teacher_id=update_data.teacher_id,
     )
     log_event(db, "proposal.review", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Voorstel beoordeeld: {update_data.status}")
     return result.internship.proposal

@@ -370,9 +370,10 @@ const CompetenciesAPI = {
 // ============================================
 
 const ProposalsAPI = {
-  review(internshipId, status, feedback = null) {
+  review(internshipId, status, feedback = null, teacherId = null) {
     const body = { status };
     if (feedback) body.feedback = feedback;
+    if (teacherId) body.teacher_id = teacherId;
     return apiRequest(`/internships/${internshipId}/proposal`, {
       method: 'PATCH',
       body: JSON.stringify(body)
