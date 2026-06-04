@@ -207,6 +207,7 @@ class InternshipLifecycle:
                 user_id=member.id,
                 message=f"{student_name} heeft een nieuw stagevoorstel ingediend.",
                 internship_id=internship.id,
+                link_view="voorstellen",  # sends committee to the proposals review tab
             )
         self.db.commit()
 
@@ -258,6 +259,7 @@ class InternshipLifecycle:
                 user_id=internship.student_id,
                 message=messages[decision],
                 internship_id=internship.id,
+                link_view="voorstel",  # sends student to their proposal view
             )
 
         self.db.commit()
@@ -329,6 +331,7 @@ class InternshipLifecycle:
                 user_id=member.id,
                 message=f"{student_name} heeft een stageovereenkomst geüpload.",
                 internship_id=internship.id,
+                link_view="overeenkomsten",  # sends committee to the agreements tab
             )
 
         self.db.commit()
@@ -504,6 +507,7 @@ class InternshipLifecycle:
                 user_id=member.id,
                 message=f"{student_name} heeft zijn/haar stagevoorstel opnieuw ingediend na aanpassingen.",
                 internship_id=internship.id,
+                link_view="voorstellen",  # sends committee to the proposals review tab
             )
         self.db.commit()
 
@@ -578,6 +582,7 @@ class InternshipLifecycle:
                 user_id=internship.student_id,
                 message="Je stageovereenkomst is gevalideerd. Je stage is nu actief!",
                 internship_id=internship.id,
+                link_view="overeenkomst",  # sends student to their agreement view
             )
         elif agreement_status == "Onvolledig" and internship.status == "Lopend":
             # Revert internship status so student can re-upload
@@ -589,6 +594,7 @@ class InternshipLifecycle:
                 user_id=internship.student_id,
                 message="Je stageovereenkomst is onvolledig. Gelieve een nieuwe versie te uploaden.",
                 internship_id=internship.id,
+                link_view="overeenkomst",  # sends student to their agreement view to re-upload
             )
 
         self.db.commit()

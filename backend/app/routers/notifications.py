@@ -25,6 +25,7 @@ class NotificationResponse(BaseModel):
     id: int
     message: str
     internship_id: int | None
+    link_view: str | None
     is_read: bool
     created_at: datetime
 

@@ -214,6 +214,9 @@ class Notification(Base):
     message = Column(Text, nullable=False)
     # Optional link back to the relevant internship so the user can navigate directly
     internship_id = Column(Integer, ForeignKey("internships.id"), nullable=True)
+    # Optional view to navigate to when the notification is clicked
+    # e.g. "voorstellen", "logboek", "overeenkomsten", "dashboard"
+    link_view = Column(String, nullable=True)
     # Whether the user has seen/dismissed the notification
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

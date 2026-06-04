@@ -146,15 +146,38 @@ function renderNotifications(notifications) {
       class="notif-item ${n.is_read ? '' : 'unread'}"
       data-id="${n.id}"
       data-internship="${n.internship_id || ''}"
+      data-view="${n.link_view || ''}"
     >
-      ${_escapeHtml(n.message)}
-      <span class="notif-time">${formatRelativeTime(n.created_at)}</span>
+      <div class="notif-item-body">
+        <span class="notif-message">${_escapeHtml(n.message)}</span>
+        <span class="notif-time">${formatRelativeTime(n.created_at)}</span>
+      </div>
+      ${n.internship_id && n.link_view ? `
+        <button class="notif-view-btn" title="Bekijken" data-id="${n.id}" data-internship="${n.internship_id}" data-view="${n.link_view}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      ` : ''}
     </li>
   `).join('');
 
-  // Wire up click handler for each item
+  // Wire up click handler for each item (marks as read)
   list.querySelectorAll('.notif-item').forEach(item => {
-    item.addEventListener('click', () => handleNotificationClick(item));
+    item.addEventListener('click', (e) => {
+      // Don't trigger on the view button — it has its own handler
+      if (e.target.closest('.notif-view-btn')) return;
+      markReadOnly(item);
+    });
+  });
+
+  // Wire up the view button — marks as read AND navigates
+  list.querySelectorAll('.notif-view-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateToNotification(btn);
+    });
   });
 }
 
@@ -177,29 +200,44 @@ function closeDropdown() {
 }
 
 /**
- * Handle a click on a single notification row.
- * Marks it as read, updates the UI, and navigates to the internship if linked.
+ * Mark a notification as read without navigating anywhere.
+ * Called when the user clicks the notification row itself.
  */
-async function handleNotificationClick(item) {
+async function markReadOnly(item) {
   const id = parseInt(item.dataset.id);
-  const internshipId = item.dataset.internship;
-
-  // Optimistically mark as read in the UI immediately (feels snappy)
-  item.classList.remove('unread');
-
+  item.classList.remove('unread'); // optimistic UI update
   try {
     await NotificationsAPI.markRead(id);
-    // Re-fetch to get accurate unread count for the dot
-    fetchAndRender();
+    fetchAndRender(); // refresh dot count
+  } catch (err) {
+    console.error('[Notifications] Failed to mark as read:', err);
+  }
+}
+
+/**
+ * Mark a notification as read AND navigate to the linked view.
+ * Called when the user clicks the 👁 view button.
+ */
+async function navigateToNotification(btn) {
+  const id = parseInt(btn.dataset.id);
+  const internshipId = btn.dataset.internship;
+  const view = btn.dataset.view;
+
+  // Mark as read first
+  try {
+    await NotificationsAPI.markRead(id);
   } catch (err) {
     console.error('[Notifications] Failed to mark as read:', err);
   }
 
-  // Navigate to the linked internship if there is one
-  if (internshipId) {
-    closeDropdown();
-    // Use the app's existing URL-based navigation
-    window.location.href = `?view=dashboard&internship=${internshipId}`;
+  closeDropdown();
+
+  // Navigate to the specific view for this notification
+  // Both internship_id and view are needed to land on the right screen
+  if (view && internshipId) {
+    window.location.href = `?view=${view}&internship=${internshipId}`;
+  } else if (view) {
+    window.location.href = `?view=${view}`;
   }
 }
 

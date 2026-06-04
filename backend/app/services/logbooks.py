@@ -90,6 +90,7 @@ def update_logbook(
                     user_id=internship.student_id,
                     message=f"Je logboek van week {logbook.week_number} is goedgekeurd door je mentor.",
                     internship_id=internship.id,
+                    link_view="logboek",  # sends student to their logbook view
                 )
         if update.mentor_feedback is not None:
             logbook.mentor_feedback = update.mentor_feedback

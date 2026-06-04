@@ -149,6 +149,7 @@ def submit_logbook(
             user_id=internship.mentor_id,
             message=f"{student_name} heeft logboek week {logbook.week_number} ingediend.",
             internship_id=internship.id,
+            link_view="validatie",  # sends mentor to their validation tab
         )
         db.commit()
 
