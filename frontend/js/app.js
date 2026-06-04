@@ -81,6 +81,9 @@ function updateUIForUser(user) {
     userName.textContent = `${user.first_name} ${user.last_name}`;
     userRole.textContent = roleDisplayNames[user.role] || user.role;
   }
+
+  // Start the notification bell now that we know who is logged in
+  initNotifications();
 }
 
 async function handleLogin(e) {
@@ -121,6 +124,8 @@ async function handleLogin(e) {
 }
 
 function handleLogout() {
+  // Stop polling for notifications before clearing the session
+  destroyNotifications();
   AuthAPI.logout();
   showToast('Uitgelogd', 'info');
   window.location.href = 'index.html?view=login';

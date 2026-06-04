@@ -199,6 +199,29 @@ class EvaluationRule(Base):
     competency = relationship("Competency", back_populates="evaluation_rules")
 
 
+class Notification(Base):
+    """
+    Stores in-app notifications for users.
+    A notification is created whenever an action impacts another user
+    (e.g. proposal approved, logbook submitted, agreement uploaded).
+    """
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # The user who should receive this notification
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # Short human-readable message shown in the bell dropdown
+    message = Column(Text, nullable=False)
+    # Optional link back to the relevant internship so the user can navigate directly
+    internship_id = Column(Integer, ForeignKey("internships.id"), nullable=True)
+    # Whether the user has seen/dismissed the notification
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", foreign_keys=[user_id])
+    internship = relationship("Internship", foreign_keys=[internship_id])
+
+
 class Feedback(Base):
     __tablename__ = "feedbacks"
 

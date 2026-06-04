@@ -14,6 +14,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models import Agreement, Company, Internship, Proposal, User
+from app.services.notifications import notify
 
 
 # ── Internal: legal status transitions ──
@@ -192,6 +193,23 @@ class InternshipLifecycle:
 
         self.db.commit()
         self.db.refresh(internship)
+
+        # ── Notify all committee members that a new proposal was submitted ──
+        from app.models import User as UserModel
+        committee_members = self.db.query(UserModel).filter(
+            UserModel.role == "committee",
+            UserModel.is_active == True,
+        ).all()
+        student_name = f"{actor.first_name} {actor.last_name}"
+        for member in committee_members:
+            notify(
+                self.db,
+                user_id=member.id,
+                message=f"{student_name} heeft een nieuw stagevoorstel ingediend.",
+                internship_id=internship.id,
+            )
+        self.db.commit()
+
         return NewInternship(internship=internship)
 
     def review_proposal(
@@ -226,6 +244,21 @@ class InternshipLifecycle:
         internship.proposal.status = decision
         if feedback is not None:
             internship.proposal.feedback = feedback
+
+        # ── Notify the student of the committee's decision ──
+        messages = {
+            "In Beoordeling": "Je stagevoorstel wordt beoordeeld door de commissie.",
+            "Goedgekeurd": "Gefeliciteerd! Je stagevoorstel is goedgekeurd.",
+            "Afgekeurd": "Je stagevoorstel is helaas afgekeurd. Bekijk de feedback.",
+            "Aanpassingen Vereist": "Je stagevoorstel vereist aanpassingen. Bekijk de feedback.",
+        }
+        if decision in messages:
+            notify(
+                self.db,
+                user_id=internship.student_id,
+                message=messages[decision],
+                internship_id=internship.id,
+            )
 
         self.db.commit()
         self.db.refresh(internship)
@@ -280,6 +313,23 @@ class InternshipLifecycle:
             self.db.add(agreement)
 
         internship.status = "Overeenkomst Ingediend"
+
+        # ── Notify all committee members that an agreement was uploaded ──
+        # We notify via a simple approach: store one notification per committee member.
+        # For now we import User here to avoid circular imports at module level.
+        from app.models import User as UserModel
+        committee_members = self.db.query(UserModel).filter(
+            UserModel.role == "committee",
+            UserModel.is_active == True,
+        ).all()
+        student_name = f"{internship.student.first_name} {internship.student.last_name}" if internship.student else "Een student"
+        for member in committee_members:
+            notify(
+                self.db,
+                user_id=member.id,
+                message=f"{student_name} heeft een stageovereenkomst geüpload.",
+                internship_id=internship.id,
+            )
 
         self.db.commit()
         self.db.refresh(internship)
@@ -440,6 +490,23 @@ class InternshipLifecycle:
 
         self.db.commit()
         self.db.refresh(internship)
+
+        # ── Notify committee that the student resubmitted after requested changes ──
+        from app.models import User as UserModel
+        committee_members = self.db.query(UserModel).filter(
+            UserModel.role == "committee",
+            UserModel.is_active == True,
+        ).all()
+        student_name = f"{actor.first_name} {actor.last_name}"
+        for member in committee_members:
+            notify(
+                self.db,
+                user_id=member.id,
+                message=f"{student_name} heeft zijn/haar stagevoorstel opnieuw ingediend na aanpassingen.",
+                internship_id=internship.id,
+            )
+        self.db.commit()
+
         return ReviewDecision(internship=internship)
 
     def withdraw_proposal(
@@ -505,10 +572,24 @@ class InternshipLifecycle:
             self._assert_transition(internship.status, "Lopend")
             agreement.validated_at = self._now()
             internship.status = "Lopend"
+            # ── Notify student their agreement is validated and stage is now active ──
+            notify(
+                self.db,
+                user_id=internship.student_id,
+                message="Je stageovereenkomst is gevalideerd. Je stage is nu actief!",
+                internship_id=internship.id,
+            )
         elif agreement_status == "Onvolledig" and internship.status == "Lopend":
             # Revert internship status so student can re-upload
             self._assert_transition(internship.status, "Overeenkomst Ingediend")
             internship.status = "Overeenkomst Ingediend"
+            # ── Notify student their agreement is incomplete and needs to be re-uploaded ──
+            notify(
+                self.db,
+                user_id=internship.student_id,
+                message="Je stageovereenkomst is onvolledig. Gelieve een nieuwe versie te uploaden.",
+                internship_id=internship.id,
+            )
 
         self.db.commit()
         self.db.refresh(internship)

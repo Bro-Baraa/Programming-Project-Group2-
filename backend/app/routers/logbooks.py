@@ -14,6 +14,7 @@ from app.schemas import (
 from app.auth import get_current_active_user, require_student
 from app.services.common import ensure_internship_access
 from app.services.logbooks import create_logbook as create_logbook_svc, update_logbook as update_logbook_svc
+from app.services.notifications import notify
 
 router = APIRouter(prefix="/internships", tags=["logbooks"])
 
@@ -138,4 +139,17 @@ def submit_logbook(
 
     db.commit()
     db.refresh(logbook)
+
+    # ── Notify the mentor that a logbook has been submitted ──
+    internship = logbook.internship
+    if internship.mentor_id:
+        student_name = f"{internship.student.first_name} {internship.student.last_name}" if internship.student else "Een student"
+        notify(
+            db,
+            user_id=internship.mentor_id,
+            message=f"{student_name} heeft logboek week {logbook.week_number} ingediend.",
+            internship_id=internship.id,
+        )
+        db.commit()
+
     return logbook

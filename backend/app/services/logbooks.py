@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models import Internship, Logbook
 from app.schemas import LogbookCreate, LogbookUpdate
 from .common import ensure_internship_access
+from .notifications import notify
 
 
 def create_logbook(
@@ -82,6 +83,14 @@ def update_logbook(
             )
         if update.mentor_validated is not None:
             logbook.mentor_validated = update.mentor_validated
+            # ── Notify the student when the mentor validates their logbook ──
+            if update.mentor_validated and internship.student_id:
+                notify(
+                    db,
+                    user_id=internship.student_id,
+                    message=f"Je logboek van week {logbook.week_number} is goedgekeurd door je mentor.",
+                    internship_id=internship.id,
+                )
         if update.mentor_feedback is not None:
             logbook.mentor_feedback = update.mentor_feedback
 

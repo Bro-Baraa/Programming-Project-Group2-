@@ -19,6 +19,7 @@ from app.routers import (
     competencies,
     users,
     me,
+    notifications,
 )
 
 # Configure logging so app-level warnings/info are visible in uvicorn console
@@ -88,6 +89,7 @@ app.include_router(feedback)
 app.include_router(reports)
 app.include_router(competencies)
 app.include_router(users)
+app.include_router(notifications)
 app.include_router(me)
 
 

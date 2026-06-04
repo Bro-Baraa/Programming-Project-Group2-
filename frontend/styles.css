@@ -1358,3 +1358,123 @@ body.login-active {
     padding: 1rem;
   }
 }
+
+/* ============================================
+   Notification bell
+   ============================================ */
+
+.notif-wrapper {
+  position: relative;
+}
+
+/* The bell button itself — plain, fits in the topbar */
+.notif-bell {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  position: relative;
+  padding: 0.25rem 0.4rem;
+  line-height: 1;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.notif-bell:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Red dot shown when there are unread notifications */
+.notif-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  background: #e53e3e;
+  border-radius: 50%;
+  border: 2px solid var(--bg, #fff);
+}
+
+/* Dropdown panel */
+.notif-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 320px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  font-size: 0.9rem;
+}
+
+/* "Mark all read" link-style button */
+.notif-read-all {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent, #0079c8);
+  font-size: 0.8rem;
+  padding: 0;
+}
+
+.notif-read-all:hover {
+  text-decoration: underline;
+}
+
+.notif-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+/* Individual notification row */
+.notif-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border, #f0f0f0);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  transition: background 0.12s;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-item:hover {
+  background: var(--surface-alt, #f7fafc);
+}
+
+/* Unread notifications have a subtle left accent and bolder text */
+.notif-item.unread {
+  background: rgba(0, 121, 200, 0.06);
+  font-weight: 500;
+}
+
+.notif-item .notif-time {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted, #888);
+  margin-top: 0.2rem;
+}
+
+.notif-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--text-muted, #888);
+  font-size: 0.85rem;
+}

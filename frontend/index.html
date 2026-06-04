@@ -32,6 +32,22 @@
         <span class="user-name" id="user-name">Gebruiker</span>
         <span class="user-role" id="user-role">Rol</span>
       </div>
+      <!-- Bell notification button — shows unread dot when there are unread notifications -->
+      <div class="notif-wrapper" id="notif-wrapper" style="display:none;">
+        <button class="notif-bell" id="notif-bell" aria-label="Notificaties">
+          🔔
+          <span class="notif-dot" id="notif-dot" style="display:none;"></span>
+        </button>
+        <div class="notif-dropdown" id="notif-dropdown" style="display:none;">
+          <div class="notif-header">
+            <strong>Notificaties</strong>
+            <button class="notif-read-all" id="notif-read-all">Alles gelezen</button>
+          </div>
+          <ul class="notif-list" id="notif-list">
+            <li class="notif-empty">Geen notificaties</li>
+          </ul>
+        </div>
+      </div>
       <button class="btn logout" id="logout-btn">Uitloggen</button>
     </div>
   </header>
@@ -692,6 +708,7 @@
   </template>
 
   <script src="js/api-client.js?v=4"></script>
+  <script src="js/notifications.js?v=1"></script>
   <script src="js/ui-helpers.js?v=4"></script>
   <script src="js/table-cards.js?v=4"></script>
   <script src="js/views/student.js?v=4"></script>
