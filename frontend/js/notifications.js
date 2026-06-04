@@ -50,32 +50,44 @@ function initNotifications() {
   const wrapper = document.getElementById('notif-wrapper');
   if (!wrapper) return;
 
+  // Clear any existing poll interval before starting a new one.
+  // This prevents intervals stacking up if the user logs in/out multiple times.
+  if (_pollInterval) {
+    clearInterval(_pollInterval);
+    _pollInterval = null;
+  }
+
   // Show the bell now that the user is logged in
   wrapper.style.display = 'block';
 
-  // Wire up the bell button toggle
-  document.getElementById('notif-bell')?.addEventListener('click', (e) => {
-    e.stopPropagation(); // prevent the document click handler from firing immediately
-    toggleDropdown();
-  });
+  // Wire up event listeners only once — use a flag on the element to track this
+  if (!wrapper.dataset.listenersAttached) {
+    wrapper.dataset.listenersAttached = 'true';
 
-  // "Mark all as read" button inside the dropdown header
-  document.getElementById('notif-read-all')?.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    try {
-      const updated = await NotificationsAPI.markAllRead();
-      renderNotifications(updated);
-    } catch (err) {
-      console.error('[Notifications] Failed to mark all as read:', err);
-    }
-  });
+    // Bell button toggle
+    document.getElementById('notif-bell')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
 
-  // Close dropdown when clicking anywhere outside it
-  document.addEventListener('click', (e) => {
-    if (_dropdownOpen && !e.target.closest('#notif-wrapper')) {
-      closeDropdown();
-    }
-  });
+    // "Mark all as read" button
+    document.getElementById('notif-read-all')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        const updated = await NotificationsAPI.markAllRead();
+        renderNotifications(updated);
+      } catch (err) {
+        console.error('[Notifications] Failed to mark all as read:', err);
+      }
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (_dropdownOpen && !e.target.closest('#notif-wrapper')) {
+        closeDropdown();
+      }
+    });
+  }
 
   // Initial fetch
   fetchAndRender();

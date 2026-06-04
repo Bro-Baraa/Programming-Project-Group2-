@@ -12,6 +12,7 @@ from .reports import router as reports_router
 from .competencies import router as competencies_router
 from .users import router as users_router
 from .me import router as me_router
+from .notifications import router as notifications_router
 
 # Re-export for convenience
 auth = auth_router
@@ -26,3 +27,4 @@ reports = reports_router
 competencies = competencies_router
 users = users_router
 me = me_router
+notifications = notifications_router
