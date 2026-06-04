@@ -27,7 +27,7 @@ COPY backend/ ./backend/
 COPY frontend/ ./frontend/
 
 # ── Create a Docker-specific main that serves static files ──
-COPY docker_main.py backend/docker_main.py
+COPY backend/docker_main.py backend/docker_main.py
 
 # Environment defaults
 ENV DATABASE_PATH=/app/data/stage_monitoring.db
