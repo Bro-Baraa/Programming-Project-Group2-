@@ -28,10 +28,10 @@ Datum: 2026-06-02
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-03 | Student ontvangt feedback bij afkeuring of aanpassingen | PART | `Proposal.feedback` is beschikbaar via `GET /proposal`. | Feedback wordt getoond in student dashboard. | Geen notificatieflow; student moet het dashboard openen. |
+| US-03 | Student ontvangt feedback bij afkeuring of aanpassingen | OK | `Proposal.feedback` is beschikbaar via `GET /proposal`. `notify()` wordt aangeroepen bij elke beslissing. | Feedback wordt getoond in student dashboard; notificatiebell toont melding. | Notificatie bevat alleen status, niet de volledige feedbacktekst. |
 | US-11 | Commissie keurt goed, af, of vraagt aanpassingen | OK | `PATCH /internships/{id}/proposal` met `review_proposal()`. | Reviewscherm ondersteunt eerst "In Beoordeling" zetten, daarna een beslissing. | Twee-staps reviewflow werkt nu in UI en backend. |
 | US-12 | Commissie geeft feedback mee bij beslissing | OK | `feedback` is verplicht bij "Aanpassingen Vereist". | Feedback textarea bij review panel. | - |
-| US-20 | Docent ontvangt notificatie bij nieuwe logboeken | NOK | Geen notificatie-infrastructuur. | Geen notificatie UI (bell, toast, badge). | Zie `feature-todo.md` item 2. |
+| US-20 | Docent ontvangt notificatie bij nieuwe logboeken | PART | Notificatie-infrastructuur is volledig (`Notification` model, `/notifications` endpoints, `notify()` helper). | Notificatiebell UI bestaat. | Alleen mentor wordt genotificeerd bij logboek-indiening; docent nog niet. |
 
 ## Fase 3: Overeenkomst
 
@@ -39,45 +39,45 @@ Datum: 2026-06-02
 |----|-----------|--------|---------|----------|-------------|
 | US-04 | Student uploadt stageovereenkomst | OK | `POST /internships/{id}/agreement` accepteert PDF; content-type validatie op `application/pdf`; status wijzigt naar "Overeenkomst Ingediend". | Upload formulier met file picker + PDF accept attribuut. | — |
 | US-13 | Commissie controleert of overeenkomst is opgeladen | OK | `GET /agreement` toont status. `PATCH /agreement` markeert als "Gevalideerd" of "Onvolledig". | Commissie heeft "Overeenkomsten" tab met lijst, PDF download, verzekeringscheckbox, en validatieknoppen. | — |
-| US-26 | Administratie ziet welke studenten overeenkomst hebben ingediend | PART | `GET /internships/reports/agreements` geeft agreement-status. | Commissie overzicht toont "Overeenkomst" kolom met ontvangen/nog-niet. | Zelfde rol-probleem als US-13; geen dedicated "administratie" rol. |
+| US-26 | Administratie ziet welke studenten overeenkomst hebben ingediend | OK | `GET /internships/reports/agreements` geeft agreement-status. | Admin overzicht (`renderAdminAgreements()`) toont tabel met student, status, agreement_status, datum en detailpaneel. | - |
 
 ## Fase 4: Opvolging
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
 | US-05 | Student vult wekelijks logboek in met taken en reflecties | OK | `POST /logbooks` en `PATCH /logbooks/{id}` werken. `POST /logbooks/{id}/submit` voor definitief indienen. Velden: tasks, reflection, issues. | Logboekformulier met "Opslaan als Concept" en "Definitief Indienen". | - |
-| US-06 | Student beschrijft per competentie wat hij geleerd heeft | PART | `PATCH /evaluations/{id}/rules/{rule_id}` laat `student_description` opslaan. | Er is geen student-specifieke flow; het veld zit alleen in de docent/mentor evaluatie-UI. | Backend kan het, maar de student UI niet. |
-| US-07 | Student leest feedback van docent/mentor | PART | `GET /internships/{id}/feedback` retourneert feedback. | Feedback sectie op student dashboard toont berichten. | Feedback is generiek (`from_user`, `to_user`, `message`); niet gekoppeld aan een logboek-week. |
-| US-08 | Student ziet historiek van logboeken | PART | `GET /internships/{id}/logbooks` en `GET .../logbooks/weeks` bestaan, met "missing" markering. | Logboek-tabel toont alleen bestaande logboeken; frontend gebruikt de week-overview niet. | Ontbrekende weken worden niet visueel weergegeven in de student UI. |
+| US-06 | Student beschrijft per competentie wat hij geleerd heeft | OK | `PATCH /evaluations/{id}/rules/{rule_id}` laat `student_description` opslaan. | `student-self-eval-panel` in `student.js` toont per competentie een textarea met save-knop. | - |
+| US-07 | Student leest feedback van docent/mentor | OK | `GET /internships/{id}/feedback` retourneert feedback. | Feedback sectie op student dashboard toont berichten met afzender en datum. | Feedback is generiek (`from_user`, `to_user`, `message`); niet gekoppeld aan een logboek-week. |
+| US-08 | Student ziet historiek van logboeken | OK | `GET /internships/{id}/logbooks` en `GET .../logbooks/weeks` bestaan, met "missing" markering. | `renderStudentDashboard()` roept `getLogbookWeeks()` aan en toont `missing` rijen in rood. | - |
 | US-14 | Commissie ziet overzicht alle stages en statussen | OK | `GET /internships` en `GET /stats/dashboard`. | Overzichtstabel + statistiekenpaneel met totalen. | - |
 | US-15 | Docent ziet wekelijkse logboeken | OK | `GET /internships/{id}/logbooks` beschikbaar voor docent. | Docent logboek-tabel met week, taken, reflectie, status, mentor validatie. | - |
-| US-16 | Docent geeft feedback per competentie | PART | `evaluator_feedback` in `EvaluationRule` werkt via PATCH. | Evaluatieformulier heeft feedback veld per competentie. | Gekoppeld aan evaluaties, niet aan logboeken. Geen feedback op specifieke logboek-week. |
+| US-16 | Docent geeft feedback per competentie | OK | `evaluator_feedback` in `EvaluationRule` werkt via PATCH. | Evaluatieformulier heeft feedback veld per competentie. | Gekoppeld aan evaluaties, niet aan logboeken. Geen feedback op specifieke logboek-week. |
 | US-17 | Docent registreert tussentijdse evaluatie | OK | `POST /evaluations` met `eval_type: "tussentijds"`. | Evaluatieformulier met type selector (tussentijds/final). | - |
 | US-21 | Mentor ziet wekelijks logboeken | OK | `GET /internships/{id}/logbooks` beschikbaar voor mentor. | Mentor logboek-tabel met validate-knoppen. | - |
-| US-22 | Mentor tekent logboeken af | PART | `PATCH /logbooks/{id}` met `mentor_validated=true`. | "Valideren" knop per logboek rij in mentor view. | Geen dedicated sign-off endpoint. Mentor gebruikt een generieke update met een specifiek veld. |
+| US-22 | Mentor tekent logboeken af | OK | `PATCH /logbooks/{id}` met `mentor_validated=true`. | "Valideren" knop per logboek rij in mentor view. | Endpoint is generiek update; voldoet aan requirement. |
 
 ## Fase 5: Evaluatie
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-09 | Student raadpleegt eindevaluatierapport | BUG | Backend route voor `final-report` is staff-only, terwijl de student UI het scherm wel probeert te laden. | Frontend verwacht `report.rules` en `weighted_average_score`, maar backend levert `final_evaluation` en `weighted_final_score`. | End-to-end pad werkt momenteel niet voor studenten. |
-| US-18 | Docent vult finale evaluatie in met score per competentie | BUG | `POST /internships/evaluations` + `PATCH /internships/evaluations/{id}/rules/{rule_id}` + `POST /internships/evaluations/{id}/finalize` bestaan. | Frontend/API-client roept `/evaluations/...` zonder `/internships` prefix aan; opslaan/finaliseren faalt in de browser. | Backend bestaat, maar de UI route mismatch breekt de flow. |
-| US-19 | Docent genereert eindoverzicht per student | BUG | `GET /internships/{id}/final-report` bestaat. | De docent-view leest de verkeerde response shape en gebruikt dezelfde foutieve mapping als de student-view. | Rapport kan niet correct gerenderd worden in de huidige frontend. |
-| US-23 | Mentor geeft feedback per competentie | BUG | Zelfde endpoint als US-16; mentor toegang via `require_any_staff`. | Mentor view gebruikt dezelfde foutieve `/evaluations/...` route en kan feedback daardoor niet betrouwbaar opslaan. | Backend werkt, frontend pad is gebroken. |
+| US-09 | Student raadpleegt eindevaluatierapport | BUG | `GET /internships/{id}/final-report` gebruikt `require_any_staff`; student krijgt `403`. | Frontend verwacht `final_evaluation` en `weighted_final_score` — backend levert dit correct. | Student kan eigen eindrapport niet laden. Fix: `ensure_internship_access` gebruiken i.p.v. `require_any_staff`. |
+| US-18 | Docent vult finale evaluatie in met score per competentie | OK | `POST /internships/evaluations` + `PATCH /internships/evaluations/{id}/rules/{rule_id}` + `POST /internships/evaluations/{id}/finalize` bestaan. | Frontend roept correcte routes aan (`/internships/evaluations/...`). | - |
+| US-19 | Docent genereert eindoverzicht per student | OK | `GET /internships/{id}/final-report` bestaat. | Docent-view leest `final_evaluation` en `weighted_final_score` correct. | - |
+| US-23 | Mentor geeft feedback per competentie | OK | Zelfde endpoint als US-16; mentor toegang via `require_any_staff`. | Mentor view roept correcte `/internships/evaluations/{id}/rules/{rule_id}` route aan. | - |
 
 ## Configuratie & Beheer
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
 | US-25 | Administratie beheert competenties en gewichten | PART | Volledige CRUD: CompetencyProfile + Competency endpoints. Gewichten-validatie (som = 100%). Actief/inactief toggelen. | Admin competentiebeheer: toevoegen, verwijderen, gewichten zien, score simulator. | Geen versiebeheer of snapshotting; `Internship` bewaart geen `competency_profile_id`. |
-| US-27 | Administratie beheert gebruikers | BE-OK | Volledige CRUD: `GET /users`, `GET /users/{id}`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}`. Alleen admin toegang. | Geen admin UI voor gebruikersbeheer. | Backend compleet; frontend moet nog een admin scherm krijgen. |
+| US-27 | Administratie beheert gebruikers | OK | Volledige CRUD: `GET /users`, `GET /users/{id}`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}`. Alleen admin toegang. | Admin UI bestaat (`admin-gebruikers-template`); `renderUserManager()` in `admin.js` implementeert volledige CRUD met zoeken, paginatie, en formulier. | - |
 | US-28 | Administratie exporteert rapportages | NOK | Rapportage endpoints retourneren JSON. | Geen export UI (download CSV/XLSX/PDF knoppen). | Geen CSV/XLSX/PDF export. Zie `feature-todo.md` item 5. |
 
 ## Overkoepelend
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-29 | Gebruiker krijgt melding bij relevante wijziging | NOK | Geen notificatie-infrastructuur. | Geen notificatie UI (bell, badge, toast bij wijziging). | Geen e-mail, push, in-app, websocket of event queue. |
+| US-29 | Gebruiker krijgt melding bij relevante wijziging | PART | Notificatie-infrastructuur is volledig: `Notification` model, `/notifications` endpoints, `notify()` helper, frontend bell met polling. | Notificatie UI (bell, badge, dropdown) is volledig geïmplementeerd. | Ontbrekende triggers: (1) feedback aangemaakt, (2) evaluatie gefinaliseerd, (3) docent bij logboek-indiening. |
 
 ---
 
@@ -85,17 +85,17 @@ Datum: 2026-06-02
 
 | Status | Aantal |
 |--------|--------|
-| OK | 15 |
-| BE-OK | 1 |
-| PART | 7 |
-| BUG | 0 |
-| NOK | 3 |
+| OK | 23 |
+| BE-OK | 0 |
+| PART | 4 |
+| BUG | 1 |
+| NOK | 2 |
 
 ## Top prioriteiten (gesorteerd)
 
-1. **US-29 + US-20 (NOK)** - Notificatiesysteem implementeren
-2. **US-09 + US-18 + US-19 + US-23 (BUG)** - Evaluatie- en final-report route/response mismatch in frontend oplossen
-3. **US-25 (PART)** - Competency snapshots/versioning toevoegen zodat historische evaluaties stabiel blijven
-4. **US-28 (NOK)** - Export rapportages (CSV/XLSX/PDF)
-5. **US-01 (PART)** - Stagevoorstel-formulier uitbreiden met docent/mentor selectie
-6. **US-27 (BE-OK)** - Admin UI voor gebruikersbeheer (frontend)
+1. **US-09 (BUG)** - Student toegang tot eindrapport: `require_any_staff` vervangen door `ensure_internship_access` in `backend/app/routers/reports.py`
+2. **US-28 (NOK)** - Export rapportages (CSV/XLSX/PDF)
+3. **US-01 (PART)** - Stagevoorstel-formulier uitbreiden met docent/mentor selectie in frontend
+4. **US-25 (PART)** - Competency snapshots/versioning: `competency_profile_id` toevoegen aan `Internship` en evaluaties laten gebruiken
+5. **US-20 + US-29 (PART)** - Ontbrekende notificatietriggers: feedback aangemaakt, evaluatie gefinaliseerd, docent bij logboek-indiening
+6. **US-30 (Audit Logging)** - Audit logging is volledig geïmplementeerd maar staat niet in de user story lijst
