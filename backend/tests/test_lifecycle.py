@@ -179,7 +179,7 @@ class TestReviewProposal:
         )
         return result.internship
 
-    def test_committee_approves(self, db, pending_internship, test_committee, config):
+    def test_committee_approves(self, db, pending_internship, test_committee, test_teacher, config):
         lifecycle = InternshipLifecycle(db, config)
         # Eerst naar "In Beoordeling" zetten
         lifecycle.review_proposal(
@@ -192,6 +192,7 @@ class TestReviewProposal:
             internship_id=pending_internship.id,
             actor=test_committee,
             decision="Goedgekeurd",
+            teacher_id=test_teacher.id,
         )
         assert result.internship.status == "Goedgekeurd"
         assert result.internship.proposal.status == "Goedgekeurd"
@@ -277,7 +278,7 @@ class TestUploadAgreement:
     """Test agreement upload transitions and file persistence."""
 
     @pytest.fixture
-    def approved_internship(self, db, test_student, test_committee, config):
+    def approved_internship(self, db, test_student, test_committee, test_teacher, config):
         lifecycle = InternshipLifecycle(db, config)
         result = lifecycle.submit_internship(
             actor=test_student,
@@ -299,6 +300,7 @@ class TestUploadAgreement:
             internship_id=result.internship.id,
             actor=test_committee,
             decision="Goedgekeurd",
+            teacher_id=test_teacher.id,
         )
         return result.internship
 
@@ -368,7 +370,7 @@ class TestValidateAgreement:
     """Test agreement validation transitions."""
 
     @pytest.fixture
-    def uploaded_agreement(self, db, test_student, test_committee, config):
+    def uploaded_agreement(self, db, test_student, test_committee, test_teacher, config):
         lifecycle = InternshipLifecycle(db, config)
         result = lifecycle.submit_internship(
             actor=test_student,
@@ -390,6 +392,7 @@ class TestValidateAgreement:
             internship_id=result.internship.id,
             actor=test_committee,
             decision="Goedgekeurd",
+            teacher_id=test_teacher.id,
         )
         from io import BytesIO
 
@@ -488,7 +491,7 @@ class TestResubmitProposal:
         assert internship.proposal.submitted_at is not None
 
     def test_resubmit_without_changes_status_raises_400(
-        self, db, test_student, test_committee, config
+        self, db, test_student, test_committee, test_teacher, config
     ):
         # Create an internship already at Goedgekeurd
         lifecycle = InternshipLifecycle(db, config)
@@ -512,6 +515,7 @@ class TestResubmitProposal:
             internship_id=result.internship.id,
             actor=test_committee,
             decision="Goedgekeurd",
+            teacher_id=test_teacher.id,
         )
 
         # Resubmit from Goedgekeurd is illegal

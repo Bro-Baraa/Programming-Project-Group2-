@@ -204,7 +204,7 @@ class TestInternshipWorkflow:
         )
         return response.json()
 
-    def test_status_transition_via_proposal(self, client, auth_headers_committee, created_internship):
+    def test_status_transition_via_proposal(self, client, auth_headers_committee, created_internship, test_teacher):
         """Test valid status transition via proposal approval workflow."""
         internship_id = created_internship["id"]
 
@@ -220,7 +220,7 @@ class TestInternshipWorkflow:
         # Step 2: Approve proposal
         response = client.patch(
             f"/internships/{internship_id}/proposal",
-            json={"status": "Goedgekeurd", "feedback": ""},
+            json={"status": "Goedgekeurd", "feedback": "", "teacher_id": test_teacher.id},
             headers=auth_headers_committee
         )
         assert response.status_code == 200
@@ -267,7 +267,7 @@ class TestInternshipWorkflow:
         )
         assert response.status_code == 403
 
-    def test_agreement_workflow_transitions_status(self, client, auth_headers_student, auth_headers_committee, created_internship):
+    def test_agreement_workflow_transitions_status(self, client, auth_headers_student, auth_headers_committee, created_internship, test_teacher):
         """Test that agreement upload and validation transitions internship status properly."""
         import io
 
@@ -284,7 +284,7 @@ class TestInternshipWorkflow:
         # Step 2: Approve the proposal
         response = client.patch(
             f"/internships/{internship_id}/proposal",
-            json={"status": "Goedgekeurd", "feedback": ""},
+            json={"status": "Goedgekeurd", "feedback": "", "teacher_id": test_teacher.id},
             headers=auth_headers_committee
         )
         assert response.status_code == 200
