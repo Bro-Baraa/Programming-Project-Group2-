@@ -400,7 +400,7 @@ const ProposalsAPI = {
 
 const EvaluationsAPI = {
   update(evaluationId, data) {
-    return apiRequest(`/evaluations/${evaluationId}`, {
+    return apiRequest(`/internships/evaluations/${evaluationId}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
@@ -413,7 +413,7 @@ const EvaluationsAPI = {
 
 const EvaluationRulesAPI = {
   update(evaluationId, ruleId, data) {
-    return apiRequest(`/evaluations/${evaluationId}/rules/${ruleId}`, {
+    return apiRequest(`/internships/evaluations/${evaluationId}/rules/${ruleId}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });

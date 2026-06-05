@@ -139,7 +139,7 @@ function wireEvaluationForm() {
 
     try {
       // Backend finalize endpoint: POST /evaluations/{id}/finalize
-      await apiRequest(`/evaluations/${evaluation.id}/finalize`, { method: 'POST' });
+      await apiRequest(`/internships/evaluations/${evaluation.id}/finalize`, { method: 'POST' });
       hideLoading(finalizeBtn);
       showToast('Evaluatie definitief afgesloten!', 'success');
     } catch (error) {
