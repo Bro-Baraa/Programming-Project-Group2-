@@ -13,7 +13,7 @@ async function renderStudentDashboard() {
       `;
       return;
     }
-  
+
     const hero = document.querySelector('.hero');
     if (hero) {
       const companyName = currentInternship.company?.name || 'Onbekend';
@@ -26,7 +26,7 @@ async function renderStudentDashboard() {
         case 'Onvolledig': agreementLabel = '⚠ Onvolledig'; break;
         default: agreementLabel = `✓ ${agreementStatus}`;
       }
-  
+
       hero.innerHTML = `
         <h2>Mijn Stage</h2>
         <p><strong>Bedrijf:</strong> ${companyName}</p>
@@ -35,8 +35,8 @@ async function renderStudentDashboard() {
         <p><strong>Overeenkomst:</strong> ${agreementLabel}</p>
       `;
     }
-  
-    // Logboeken tabel bijwerken — toon alle weken inclusief ontbrekende (US-08)
+
+    // Logboeken tabel bijwerken - toon alle weken inclusief ontbrekende (US-08)
     const tbody = document.querySelector('table tbody');
     if (tbody && currentInternship) {
       try {
@@ -75,7 +75,7 @@ async function renderStudentDashboard() {
         `).join('') || '<tr><td colspan="4">Geen logboeken gevonden</td></tr>';
       }
     }
-  
+
     // Competentie Progressie bijwerken
     const competencyPanel = Array.from(document.querySelectorAll('.panel.card')).find(
       p => p.querySelector('h2')?.textContent === 'Competentie Progressie'
@@ -84,7 +84,7 @@ async function renderStudentDashboard() {
       // Only use finalized evaluations
       const finalizedEvals = currentEvaluations.filter(ev => ev.finalized);
       const competencyScores = {};
-  
+
       for (const ev of finalizedEvals) {
         for (const rule of (ev.rules || [])) {
           const name = rule.competency?.name || 'Onbekend';
@@ -95,13 +95,13 @@ async function renderStudentDashboard() {
           }
         }
       }
-  
+
       const competencyItems = Object.entries(competencyScores).map(([name, data]) => {
         const avg = data.total / data.count;
         const pct = Math.round((avg / 5) * 100);
         return { name, pct, avg: avg.toFixed(1) };
       });
-  
+
       if (competencyItems.length > 0) {
         competencyPanel.innerHTML = `
           <h2>Competentie Progressie</h2>
@@ -118,7 +118,7 @@ async function renderStudentDashboard() {
         `;
       }
     }
-  
+
     // Feedback sectie bijwerken
     const feedbackDiv = document.getElementById('student-feedback');
     if (feedbackDiv) {
@@ -134,18 +134,52 @@ async function renderStudentDashboard() {
       }
     }
   }
-  
+
   function wireProposalForm() {
     const container = content.querySelector('.panel.card');
     if (!container) return;
-  
+
     // ── No internship yet: show the original creation form ──
     if (!currentInternship) {
       const form = document.getElementById('proposal-form');
-      form?.addEventListener('submit', async (e) => {
+      if (!form) return;
+
+      // teacher en mentor dropdowns
+      const teacherSelect = document.getElementById('teacher-select');
+      const mentorSelect = document.getElementById('mentor-select');
+
+      if (teacherSelect) {
+        teacherSelect.innerHTML = '<option value="">-- Kies een docent --</option>';
+        UsersAPI.list('teacher').then(teachers => {
+          teachers.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = `${t.first_name} ${t.last_name} (${t.email})`;
+            teacherSelect.appendChild(option);
+          });
+        }).catch(() => {
+          teacherSelect.innerHTML = '<option value="">Kon docenten niet laden</option>';
+        });
+      }
+
+      if (mentorSelect) {
+        mentorSelect.innerHTML = '<option value="">-- Kies een mentor --</option>';
+        UsersAPI.list('mentor').then(mentors => {
+          mentors.forEach(m => {
+            const option = document.createElement('option');
+            option.value = m.id;
+            option.textContent = `${m.first_name} ${m.last_name} (${m.email})`;
+            mentorSelect.appendChild(option);
+          });
+        }).catch(() => {
+          mentorSelect.innerHTML = '<option value="">Kon mentors niet laden</option>';
+        });
+      }
+
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const submitBtn = form.querySelector('button[type="submit"]');
-  
+
         const data = {
           company_name: document.getElementById('company-name').value,
           company_address: document.getElementById('company-address').value || null,
@@ -156,9 +190,14 @@ async function renderStudentDashboard() {
           end_date: document.getElementById('end-date').value,
           description: document.getElementById('assignment-desc').value,
         };
-  
+
+        const teacherId = parseInt(document.getElementById('teacher-select')?.value);
+        const mentorId = parseInt(document.getElementById('mentor-select')?.value);
+        if (teacherId) data.teacher_id = teacherId;
+        if (mentorId) data.mentor_id = mentorId;
+
         showLoading(submitBtn, 'Indienen...');
-  
+
         try {
           await InternshipsAPI.create(data);
           hideLoading(submitBtn);
@@ -171,7 +210,7 @@ async function renderStudentDashboard() {
       });
       return;
     }
-  
+
     // ── Student already has an internship: show proposal details ──
     const proposal = currentInternship.proposal;
     const company = currentInternship.company || {};
@@ -180,17 +219,17 @@ async function renderStudentDashboard() {
     const feedback = proposal?.feedback;
     const revisionCount = proposal?.revision_count || 0;
     const resubmittedAt = proposal?.resubmitted_at;
-  
+
     let proposalStatusText;
     switch (currentInternship.status) {
       case 'In Beoordeling': proposalStatusText = 'in beoordeling'; break;
       case 'Afgekeurd': proposalStatusText = 'afgekeurd'; break;
       default: proposalStatusText = 'goedgekeurd';
     }
-  
+
     container.innerHTML = `
       <h2>Mijn Stagevoorstel</h2>
-  
+
       <div class="proposal-summary">
         <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(currentInternship.status)}">${currentInternship.status}</span></p>
         <p><strong>Bedrijf:</strong> ${escapeHtml(company.name || 'Onbekend')}</p>
@@ -198,7 +237,7 @@ async function renderStudentDashboard() {
         ${company.sector ? `<p><strong>Sector:</strong> ${escapeHtml(company.sector)}</p>` : ''}
         <p><strong>Contactpersoon:</strong> ${escapeHtml(company.contact_person || 'Onbekend')}</p>
         <p><strong>E-mail:</strong> ${escapeHtml(company.contact_email || 'Onbekend')}</p>
-        <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} – ${formatDate(currentInternship.end_date)}</p>
+        <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} - ${formatDate(currentInternship.end_date)}</p>
         ${revisionCount > 0 ? `<p><strong>Aantal herzieningen:</strong> ${revisionCount}</p>` : ''}
         ${resubmittedAt ? `<p><strong>Laatst herzien:</strong> ${formatDate(resubmittedAt)}</p>` : ''}
         <div class="proposal-description">
@@ -208,14 +247,14 @@ async function renderStudentDashboard() {
           </div>
         </div>
       </div>
-  
+
       ${feedback ? `
         <div class="info-message warning">
           <p><strong>Feedback van de commissie:</strong></p>
           <p>${escapeHtml(feedback)}</p>
         </div>
       ` : ''}
-  
+
       ${isIngediend ? `
         <div class="btn-group" style="margin-top: 1rem;">
           <button id="btn-edit-proposal" class="btn">✏️ Wijzigen</button>
@@ -264,7 +303,7 @@ async function renderStudentDashboard() {
           </form>
         </div>
       ` : ''}
-  
+
       ${isChangesRequired ? `
         <div class="resubmit-section" style="margin-top: 1.5rem;">
           <h3>Opnieuw indienen</h3>
@@ -306,46 +345,46 @@ async function renderStudentDashboard() {
           </form>
         </div>
       ` : ''}
-  
+
       ${!isIngediend && !isChangesRequired ? `
         <div class="info-message" style="margin-top: 1rem;">
           <p>Je voorstel is ${proposalStatusText}. Je kunt het op dit moment niet meer wijzigen.</p>
         </div>
       ` : ''}
     `;
-  
+
     // Wire edit form
     const editBtn = document.getElementById('btn-edit-proposal');
     const editSection = document.getElementById('edit-section');
     const editForm = document.getElementById('edit-form');
     const cancelEditBtn = document.getElementById('btn-cancel-edit');
-  
+
     editBtn?.addEventListener('click', () => {
       if (editSection) editSection.style.display = 'block';
       editBtn.style.display = 'none';
       const withdrawBtn = document.getElementById('btn-withdraw-proposal');
       if (withdrawBtn) withdrawBtn.style.display = 'none';
     });
-  
+
     cancelEditBtn?.addEventListener('click', () => {
       if (editSection) editSection.style.display = 'none';
       editBtn.style.display = 'inline-block';
       const withdrawBtn = document.getElementById('btn-withdraw-proposal');
       if (withdrawBtn) withdrawBtn.style.display = 'inline-block';
     });
-  
+
     editForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = editForm.querySelector('button[type="submit"]');
       const description = document.getElementById('edit-description').value;
-  
+
       if (!description || description.length < 20) {
         showToast('Omschrijving moet minstens 20 karakters bevatten', 'error');
         return;
       }
-  
+
       showLoading(submitBtn, 'Opslaan...');
-  
+
       try {
         await ProposalsAPI.edit(currentInternship.id, {
           description,
@@ -366,11 +405,11 @@ async function renderStudentDashboard() {
         showToast(error.message, 'error');
       }
     });
-  
+
     // Wire withdraw button
     document.getElementById('btn-withdraw-proposal')?.addEventListener('click', async () => {
       if (!confirm('Weet je zeker dat je je stagevoorstel wilt intrekken? Dit kan niet ongedaan gemaakt worden.')) return;
-  
+
       try {
         await ProposalsAPI.withdraw(currentInternship.id);
         showToast('Voorstel succesvol ingetrokken', 'success');
@@ -380,21 +419,21 @@ async function renderStudentDashboard() {
         showToast(error.message, 'error');
       }
     });
-  
+
     // Wire resubmit form
     const resubmitForm = document.getElementById('resubmit-form');
     resubmitForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const submitBtn = resubmitForm.querySelector('button[type="submit"]');
       const newDescription = document.getElementById('resubmit-description').value;
-  
+
       if (!newDescription || newDescription.length < 20) {
         showToast('Omschrijving moet minstens 20 karakters bevatten', 'error');
         return;
       }
-  
+
       showLoading(submitBtn, 'Indienen...');
-  
+
       try {
         await ProposalsAPI.resubmit(currentInternship.id, newDescription, {
           company_name: document.getElementById('resubmit-company-name').value || undefined,
@@ -415,7 +454,7 @@ async function renderStudentDashboard() {
       }
     });
   }
-  
+
   function wireLogbookForm() {
     const form = document.getElementById('logbook-form');
     const submitBtn = document.getElementById('submit-logbook');
@@ -423,7 +462,7 @@ async function renderStudentDashboard() {
     const gridEl = document.getElementById('logbook-week-grid');
     const formPanel = document.getElementById('logbook-form-panel');
     const formWeekLabel = document.getElementById('form-week-label');
-  
+
     if (!currentInternship) {
       content.innerHTML = `
         <div class="panel card reveal">
@@ -433,7 +472,7 @@ async function renderStudentDashboard() {
       `;
       return;
     }
-  
+
     const canLog = currentInternship.status === 'Lopend' || currentInternship.status === 'Afgerond';
     if (!canLog) {
       content.innerHTML = `
@@ -446,10 +485,10 @@ async function renderStudentDashboard() {
       `;
       return;
     }
-  
+
     let selectedWeek = null;
     let selectedLogbook = null;
-  
+
     // ── Build week grid ──
     function renderWeekGrid() {
       if (!gridEl) return;
@@ -464,9 +503,9 @@ async function renderStudentDashboard() {
         gridEl.innerHTML = '<p class="hint">Stageperiode niet ingesteld.</p>';
         return;
       }
-  
+
       const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
-  
+
       gridEl.innerHTML = '';
       for (let w = 1; w <= totalWeeks; w++) {
         const lb = logbookMap.get(w);
@@ -481,7 +520,7 @@ async function renderStudentDashboard() {
             statusLabel = 'Concept';
           }
         }
-  
+
         const cell = document.createElement('div');
         cell.className = `week-cell ${statusClass}`;
         cell.dataset.week = w;
@@ -493,53 +532,53 @@ async function renderStudentDashboard() {
         gridEl.appendChild(cell);
       }
     }
-  
+
     // ── Open a week in the form ──
     function openWeek(week) {
       selectedWeek = week;
       selectedLogbook = currentLogbooks.find(lb => lb.week_number === week) || null;
-  
+
       // Highlight selected cell
       gridEl?.querySelectorAll('.week-cell').forEach(c => c.classList.remove('selected'));
       gridEl?.querySelector(`[data-week="${week}"]`)?.classList.add('selected');
-  
+
       // Show form panel
       if (formPanel) formPanel.style.display = 'block';
       if (formWeekLabel) formWeekLabel.textContent = week;
-  
+
       document.getElementById('log-week').value = week;
       document.getElementById('log-tasks').value = selectedLogbook?.tasks || '';
       document.getElementById('log-reflection').value = selectedLogbook?.reflection || '';
       document.getElementById('log-issues').value = selectedLogbook?.issues || '';
-  
+
       // Disable submit if already submitted
       if (submitBtn) {
         submitBtn.disabled = selectedLogbook?.status === 'submitted';
         submitBtn.textContent = selectedLogbook?.status === 'submitted' ? 'Reeds ingediend' : 'Definitief Indienen';
       }
     }
-  
+
     function closeForm() {
       if (formPanel) formPanel.style.display = 'none';
       gridEl?.querySelectorAll('.week-cell').forEach(c => c.classList.remove('selected'));
       selectedWeek = null;
       selectedLogbook = null;
     }
-  
+
     // ── Save as draft ──
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const saveBtn = form.querySelector('button[type="submit"]');
       const week = parseInt(document.getElementById('log-week').value);
       const tasks = document.getElementById('log-tasks').value;
-  
+
       if (!week) {
         showToast('Selecteer een week', 'error');
         return;
       }
-  
+
       showLoading(saveBtn, 'Opslaan...');
-  
+
       try {
         const payload = {
           week_number: week,
@@ -548,16 +587,16 @@ async function renderStudentDashboard() {
           issues: document.getElementById('log-issues').value,
           status: 'draft'
         };
-  
+
         if (selectedLogbook) {
           await InternshipsAPI.updateLogbook(selectedLogbook.id, payload);
         } else {
           await InternshipsAPI.createLogbook(currentInternship.id, payload);
         }
-  
+
         hideLoading(saveBtn);
         showToast('Logboek opgeslagen als concept', 'info');
-  
+
         // Refresh data and re-render grid
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
         renderWeekGrid();
@@ -568,12 +607,12 @@ async function renderStudentDashboard() {
         showToast(error.message, 'error');
       }
     });
-  
+
     // ── Submit ──
     submitBtn?.addEventListener('click', async () => {
       const week = parseInt(document.getElementById('log-week').value);
       const tasks = document.getElementById('log-tasks').value;
-  
+
       if (!week) {
         showToast('Selecteer een week', 'error');
         return;
@@ -586,9 +625,9 @@ async function renderStudentDashboard() {
         showToast('Logboek is al ingediend', 'error');
         return;
       }
-  
+
       showLoading(submitBtn, 'Indienen...');
-  
+
       try {
         // Ensure logbook exists first
         let logbook = selectedLogbook;
@@ -601,13 +640,13 @@ async function renderStudentDashboard() {
             status: 'draft'
           });
         }
-  
+
         // Submit via dedicated endpoint
         await InternshipsAPI.submitLogbook(logbook.id);
-  
+
         hideLoading(submitBtn);
         showToast(`Logboek week ${week} ingediend!`, 'success');
-  
+
         // Refresh data and re-render grid
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
         renderWeekGrid();
@@ -617,18 +656,18 @@ async function renderStudentDashboard() {
         showToast(error.message, 'error');
       }
     });
-  
+
     // ── Cancel ──
     cancelBtn?.addEventListener('click', closeForm);
-  
+
     // ── Initial render ──
     renderWeekGrid();
   }
-  
+
   function wireAgreementUpload() {
     const form = document.getElementById('agreement-form');
     const statusText = document.getElementById('agreement-status-text');
-  
+
     if (!currentInternship) {
       content.innerHTML = `
         <div class="panel card reveal">
@@ -638,9 +677,9 @@ async function renderStudentDashboard() {
       `;
       return;
     }
-  
+
     const agreementStatus = currentInternship.agreement_status;
-  
+
     // If agreement is already validated, show success regardless of internship status
     if (agreementStatus === 'Gevalideerd') {
       if (statusText) {
@@ -653,9 +692,9 @@ async function renderStudentDashboard() {
       `;
       return;
     }
-  
+
     const canUpload = currentInternship.status === 'Goedgekeurd' || currentInternship.status === 'Overeenkomst Ingediend';
-  
+
     if (!canUpload) {
       form.innerHTML = `
         <div class="info-message warning">
@@ -667,17 +706,17 @@ async function renderStudentDashboard() {
       return;
     }
     const hint = document.getElementById('agreement-hint');
-  
+
     function setStatusLabel(label, className) {
       if (statusText) {
         statusText.innerHTML = `<span class="status-pill ${className}">${label}</span>`;
       }
     }
-  
+
     function setHint(text) {
       if (hint) hint.textContent = text;
     }
-  
+
     if (agreementStatus === 'Onvolledig') {
       setStatusLabel('Onvolledig', 'status-warn');
       setHint('De commissie heeft je overeenkomst als onvolledig gemarkeerd. Upload een nieuwe versie.');
@@ -690,37 +729,37 @@ async function renderStudentDashboard() {
       setStatusLabel('Ingediend', 'status-info');
       setHint('Je overeenkomst is ingediend en wacht op validatie door de commissie.');
     }
-  
+
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const fileInput = document.getElementById('agreement-file');
       const file = fileInput?.files[0];
       const submitBtn = form.querySelector('button[type="submit"]');
-  
+
       if (!file) {
         showToast('Selecteer een PDF bestand', 'error');
         return;
       }
-  
+
       if (file.type !== 'application/pdf') {
         showToast('Alleen PDF bestanden zijn toegestaan', 'error');
         return;
       }
-  
+
       if (file.size > 5 * 1024 * 1024) {
         showToast('Bestand is te groot (max 5MB)', 'error');
         return;
       }
-  
+
       showLoading(submitBtn, 'Uploaden...');
-  
+
       try {
         await InternshipsAPI.uploadAgreement(currentInternship.id, file);
         hideLoading(submitBtn);
         showToast('Overeenkomst succesvol geüpload!', 'success');
-  
+
         await refreshInternshipData();
-  
+
         if (statusText) {
           statusText.innerHTML = '<span class="status-pill status-good">Ontvangen</span>';
         }
@@ -730,7 +769,7 @@ async function renderStudentDashboard() {
       }
     });
   }
-  
+
   async function renderStudentEvaluations() {
     const tbody = document.querySelector('table tbody');
     if (tbody && currentEvaluations.length > 0) {
@@ -745,11 +784,11 @@ async function renderStudentDashboard() {
     } else if (tbody) {
       tbody.innerHTML = '<tr><td colspan="4">Geen evaluaties gevonden</td></tr>';
     }
-  
+
     // US-09: Eindoverzicht ophalen
     const finalSummary = document.getElementById('final-summary');
     if (!finalSummary || !currentInternship) return;
-  
+
     try {
       const report = await InternshipsAPI.getFinalReport(currentInternship.id);
       const evalData = report?.final_evaluation;
@@ -760,12 +799,12 @@ async function renderStudentDashboard() {
         `;
         return;
       }
-  
+
       const rows = formatReportRows(evalData.rules);
       const weightedScore = report.weighted_final_score !== null && report.weighted_final_score !== undefined
         ? (report.weighted_final_score / 20).toFixed(2)
         : '-';
-  
+
       finalSummary.innerHTML = `
         <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
         <table style="margin-top: 0.5rem;">
@@ -779,12 +818,12 @@ async function renderStudentDashboard() {
       console.error('Failed to load final report:', error);
       finalSummary.innerHTML = '<p class="error">Kon eindoverzicht niet laden.</p>';
     }
-  
-    // US-06: Student zelfevaluatie — beschrijving per competentie
+
+    // US-06: Student zelfevaluatie - beschrijving per competentie
     const selfEvalPanel = document.getElementById('student-self-eval-panel');
     const selfEvalForm = document.getElementById('student-self-eval-form');
     const saveBtn = document.getElementById('btn-save-self-eval');
-  
+
     if (selfEvalPanel && selfEvalForm) {
       const activeEval = currentEvaluations.find(e => !e.finalized);
       if (activeEval && activeEval.rules && activeEval.rules.length > 0) {
@@ -798,7 +837,7 @@ async function renderStudentDashboard() {
             </div>
           `;
         }).join('');
-  
+
         saveBtn?.addEventListener('click', async () => {
           const fields = selfEvalForm.querySelectorAll('.student-desc-field');
           showLoading(saveBtn, 'Opslaan...');
