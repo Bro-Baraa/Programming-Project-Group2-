@@ -22,9 +22,9 @@ async function renderStudentDashboard() {
       const agreementStatus = currentInternship.agreement_status || 'Niet Ingediend';
       let agreementLabel;
       switch (agreementStatus) {
-        case 'Niet Ingediend': agreementLabel = '✗ Nog niet'; break;
-        case 'Onvolledig': agreementLabel = '⚠ Onvolledig'; break;
-        default: agreementLabel = `✓ ${agreementStatus}`;
+        case 'Niet Ingediend': agreementLabel = `${iconHtml('x-circle', 14)} Nog niet`; break;
+        case 'Onvolledig': agreementLabel = `${iconHtml('alert-circle', 14)} Onvolledig`; break;
+        default: agreementLabel = `${iconHtml('check-circle', 14)} ${agreementStatus}`;
       }
 
       hero.innerHTML = `
@@ -267,8 +267,8 @@ async function renderStudentDashboard() {
 
       ${isIngediend ? `
         <div class="btn-group" style="margin-top: 1rem;">
-          <button id="btn-edit-proposal" class="btn">✏️ Wijzigen</button>
-          <button id="btn-withdraw-proposal" class="btn danger">🗑️ Intrekken</button>
+          <button id="btn-edit-proposal" class="btn">${iconHtml('edit', 14)} Wijzigen</button>
+          <button id="btn-withdraw-proposal" class="btn danger">${iconHtml('trash', 14)} Intrekken</button>
         </div>
         <div id="edit-section" style="display: none; margin-top: 1.5rem;">
           <h3>Voorstel wijzigen</h3>
@@ -839,7 +839,7 @@ async function renderStudentDashboard() {
       }
       form.innerHTML = `
         <div class="info-message success">
-          <p>✓ Je overeenkomst is gevalideerd. De stage is actief.</p>
+          <p>${iconHtml('check-circle', 16)} Je overeenkomst is gevalideerd. De stage is actief.</p>
         </div>
       `;
       return;
@@ -850,7 +850,7 @@ async function renderStudentDashboard() {
     if (!canUpload) {
       form.innerHTML = `
         <div class="info-message warning">
-          <p>⚠️ Je kan geen overeenkomst uploaden in deze fase.</p>
+          <p>${iconHtml('alert-circle', 16)} Je kan geen overeenkomst uploaden in deze fase.</p>
           <p>Huidige status: <strong>${currentInternship.status}</strong></p>
           <a href="?view=dashboard" class="btn">Naar dashboard</a>
         </div>
@@ -874,7 +874,7 @@ async function renderStudentDashboard() {
       setHint('De commissie heeft je overeenkomst als onvolledig gemarkeerd. Upload een nieuwe versie.');
       form.insertAdjacentHTML('afterbegin', `
         <div class="info-message warning" style="margin-bottom: 1rem;">
-          <p>⚠️ De commissie heeft je overeenkomst als onvolledig gemarkeerd. Upload een nieuwe versie.</p>
+          <p>${iconHtml('alert-circle', 16)} De commissie heeft je overeenkomst als onvolledig gemarkeerd. Upload een nieuwe versie.</p>
         </div>
       `);
     } else if (agreementStatus === 'Ingediend') {

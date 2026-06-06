@@ -93,7 +93,7 @@ function selectProposalForReview(internshipId) {
     if (status === 'Ingediend' || status === 'Aanpassingen Vereist') {
       // Eerst "In Beoordeling" zetten
       actionsDiv.innerHTML = `
-        <button id="btn-review" class="btn">🔍 In Beoordeling Zetten</button>
+        <button id="btn-review" class="btn">${iconHtml('search', 14)} In Beoordeling Zetten</button>
       `;
       document.getElementById('btn-review')?.addEventListener('click', () => doReview(internship.id, 'In Beoordeling'));
     } else if (status === 'In Beoordeling') {
@@ -105,9 +105,9 @@ function selectProposalForReview(internshipId) {
             <option value="">Laden...</option>
           </select>
         </div>
-        <button id="btn-approve" class="btn success">✓ Goedkeuren</button>
-        <button id="btn-reject" class="btn danger">✗ Afkeuren</button>
-        <button id="btn-changes" class="btn secondary">⚠ Aanpassingen Vereist</button>
+        <button id="btn-approve" class="btn success">${iconHtml('check-circle', 14)} Goedkeuren</button>
+        <button id="btn-reject" class="btn danger">${iconHtml('x-circle', 14)} Afkeuren</button>
+        <button id="btn-changes" class="btn secondary">${iconHtml('alert-circle', 14)} Aanpassingen Vereist</button>
       `;
 
       // Laad docenten in de dropdown
@@ -229,7 +229,7 @@ function showAgreementDetailPanel(internshipId) {
     if (!agreement) {
       detailContainer.innerHTML = `
         <div class="info-message warning">
-          <p>⚠️ Er is nog geen overeenkomst geüpload voor deze stage.</p>
+          <p>${iconHtml('alert-circle', 16)} Er is nog geen overeenkomst geüpload voor deze stage.</p>
         </div>
       `;
       document.getElementById('agreement-actions').innerHTML = '';
@@ -249,7 +249,7 @@ function showAgreementDetailPanel(internshipId) {
       if (isValidated) {
         actionsDiv.innerHTML = `
           <div class="info-message success">
-            <p>✓ Deze overeenkomst is gevalideerd. De stage is actief.</p>
+            <p>${iconHtml('check-circle', 16)} Deze overeenkomst is gevalideerd. De stage is actief.</p>
           </div>
         `;
       } else {

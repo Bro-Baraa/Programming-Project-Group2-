@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=2026-06-06" />
 </head>
 
 <body>
@@ -31,6 +31,7 @@
         </select>
       </div>
       <div class="user-badge">
+        <img src="icons/user.svg" alt="" width="16" height="16" class="icon-img" />
         <span class="user-name" id="user-name">Gebruiker</span>
         <span class="user-role" id="user-role">Rol</span>
       </div>
@@ -50,7 +51,7 @@
           </ul>
         </div>
       </div>
-      <button class="btn logout" id="logout-btn">Uitloggen</button>
+      <button class="btn logout" id="logout-btn"><img src="icons/log-out.svg" alt="" width="14" height="14" class="icon-img" /> Uitloggen</button>
     </div>
   </header>
 
@@ -330,9 +331,9 @@
       <div id="selected-description" style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">-</div>
 
       <div class="btn-group" id="review-actions" style="margin-bottom: 1rem;">
-        <button id="btn-approve" class="btn success">✓ Goedkeuren</button>
-        <button id="btn-reject" class="btn danger">✗ Afkeuren</button>
-        <button id="btn-changes" class="btn secondary">⚠ Aanpassingen Vereist</button>
+        <button id="btn-approve" class="btn success"><img src="icons/check-circle.svg" alt="" width="14" height="14" class="icon-img" /> Goedkeuren</button>
+        <button id="btn-reject" class="btn danger"><img src="icons/x-circle.svg" alt="" width="14" height="14" class="icon-img" /> Afkeuren</button>
+        <button id="btn-changes" class="btn secondary"><img src="icons/alert-circle.svg" alt="" width="14" height="14" class="icon-img" /> Aanpassingen Vereist</button>
       </div>
 
       <div id="feedback-section">
@@ -747,16 +748,16 @@
     </div>
   </template>
 
-  <script src="js/api-client.js?v=5"></script>
-  <script src="js/notifications.js?v=1"></script>
-  <script src="js/ui-helpers.js?v=4"></script>
-  <script src="js/table-cards.js?v=4"></script>
-  <script src="js/views/student.js?v=4"></script>
-  <script src="js/views/committee.js?v=4"></script>
-  <script src="js/views/teacher.js?v=4"></script>
-  <script src="js/views/mentor.js?v=4"></script>
-  <script src="js/views/admin.js?v=5"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/api-client.js?v=2026-06-06-1"></script>
+  <script src="js/notifications.js?v=2026-06-06-1"></script>
+  <script src="js/ui-helpers.js?v=2026-06-06-1"></script>
+  <script src="js/table-cards.js?v=2026-06-06-1"></script>
+  <script src="js/views/student.js?v=2026-06-06-1"></script>
+  <script src="js/views/committee.js?v=2026-06-06-1"></script>
+  <script src="js/views/teacher.js?v=2026-06-06-1"></script>
+  <script src="js/views/mentor.js?v=2026-06-06-1"></script>
+  <script src="js/views/admin.js?v=2026-06-06-1"></script>
+  <script src="js/app.js?v=2026-06-06-1"></script>
 </body>
 
 </html>

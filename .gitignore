@@ -54,3 +54,4 @@ startup.log
 
 # Git worktrees
 .worktrees/
+.ralph/

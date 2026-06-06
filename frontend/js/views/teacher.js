@@ -223,7 +223,7 @@ async function renderTeacherLogbooks() {
           <td>${lb?.tasks || '-'}</td>
           <td>${lb?.reflection || '-'}</td>
           <td><span class="status-pill ${getStatusClass(w.status)}">${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
-          <td>${w.mentor_validated ? '✓ Gevalideerd' : 'In afwachting'}</td>
+          <td>${w.mentor_validated ? `${iconHtml('check-circle', 14)} Gevalideerd` : 'In afwachting'}</td>
         </tr>
       `;
     });
@@ -237,7 +237,7 @@ async function renderTeacherLogbooks() {
         <td>${lb.tasks || '-'}</td>
         <td>${lb.reflection || '-'}</td>
         <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
-        <td>${lb.mentor_validated ? '✓ Gevalideerd' : 'In afwachting'}</td>
+        <td>${lb.mentor_validated ? `${iconHtml('check-circle', 14)} Gevalideerd` : 'In afwachting'}</td>
       </tr>
     `).join('') || '<tr><td colspan="5">Geen logboeken gevonden voor deze stage.</td></tr>';
   }

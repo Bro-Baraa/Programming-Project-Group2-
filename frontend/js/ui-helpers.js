@@ -45,13 +45,24 @@ function getEvalTypeLabel(type) {
   return type;
 }
 
+function iconHtml(name, size = 16, opts = {}) {
+  const alt = opts.alt || '';
+  const cls = opts.class || 'icon-img';
+  return `<img src="icons/${name}.svg" alt="${alt}" width="${size}" height="${size}" class="${cls}" />`;
+}
+
 function showToast(message, type = "success", duration = 3000) {
   const existing = document.querySelector(".toast-notification");
   if (existing) existing.remove();
 
   const toast = document.createElement("div");
   toast.className = `toast-notification toast-${type}`;
-  const icons = { success: "✓", error: "✗", warning: "⚠", info: "ℹ" };
+  const icons = {
+    success: iconHtml('check-circle', 16),
+    error: iconHtml('x-circle', 16),
+    warning: iconHtml('alert-circle', 16),
+    info: iconHtml('alert-circle', 16)
+  };
 
   toast.innerHTML = `
     <span class="toast-icon">${icons[type] || "•"}</span>
@@ -95,8 +106,8 @@ function renderAgreementStatusCell(agreementStatus) {
 
 function renderAgreementUploadedCell(uploaded) {
   return uploaded
-    ? '<span class="status-pill status-good">✓ Ja</span>'
-    : '<span class="status-pill status-warn">✗ Nee</span>';
+    ? `<span class="status-pill status-good">${iconHtml('check-circle', 14)} Ja</span>`
+    : `<span class="status-pill status-warn">${iconHtml('x-circle', 14)} Nee</span>`;
 }
 
 function renderAgreementDetailHTML(agreement, opts = {}) {
@@ -110,8 +121,8 @@ function renderAgreementDetailHTML(agreement, opts = {}) {
   } = opts;
 
   const insurance = agreement?.insurance_verified || insuranceVerified
-    ? { text: '✓ Verzekering gecontroleerd', class: 'status-good' }
-    : { text: '✗ Verzekering nog niet gecontroleerd', class: 'status-warn' };
+    ? { text: `${iconHtml('check-circle', 14)} Verzekering gecontroleerd`, class: 'status-good' }
+    : { text: `${iconHtml('x-circle', 14)} Verzekering nog niet gecontroleerd`, class: 'status-warn' };
 
   let html = `
     <div class="agreement-info">
@@ -125,7 +136,7 @@ function renderAgreementDetailHTML(agreement, opts = {}) {
   if (showDownload && agreement.file_path) {
     html += `
       <div style="margin-top: 1rem;">
-        <button class="btn" id="download-agreement-btn" data-internship-id="${agreement.internship_id || ''}">📄 PDF Downloaden</button>
+        <button class="btn" id="download-agreement-btn" data-internship-id="${agreement.internship_id || ''}">${iconHtml('file-text', 16)} PDF Downloaden</button>
       </div>
     `;
   }
@@ -140,8 +151,8 @@ function renderAgreementDetailHTML(agreement, opts = {}) {
           </label>
         </div>
         <div class="btn-group">
-          <button id="btn-validate" class="btn success">✓ Valideren</button>
-          <button id="btn-incomplete" class="btn danger">✗ Onvolledig</button>
+          <button id="btn-validate" class="btn success">${iconHtml('check-circle', 14)} Valideren</button>
+          <button id="btn-incomplete" class="btn danger">${iconHtml('x-circle', 14)} Onvolledig</button>
         </div>
       </div>
     `;

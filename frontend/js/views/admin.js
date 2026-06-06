@@ -29,7 +29,7 @@ async function renderCompetencyManager() {
   if (profileSelect) {
     profileSelect.innerHTML = competencyProfiles.length
       ? competencyProfiles.map(p =>
-        `<option value="${p.id}" ${p.active ? 'selected' : ''}>${p.name} (${p.academic_year})${p.active ? ' ★' : ''}</option>`
+        `<option value="${p.id}" ${p.active ? 'selected' : ''}>${p.name} (${p.academic_year})${p.active ? ' (actief)' : ''}</option>`
       ).join('')
       : '<option value="">Geen profielen</option>';
 
@@ -108,7 +108,7 @@ async function renderCompetencyManager() {
     const total = currentCompetencies.filter(c => c.active).reduce((sum, c) => sum + c.weight, 0);
     const valid = Math.abs(total - 100) < 0.01;
     if (weightCheck) {
-      weightCheck.textContent = `Totaal gewicht (actief): ${total}% ${valid ? '✓ OK' : '⚠ Moet 100% zijn'}`;
+      weightCheck.textContent = `Totaal gewicht (actief): ${total}% ${valid ? 'OK' : 'Moet 100% zijn'}`;
       weightCheck.className = `weight-check ${valid ? 'valid' : 'invalid'}`;
     }
   }
@@ -362,7 +362,7 @@ async function renderCompetencyManager() {
       // Refresh profile selector
       if (profileSelect) {
         profileSelect.innerHTML = competencyProfiles.map(p =>
-          `<option value="${p.id}" ${p.id === selectedProfileId ? 'selected' : ''}>${p.name} (${p.academic_year})${p.active ? ' ★' : ''}</option>`
+          `<option value="${p.id}" ${p.id === selectedProfileId ? 'selected' : ''}>${p.name} (${p.academic_year})${p.active ? ' (actief)' : ''}</option>`
         ).join('');
       }
       await loadCompetencies();
@@ -840,7 +840,7 @@ function showAdminAgreementDetail(internshipId) {
     if (item.agreement_status === 'Niet Ingediend') {
       content.innerHTML = `
         <div class="info-message warning">
-          <p>⚠️ Er is nog geen overeenkomst ingediend voor deze stage.</p>
+          <p>${iconHtml('alert-circle', 16)} Er is nog geen overeenkomst ingediend voor deze stage.</p>
         </div>
       `;
     } else {

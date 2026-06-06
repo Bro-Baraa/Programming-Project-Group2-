@@ -24,7 +24,7 @@ async function renderMentorLogbooks() {
       const lb = logbookMap.get(w.week_number);
       let actionCell;
       if (w.mentor_validated) {
-        actionCell = '<span class="status-pill status-good">✓ Gevalideerd</span>';
+        actionCell = `<span class="status-pill status-good">${iconHtml('check-circle', 14)} Gevalideerd</span>`;
       } else if (w.status === 'submitted') {
         actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb?.id}">Valideren</button>`;
       } else {
@@ -50,7 +50,7 @@ async function renderMentorLogbooks() {
     tbody.innerHTML = currentLogbooks.map(lb => {
       let actionCell;
       if (lb.mentor_validated) {
-        actionCell = '<span class="status-pill status-good">✓ Gevalideerd</span>';
+        actionCell = `<span class="status-pill status-good">${iconHtml('check-circle', 14)} Gevalideerd</span>`;
       } else if (lb.status === 'submitted') {
         actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`;
       } else {
@@ -145,7 +145,7 @@ async function renderMentorEvaluation() {
 
   container.innerHTML = `
   <div style="margin-bottom: 1rem;">
-    <span class="status-pill ${isReadOnly ? 'status-good' : 'status-info'}">${isReadOnly ? '✓ Afgeronde evaluatie' : 'Actieve evaluatie'}</span>
+    <span class="status-pill ${isReadOnly ? 'status-good' : 'status-info'}">${isReadOnly ? `${iconHtml('check-circle', 14)} Afgeronde evaluatie` : 'Actieve evaluatie'}</span>
     <span class="hint" style="margin-left: 0.5rem;">${actieveEval.eval_type === 'final' ? 'Finale evaluatie' : 'Tussentijdse evaluatie'}</span>
   </div>
   ${currentCompetencies.map(comp => {

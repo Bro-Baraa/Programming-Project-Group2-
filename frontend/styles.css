@@ -241,6 +241,24 @@ input:invalid { border-color: var(--bad); }
   outline-offset: 2px;
 }
 
+/* Inline icon images */
+.icon-img {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+  margin-top: -2px;
+}
+
+.btn .icon-img {
+  margin-right: 0.35rem;
+  margin-top: -3px;
+}
+
+.status-pill .icon-img {
+  margin-right: 0.2rem;
+  margin-top: -2px;
+}
+
 .btn.small { padding: 0.33rem 0.55rem; font-size: 0.82rem; }
 
 .btn.secondary { background: var(--accent-2); }

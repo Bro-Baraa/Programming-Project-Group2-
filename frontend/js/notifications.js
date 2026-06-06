@@ -234,7 +234,7 @@ async function markReadOnly(item) {
 
 /**
  * Mark a notification as read AND navigate to the linked view.
- * Called when the user clicks the 👁 view button.
+ * Called when the user clicks the view button.
  */
 async function navigateToNotification(btn) {
   const id = parseInt(btn.dataset.id);
