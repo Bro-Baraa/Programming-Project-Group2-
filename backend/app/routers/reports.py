@@ -38,7 +38,7 @@ def get_agreement_status_report(
 def get_final_report(
     internship_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_staff),
+    current_user: User = Depends(get_current_active_user),
 ):
     """US-19: Generate final report for a student"""
     return get_final_report_svc(db, current_user, internship_id)
