@@ -70,6 +70,17 @@ label {
   padding: 1.4rem 1rem 0.8rem;
 }
 
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand-logo {
+  display: block;
+  flex-shrink: 0;
+}
+
 .layout {
   display: grid;
   gap: 1rem;
@@ -539,6 +550,11 @@ th {
 .login-header {
   text-align: center;
   margin-bottom: 2rem;
+}
+
+.login-logo {
+  display: block;
+  margin: 0 auto 0.75rem;
 }
 
 .login-header h1 {
