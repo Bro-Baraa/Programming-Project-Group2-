@@ -26,6 +26,12 @@ async function renderStudentDashboard() {
         case 'Onvolledig': agreementLabel = `${iconHtml('alert-circle', 14)} Onvolledig`; break;
         default: agreementLabel = `${iconHtml('check-circle', 14)} ${agreementStatus}`;
       }
+      const teacherName = currentInternship.teacher
+        ? `${currentInternship.teacher.first_name} ${currentInternship.teacher.last_name}`
+        : 'Nog niet toegewezen';
+      const mentorName = currentInternship.mentor
+        ? `${currentInternship.mentor.first_name} ${currentInternship.mentor.last_name}`
+        : 'Nog niet toegewezen';
 
       hero.innerHTML = `
         <h2>Mijn Stage</h2>
@@ -33,6 +39,8 @@ async function renderStudentDashboard() {
         <p><strong>Periode:</strong> ${startDate} - ${endDate}</p>
         <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(currentInternship.status)}">${currentInternship.status}</span></p>
         <p><strong>Overeenkomst:</strong> ${agreementLabel}</p>
+        <p><strong>Docent:</strong> ${teacherName}</p>
+        <p><strong>Mentor:</strong> ${mentorName}</p>
         <div style="margin-top: 1rem;">
           <a href="?view=voorstel" class="btn">+ Nieuw stagevoorstel</a>
         </div>
