@@ -26,7 +26,7 @@ async function renderMentorLogbooks() {
       if (w.mentor_validated) {
         actionCell = `<span class="status-pill status-good">${iconHtml('check-circle', 14)} Gevalideerd</span>`;
       } else if (w.status === 'submitted') {
-        actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb?.id}">Valideren</button>`;
+        actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb?.id}">${iconHtml('check-circle', 14)} Valideren</button>`;
       } else {
         actionCell = '<span class="status-pill">Concept</span>';
       }
@@ -39,7 +39,7 @@ async function renderMentorLogbooks() {
           <td><span class="status-pill ${getStatusClass(w.status)}">${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
           <td>
             <textarea class="mentor-feedback-input" data-id="${lb?.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb?.mentor_feedback || ''}</textarea>
-            <button class="btn small save-feedback-btn" data-id="${lb?.id}" style="margin-top:0.25rem;">Opslaan</button>
+            <button class="btn small save-feedback-btn" data-id="${lb?.id}" style="margin-top:0.25rem;">${iconHtml('check-circle', 14)} Opslaan</button>
           </td>
           <td>${actionCell}</td>
         </tr>
@@ -52,7 +52,7 @@ async function renderMentorLogbooks() {
       if (lb.mentor_validated) {
         actionCell = `<span class="status-pill status-good">${iconHtml('check-circle', 14)} Gevalideerd</span>`;
       } else if (lb.status === 'submitted') {
-        actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb.id}">Valideren</button>`;
+        actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb.id}">${iconHtml('check-circle', 14)} Valideren</button>`;
       } else {
         actionCell = '<span class="status-pill">Concept</span>';
       }
@@ -65,7 +65,7 @@ async function renderMentorLogbooks() {
           <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
           <td>
             <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb.mentor_feedback || ''}</textarea>
-            <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">Opslaan</button>
+            <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">${iconHtml('check-circle', 14)} Opslaan</button>
           </td>
           <td>${actionCell}</td>
         </tr>
@@ -141,7 +141,7 @@ async function renderMentorEvaluation() {
   const readOnlyAttr = isReadOnly ? 'readonly' : '';
   const saveBtnHtml = isReadOnly
     ? '<p class="hint">Deze evaluatie is definitief afgesloten. Feedback kan niet meer worden gewijzigd.</p>'
-    : '<button id="save-mentor-feedback" class="btn">Feedback Opslaan</button>';
+    : `<button id="save-mentor-feedback" class="btn">${iconHtml('check-circle', 14)} Feedback Opslaan</button>`;
 
   container.innerHTML = `
   <div style="margin-bottom: 1rem;">

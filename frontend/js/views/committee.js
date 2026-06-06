@@ -180,7 +180,7 @@ async function renderCommitteeAgreements() {
               <td>${renderAgreementStatusCell(agreementStatus)}</td>
               <td>${renderAgreementUploadedCell(i.agreement_uploaded)}</td>
               <td>
-                <button class="btn small view-agreement-btn" data-id="${i.id}">Bekijken</button>
+                <button class="btn small view-agreement-btn" data-id="${i.id}">${iconHtml('eye', 14)} Bekijken</button>
               </td>
             </tr>
           `;

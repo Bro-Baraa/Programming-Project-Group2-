@@ -192,7 +192,7 @@ async function renderTeacherFinalReport() {
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      <button class="btn" style="margin-top: 1rem;" onclick="window.print()">Afdrukken</button>
+      <button class="btn" style="margin-top: 1rem;" onclick="window.print()">${iconHtml('file-text', 16)} Afdrukken</button>
     `;
   } catch (error) {
     console.error('Failed to load final report:', error);

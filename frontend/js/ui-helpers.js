@@ -82,7 +82,7 @@ function showToast(message, type = "success", duration = 3000) {
   toast.innerHTML = `
     <span class="toast-icon">${icons[type] || "•"}</span>
     <span class="toast-message">${escapeHtml(message)}</span>
-    <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+    <button class="toast-close" onclick="this.parentElement.remove()">${iconHtml('x-circle', 14)}</button>
   `;
 
   toastRegion.appendChild(toast);

@@ -307,6 +307,80 @@ input:invalid { border-color: var(--bad); }
   margin-top: -2px;
 }
 
+.nav-tab .tab-icon {
+  margin-right: 0.35rem;
+  margin-top: -3px;
+  opacity: 0.8;
+}
+
+.nav-tab.active .tab-icon {
+  opacity: 1;
+}
+
+/* Input with icon wrapper */
+.input-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 0.6rem;
+}
+
+.input-with-icon:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 121, 140, 0.15);
+}
+
+.input-with-icon input {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.input-with-icon input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Field group with icon */
+.field-group .input-with-icon {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 0.6rem;
+}
+
+.field-group .input-with-icon:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 121, 140, 0.15);
+}
+
+.field-group .input-with-icon input {
+  border: none;
+  background: transparent;
+  padding: 0.6rem 0;
+}
+
+.field-group .input-with-icon input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Date range with icon */
+.date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-range .input-with-icon {
+  flex: 1;
+}
+
 .btn.small { padding: 0.33rem 0.55rem; font-size: 0.82rem; }
 
 .btn.secondary { background: var(--accent-2); }
@@ -537,7 +611,6 @@ input[readonly] {
 .toast-close {
   background: none;
   border: none;
-  font-size: 1.5rem;
   cursor: pointer;
   color: var(--ink-soft);
   padding: 0;
@@ -545,6 +618,9 @@ input[readonly] {
   height: 24px;
   border-radius: 4px;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .toast-close:hover {

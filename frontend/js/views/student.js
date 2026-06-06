@@ -8,7 +8,7 @@ async function renderStudentDashboard() {
         <div class="panel card reveal">
           <h2>Geen stage gevonden</h2>
           <p>Je hebt nog geen stage ingediend.</p>
-          <a href="?view=voorstel" class="btn">Stagevoorstel indienen</a>
+          <a href="?view=voorstel" class="btn">${iconHtml('plus', 16)} Stagevoorstel indienen</a>
         </div>
       `;
       return;
@@ -42,7 +42,7 @@ async function renderStudentDashboard() {
         <p><strong>Docent:</strong> ${teacherName}</p>
         <p><strong>Mentor:</strong> ${mentorName}</p>
         <div style="margin-top: 1rem;">
-          <a href="?view=voorstel" class="btn">+ Nieuw stagevoorstel</a>
+          <a href="?view=voorstel" class="btn">${iconHtml('plus', 16)} Nieuw stagevoorstel</a>
         </div>
       `;
     }
@@ -249,7 +249,7 @@ async function renderStudentDashboard() {
     container.innerHTML = `
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
         <h2 style="margin:0;">Mijn Stagevoorstel</h2>
-        <button id="btn-new-proposal" class="btn">+ Nieuw stagevoorstel</button>
+        <button id="btn-new-proposal" class="btn">${iconHtml('plus', 16)} Nieuw stagevoorstel</button>
       </div>
 
       <div class="proposal-summary">
@@ -311,9 +311,15 @@ async function renderStudentDashboard() {
             <div class="row full">
               <label>Stageperiode</label>
               <div class="date-range">
-                <input type="date" id="edit-start-date" value="${currentInternship.start_date || ''}" />
+                <div class="input-with-icon">
+                  ${iconHtml('calendar', 16)}
+                  <input type="date" id="edit-start-date" value="${currentInternship.start_date || ''}" />
+                </div>
                 <span>tot</span>
-                <input type="date" id="edit-end-date" value="${currentInternship.end_date || ''}" />
+                <div class="input-with-icon">
+                  ${iconHtml('calendar', 16)}
+                  <input type="date" id="edit-end-date" value="${currentInternship.end_date || ''}" />
+                </div>
               </div>
             </div>
             <div class="row full">
@@ -321,8 +327,8 @@ async function renderStudentDashboard() {
               <textarea id="edit-description" rows="4" required minlength="20">${escapeHtml(proposal?.description || '')}</textarea>
             </div>
             <div class="btn-group">
-              <button type="submit" class="btn">Wijzigingen opslaan</button>
-              <button type="button" id="btn-cancel-edit" class="btn secondary">Annuleren</button>
+              <button type="submit" class="btn">${iconHtml('check-circle', 16)} Wijzigingen opslaan</button>
+              <button type="button" id="btn-cancel-edit" class="btn secondary">${iconHtml('x-circle', 14)} Annuleren</button>
             </div>
           </form>
         </div>
@@ -356,16 +362,22 @@ async function renderStudentDashboard() {
             <div class="row full">
               <label>Stageperiode</label>
               <div class="date-range">
-                <input type="date" id="resubmit-start-date" value="${currentInternship.start_date || ''}" />
+                <div class="input-with-icon">
+                  ${iconHtml('calendar', 16)}
+                  <input type="date" id="resubmit-start-date" value="${currentInternship.start_date || ''}" />
+                </div>
                 <span>tot</span>
-                <input type="date" id="resubmit-end-date" value="${currentInternship.end_date || ''}" />
+                <div class="input-with-icon">
+                  ${iconHtml('calendar', 16)}
+                  <input type="date" id="resubmit-end-date" value="${currentInternship.end_date || ''}" />
+                </div>
               </div>
             </div>
             <div class="row full">
               <label>Omschrijving opdracht * (min. 20 karakters)</label>
               <textarea id="resubmit-description" rows="4" required minlength="20">${escapeHtml(proposal?.description || '')}</textarea>
             </div>
-            <button type="submit" class="btn">Voorstel Opnieuw Indienen</button>
+            <button type="submit" class="btn">${iconHtml('check-circle', 16)} Voorstel Opnieuw Indienen</button>
           </form>
         </div>
       ` : ''}
@@ -387,7 +399,7 @@ async function renderStudentDashboard() {
                 <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(i.status)}">${i.status}</span></p>
                 <p><strong>Periode:</strong> ${formatDate(i.start_date)} - ${formatDate(i.end_date)}</p>
                 <p><strong>Opdracht:</strong> ${escapeHtml(i.proposal?.description?.substring(0, 100) || 'Geen omschrijving')}${i.proposal?.description?.length > 100 ? '...' : ''}</p>
-                <a href="?view=voorstel&internship=${i.id}" class="btn small">Bekijken</a>
+                <a href="?view=voorstel&internship=${i.id}" class="btn small">${iconHtml('eye', 14)} Bekijken</a>
               </div>
             `;
           }).join('')}
@@ -528,9 +540,15 @@ async function renderStudentDashboard() {
           <div class="row full">
             <label>Stageperiode *</label>
             <div class="date-range">
-              <input type="date" id="new-start-date" required />
+              <div class="input-with-icon">
+                ${iconHtml('calendar', 16)}
+                <input type="date" id="new-start-date" required />
+              </div>
               <span>tot</span>
-              <input type="date" id="new-end-date" required />
+              <div class="input-with-icon">
+                ${iconHtml('calendar', 16)}
+                <input type="date" id="new-end-date" required />
+              </div>
             </div>
           </div>
           <div class="row full">
@@ -549,8 +567,8 @@ async function renderStudentDashboard() {
               <option value="">-- Kies een mentor --</option>
             </select>
           </div>
-          <button type="submit" class="btn">Voorstel Indienen</button>
-          <button type="button" id="btn-cancel-new-proposal" class="btn secondary">Annuleren</button>
+          <button type="submit" class="btn">${iconHtml('check-circle', 16)} Voorstel Indienen</button>
+          <button type="button" id="btn-cancel-new-proposal" class="btn secondary">${iconHtml('x-circle', 14)} Annuleren</button>
         </form>
       `;
 
@@ -656,7 +674,7 @@ async function renderStudentDashboard() {
           <h2>Logboeken</h2>
           <p>Je kunt pas logboeken invullen als je stage actief is.</p>
           <p>Huidige status: <strong>${currentInternship.status}</strong></p>
-          <a href="?view=dashboard" class="btn">Naar dashboard</a>
+          <a href="?view=dashboard" class="btn">${iconHtml('home', 16)} Naar dashboard</a>
         </div>
       `;
       return;
@@ -885,7 +903,7 @@ async function renderStudentDashboard() {
         <div class="info-message warning">
           <p>${iconHtml('alert-circle', 16)} Je kan geen overeenkomst uploaden in deze fase.</p>
           <p>Huidige status: <strong>${currentInternship.status}</strong></p>
-          <a href="?view=dashboard" class="btn">Naar dashboard</a>
+          <a href="?view=dashboard" class="btn">${iconHtml('home', 16)} Naar dashboard</a>
         </div>
       `;
       return;
@@ -963,7 +981,7 @@ async function renderStudentDashboard() {
           <td>${getEvalTypeLabel(ev.eval_type)}</td>
           <td>${ev.finalized ? formatDate(ev.finalized_at) : '-'}</td>
           <td>${ev.finalized ? 'Afgerond' : 'In behandeling'}</td>
-          <td>${ev.finalized ? '<button class="btn small">Bekijken</button>' : '-'}</td>
+          <td>${ev.finalized ? `<button class="btn small">${iconHtml('eye', 14)} Bekijken</button>` : '-'}</td>
         </tr>
       `).join('');
     } else if (tbody) {
@@ -1059,7 +1077,7 @@ async function renderStudentDashboard() {
       selfEvalPanel.style.display = 'block';
       selfEvalForm.innerHTML = `
         <p class="hint">Er is nog geen actieve evaluatie beschikbaar. Start een zelfevaluatie om per competentie te beschrijven wat je geleerd hebt.</p>
-        <button id="btn-start-self-eval" class="btn" style="margin-top: 1rem;">Start Zelfevaluatie</button>
+        <button id="btn-start-self-eval" class="btn" style="margin-top: 1rem;">${iconHtml('check-circle', 16)} Start Zelfevaluatie</button>
       `;
 
       if (saveBtn) saveBtn.style.display = 'none';

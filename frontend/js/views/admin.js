@@ -79,8 +79,8 @@ async function renderCompetencyManager() {
                 <input type="text" id="edit-name-${comp.id}" value="${escapeHtml(comp.name)}" />
                 <input type="text" id="edit-desc-${comp.id}" value="${escapeHtml(comp.description || '')}" placeholder="Beschrijving" />
                 <input type="number" id="edit-weight-${comp.id}" value="${comp.weight}" min="0" max="100" />
-                <button class="btn small" onclick="saveCompetencyEdit(${comp.id})">Opslaan</button>
-                <button class="btn small secondary" onclick="cancelCompetencyEdit()">Annuleren</button>
+                <button class="btn small" onclick="saveCompetencyEdit(${comp.id})">${iconHtml('check-circle', 14)} Opslaan</button>
+                <button class="btn small secondary" onclick="cancelCompetencyEdit()">${iconHtml('x-circle', 14)} Annuleren</button>
               </div>
             ` : `
               <div class="comp-row">
@@ -91,12 +91,12 @@ async function renderCompetencyManager() {
                 </div>
                 ${comp.description ? `<div class="comp-desc">${escapeHtml(comp.description)}</div>` : ''}
                 <div class="comp-actions">
-                  <button class="btn small" onclick="startCompetencyEdit(${comp.id})">Bewerk</button>
+                  <button class="btn small" onclick="startCompetencyEdit(${comp.id})">${iconHtml('edit', 14)} Bewerk</button>
                   ${isInactive
-            ? `<button class="btn small success" onclick="activateCompetency(${comp.id})">Heractiveer</button>`
-            : `<button class="btn small secondary" onclick="deactivateCompetency(${comp.id})">Deactiveer</button>`
+            ? `<button class="btn small success" onclick="activateCompetency(${comp.id})">${iconHtml('check-circle', 14)} Heractiveer</button>`
+            : `<button class="btn small secondary" onclick="deactivateCompetency(${comp.id})">${iconHtml('x-circle', 14)} Deactiveer</button>`
           }
-                  <button class="btn small danger" onclick="deleteCompetency(${comp.id})">Verwijder</button>
+                  <button class="btn small danger" onclick="deleteCompetency(${comp.id})">${iconHtml('trash', 14)} Verwijder</button>
                 </div>
               </div>
             `}
@@ -215,7 +215,7 @@ async function renderCompetencyManager() {
   bulkToggle?.addEventListener('click', () => {
     const isHidden = bulkPanel.style.display === 'none';
     bulkPanel.style.display = isHidden ? 'block' : 'none';
-    bulkToggle.textContent = isHidden ? '− Bulk toevoegen' : '+ Bulk toevoegen';
+    bulkToggle.innerHTML = isHidden ? '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> − Bulk toevoegen' : '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> + Bulk toevoegen';
   });
 
   // Bulk add
@@ -265,7 +265,7 @@ async function renderCompetencyManager() {
       showToast(`${created.length} competenties toegevoegd`, 'success');
       textarea.value = '';
       bulkPanel.style.display = 'none';
-      bulkToggle.textContent = '+ Bulk toevoegen';
+      bulkToggle.innerHTML = '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> + Bulk toevoegen';
     } catch (error) {
       hideLoading(bulkBtn);
       showToast(error.message, 'error');
@@ -318,8 +318,8 @@ async function renderCompetencyManager() {
           <span class="profile-meta">${p.version ? 'v' + p.version + ' · ' : ''}${p.academic_year}${p.active ? ' · Actief' : ''}</span>
         </div>
         <div class="profile-actions">
-          ${!p.active ? `<button class="btn small" onclick="activateProfile(${p.id})">Activeren</button>` : ''}
-          <button class="btn small danger" onclick="deleteProfile(${p.id})">Verwijder</button>
+          ${!p.active ? `<button class="btn small" onclick="activateProfile(${p.id})">${iconHtml('check-circle', 14)} Activeren</button>` : ''}
+          <button class="btn small danger" onclick="deleteProfile(${p.id})">${iconHtml('trash', 14)} Verwijder</button>
         </div>
       </div>
     `).join('');
@@ -556,8 +556,8 @@ async function renderUserManager() {
           <td>${roleDisplayNames[u.role] || u.role}</td>
           <td><span class="status-pill ${statusClass}">${statusText}</span></td>
           <td>
-            <button class="btn small" onclick="handleEditUser(${u.id})">Bewerk</button>
-            <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">Verwijder</button>
+            <button class="btn small" onclick="handleEditUser(${u.id})">${iconHtml('edit', 14)} Bewerk</button>
+            <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">${iconHtml('trash', 14)} Verwijder</button>
           </td>
         </tr>
       `;
@@ -565,9 +565,9 @@ async function renderUserManager() {
 
     // Pagination controls
     pagination.innerHTML = `
-      <button class="btn small" ${userSkip === 0 ? 'disabled' : ''} onclick="changeUserPage(-1)">← Vorige</button>
+      <button class="btn small" ${userSkip === 0 ? 'disabled' : ''} onclick="changeUserPage(-1)">${iconHtml('chevron-left', 14)} Vorige</button>
       <span style="align-self: center;">Pagina ${Math.floor(userSkip / userLimit) + 1}</span>
-      <button class="btn small" ${currentUsers.length < userLimit ? 'disabled' : ''} onclick="changeUserPage(1)">Volgende →</button>
+      <button class="btn small" ${currentUsers.length < userLimit ? 'disabled' : ''} onclick="changeUserPage(1)">Volgende ${iconHtml('chevron-right', 14)}</button>
     `;
   }
 
@@ -715,8 +715,8 @@ async function handleDeleteUser(id) {
               <td>${roleDisplayNames[u.role] || u.role}</td>
               <td><span class="status-pill ${statusClass}">${statusText}</span></td>
               <td>
-                <button class="btn small" onclick="handleEditUser(${u.id})">Bewerk</button>
-                <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">Verwijder</button>
+                <button class="btn small" onclick="handleEditUser(${u.id})">${iconHtml('edit', 14)} Bewerk</button>
+                <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">${iconHtml('trash', 14)} Verwijder</button>
               </td>
             </tr>
           `;
@@ -753,17 +753,17 @@ function changeUserPage(delta) {
               <td>${roleDisplayNames[u.role] || u.role}</td>
               <td><span class="status-pill ${statusClass}">${statusText}</span></td>
               <td>
-                <button class="btn small" onclick="handleEditUser(${u.id})">Bewerk</button>
-                <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">Verwijder</button>
+                <button class="btn small" onclick="handleEditUser(${u.id})">${iconHtml('edit', 14)} Bewerk</button>
+                <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">${iconHtml('trash', 14)} Verwijder</button>
               </td>
             </tr>
           `;
         }).join('');
       }
       pagination.innerHTML = `
-        <button class="btn small" ${userSkip === 0 ? 'disabled' : ''} onclick="changeUserPage(-1)">← Vorige</button>
+        <button class="btn small" ${userSkip === 0 ? 'disabled' : ''} onclick="changeUserPage(-1)">${iconHtml('chevron-left', 14)} Vorige</button>
         <span style="align-self: center;">Pagina ${Math.floor(userSkip / userLimit) + 1}</span>
-        <button class="btn small" ${currentUsers.length < userLimit ? 'disabled' : ''} onclick="changeUserPage(1)">Volgende →</button>
+        <button class="btn small" ${currentUsers.length < userLimit ? 'disabled' : ''} onclick="changeUserPage(1)">Volgende ${iconHtml('chevron-right', 14)}</button>
       `;
     })
     .catch(error => {
@@ -799,7 +799,7 @@ async function renderAdminAgreements() {
             <td>${renderAgreementStatusCell(item.agreement_status)}</td>
             <td>${item.uploaded_at ? formatDate(item.uploaded_at) : '-'}</td>
             <td>
-              <button class="btn small view-admin-agreement-btn" data-id="${item.internship_id}">Bekijken</button>
+              <button class="btn small view-admin-agreement-btn" data-id="${item.internship_id}">${iconHtml('eye', 14)} Bekijken</button>
             </td>
           </tr>
         `).join('');
@@ -935,9 +935,9 @@ async function renderAuditLog() {
 
     if (pagination) {
       pagination.innerHTML = `
-        <button class="btn small" ${auditSkip === 0 ? 'disabled' : ''} onclick="changeAuditPage(-1)">← Vorige</button>
+        <button class="btn small" ${auditSkip === 0 ? 'disabled' : ''} onclick="changeAuditPage(-1)">${iconHtml('chevron-left', 14)} Vorige</button>
         <span style="align-self:center;">Pagina ${Math.floor(auditSkip / auditLimit) + 1}</span>
-        <button class="btn small" ${logs.length < auditLimit ? 'disabled' : ''} onclick="changeAuditPage(1)">Volgende →</button>
+        <button class="btn small" ${logs.length < auditLimit ? 'disabled' : ''} onclick="changeAuditPage(1)">Volgende ${iconHtml('chevron-right', 14)}</button>
       `;
     }
   }

@@ -18,6 +18,24 @@ const roleDisplayNames = {
   admin: "Administratie"
 };
 
+const tabIcons = {
+  dashboard: 'home',
+  voorstel: 'plus',
+  logboek: 'book-open',
+  overeenkomst: 'file-text',
+  evaluaties: 'check-circle',
+  voorstellen: 'search',
+  overeenkomsten: 'file-text',
+  overzicht: 'users',
+  opvolging: 'book-open',
+  evaluatie: 'check-circle',
+  eindoverzicht: 'eye',
+  validatie: 'check-circle',
+  competenties: 'settings',
+  gebruikers: 'users',
+  auditlog: 'clock',
+};
+
 const templates = {
   login: "login-template",
   student: "student-dashboard-template",
@@ -251,7 +269,9 @@ async function renderMainApp() {
     const btn = document.createElement('button');
     btn.className = 'nav-tab';
     btn.dataset.view = view;
-    btn.textContent = view.charAt(0).toUpperCase() + view.slice(1);
+    const iconName = tabIcons[view];
+    const icon = iconName ? iconHtml(iconName, 16, { class: 'icon-img tab-icon' }) + ' ' : '';
+    btn.innerHTML = icon + view.charAt(0).toUpperCase() + view.slice(1);
     // ARIA: maak tab toetsenbord-bedienbaar
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-selected', 'false');
