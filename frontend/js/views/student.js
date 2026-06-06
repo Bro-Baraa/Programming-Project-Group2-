@@ -5,7 +5,7 @@
 async function renderStudentDashboard() {
     if (!currentInternship) {
       content.innerHTML = `
-        <div class="panel card reveal">
+        <div class="panel card">
           <h2>Geen stage gevonden</h2>
           <p>Je hebt nog geen stage ingediend.</p>
           <a href="?view=voorstel" class="btn">${iconHtml('plus', 16)} Stagevoorstel indienen</a>
@@ -659,7 +659,7 @@ async function renderStudentDashboard() {
 
     if (!currentInternship) {
       content.innerHTML = `
-        <div class="panel card reveal">
+        <div class="panel card">
           <h2>Geen stage gevonden</h2>
           <p>Je moet eerst een stage indienen voordat je logboeken kunt invullen.</p>
         </div>
@@ -670,7 +670,7 @@ async function renderStudentDashboard() {
     const canLog = currentInternship.status === 'Lopend' || currentInternship.status === 'Afgerond';
     if (!canLog) {
       content.innerHTML = `
-        <div class="panel card reveal">
+        <div class="panel card">
           <h2>Logboeken</h2>
           <p>Je kunt pas logboeken invullen als je stage actief is.</p>
           <p>Huidige status: <strong>${currentInternship.status}</strong></p>
@@ -873,7 +873,7 @@ async function renderStudentDashboard() {
 
     if (!currentInternship) {
       content.innerHTML = `
-        <div class="panel card reveal">
+        <div class="panel card">
           <h2>Geen stage gevonden</h2>
           <p>Je moet eerst een stage indienen.</p>
         </div>

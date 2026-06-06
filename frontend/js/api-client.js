@@ -3,18 +3,7 @@
 // Communicates with the FastAPI backend
 // ============================================
 
-const API_BASE_URL = (() => {
-  const host = window.location.hostname || 'localhost';
-  const port = window.location.port;
-  const protocol = window.location.protocol;
-
-  // Production (default ports 80/443 or empty): backend + frontend served from same origin
-  if (port === '' || port === '80' || port === '443') {
-    return `${protocol}//${window.location.host}`;
-  }
-  // Dev: frontend on 8080 (or file://), backend on 8001
-  return `http://${host}:8001`;
-})();
+const API_BASE_URL = '/api';
 console.log('[API] API_BASE_URL resolved to:', API_BASE_URL);
 
 // Token storage — wrapped in try/catch for file:// protocol where localStorage may fail

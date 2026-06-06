@@ -3,7 +3,7 @@ function wireEvaluationForm() {
 
   if (!currentInternship) {
     content.innerHTML = `
-      <div class="panel card reveal">
+      <div class="panel card">
         <h2>Geen stage geselecteerd</h2>
         <p>Selecteer eerst een stage via het navigatiemenu links.</p>
       </div>
