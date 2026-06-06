@@ -23,11 +23,8 @@ primary_region = 'lhr'
   memory_mb = 256
 
 [env]
-  DATABASE_PATH = '/app/data/stage_monitoring.db'
+  DATABASE_PATH = '/app/stage_monitoring.db'
   SECRET_KEY = 'flyio-demo-secret-key-change-me'
   FRONTEND_ORIGINS = '*'
   PYTHONPATH = '/app/backend'
 
-[[mounts]]
-  source = 'stage_data'
-  destination = '/app/data'
