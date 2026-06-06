@@ -101,39 +101,22 @@ async def rate_limit(request: Request, call_next):
     return await call_next(request)
 
 
-app.include_router(auth)
-app.include_router(companies)
-app.include_router(internships)
-app.include_router(proposals)
-app.include_router(agreements)
-app.include_router(logbooks)
-app.include_router(evaluations)
-app.include_router(feedback)
-app.include_router(reports)
-app.include_router(competencies)
-app.include_router(users)
-app.include_router(notifications)
-app.include_router(me)
-app.include_router(audit)
+app.include_router(auth, prefix="/api")
+app.include_router(companies, prefix="/api")
+app.include_router(internships, prefix="/api")
+app.include_router(proposals, prefix="/api")
+app.include_router(agreements, prefix="/api")
+app.include_router(logbooks, prefix="/api")
+app.include_router(evaluations, prefix="/api")
+app.include_router(feedback, prefix="/api")
+app.include_router(reports, prefix="/api")
+app.include_router(competencies, prefix="/api")
+app.include_router(users, prefix="/api")
+app.include_router(notifications, prefix="/api")
+app.include_router(me, prefix="/api")
+app.include_router(audit, prefix="/api")
 
-# Serve frontend static files with cache headers for performance
-_frontend_dir = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
-
-class CachedStaticFiles(StaticFiles):
-    def __init__(self, *args, cache_max_age: int = 3600, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.cache_max_age = cache_max_age
-
-    async def get_response(self, path: str, scope):
-        response = await super().get_response(path, scope)
-        if response.status_code == 200:
-            response.headers["Cache-Control"] = f"public, max-age={self.cache_max_age}"
-        return response
-
-app.mount("/", CachedStaticFiles(directory=_frontend_dir, html=True, cache_max_age=3600), name="frontend")
-
-
-@app.get("/health")
+@app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
 
@@ -141,3 +124,16 @@ def health_check():
 @app.get("/robots.txt", include_in_schema=False)
 def robots():
     return Response("User-agent: *\nDisallow: /\n", media_type="text/plain")
+
+
+# ── Static files (frontend) — serveer alleen als frontend dir bestaat ──
+_frontend_dir = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
+if os.path.isdir(_frontend_dir):
+    class _CachedStaticFiles(StaticFiles):
+        async def get_response(self, path, scope):
+            response = await super().get_response(path, scope)
+            if response.status_code == 200:
+                response.headers["Cache-Control"] = "public, max-age=3600"
+            return response
+    # Fallback: serveer frontend voor alle niet-API routes
+    app.mount("/", _CachedStaticFiles(directory=_frontend_dir, html=True), name="frontend")

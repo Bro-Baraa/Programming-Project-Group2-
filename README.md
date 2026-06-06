@@ -10,56 +10,69 @@ Een compleet stagevolgsysteem voor de opleiding Toegepaste Informatica (Erasmus 
 
 ## Snelle Start (Lokaal)
 
-### Optie 1: Alles tegelijk starten
+### Optie 1: Alles tegelijk starten (Aanbevolen)
 
 **macOS / Linux:**
 ```bash
+# Eerste keer: frontend deps installeren
+cd frontend && npm install
+
+# Start backend + frontend
 ./start.sh
 ```
 
 **Windows:**
 ```batch
+:: Eerste keer: frontend deps installeren
+cd frontend && npm install
+
+:: Start backend + frontend
 start.bat
 ```
-Of dubbelklik op `start.bat` in de Verkenner.
 
 Dit start:
 - **Backend API**: http://localhost:8001
-- **Frontend**: http://localhost:8080
+- **Frontend (Vite)**: http://localhost:8080
 
-De browser opent automatisch. Zo niet, ga dan naar **http://localhost:8080**.
+De browser opent automatisch. De Vite dev server proxy't API-calls naar de backend.
 
-> **⚠️ Belangrijk:** Open `index.html` niet rechtstreeks in de Verkenner. De app moet altijd via `http://localhost:8080` bereikt worden, anders werkt het inloggen niet.
+> **⚠️ Belangrijk:** Open `index.html` niet rechtstreeks. Gebruik altijd `http://localhost:8080`.
 
-> **Windows opmerking:** Je hebt Python nodig (download via [python.org](https://python.org)). Het script maakt automatisch een virtuele omgeving en installeert alles. Geen `uv` of Node.js nodig.
+### Optie 2: Alleen backend
 
-### Optie 2: Handmatig
+```bash
+./start.sh --backend
+```
+
+Swagger docs: http://localhost:8001/docs
+
+### Optie 3: Alleen frontend
+
+```bash
+./start.sh --frontend
+```
+
+### Optie 4: Database resetten
+
+```bash
+./start.sh --reset
+```
+
+### Optie 5: Handmatig
 
 **Terminal 1 — Backend:**
 ```bash
 cd backend
-cp .env.example .env        # Windows: copy .env.example .env
-python init_admin.py        # Eerste keer: database + testgebruikers
-uvicorn app.main:app --reload --port 8001
+uv run python -m uvicorn app.main:app --reload --port 8001
 ```
 
 **Terminal 2 — Frontend:**
 ```bash
 cd frontend
-python3 -m http.server 8080   # Windows: python -m http.server 8080
+npm run dev
 ```
 
 Bezoek http://localhost:8080
-
-### Optie 3: Alleen backend (voor API-testen)
-```bash
-cd backend
-cp .env.example .env
-python init_admin.py
-uvicorn app.main:app --reload --port 8001
-```
-
-Swagger docs: http://localhost:8001/docs
 
 ---
 
@@ -125,7 +138,7 @@ python init_admin.py
 
 | Rol | E-mail | Wachtwoord |
 |-----|--------|------------|
-| Admin | admin@school.be | admin123 |
+| Admin | admin@school.be | demo123 |
 | Student | student1@school.be | student123 |
 | Commissie | commissie1@school.be | commissie123 |
 | Docent | docent1@school.be | docent123 |
@@ -237,6 +250,70 @@ FRONTEND_ORIGINS=http://localhost:8080
 | Users | `GET /users`, `GET /users/{id}` |
 
 Zie `/docs` (lokaal) voor de volledige lijst.
+
+---
+
+## Ontwikkelgids
+
+### Setup
+
+```bash
+# Eenmalig: frontend afhankelijkheden installeren
+cd frontend && npm install
+```
+
+### Commando's
+
+| Commando | Wat het doet |
+|---------|-------------|
+| `./start.sh` | Start backend (8001) + frontend (8080) |
+| `./start.sh --backend` | Alleen FastAPI backend |
+| `./start.sh --frontend` | Alleen Vite frontend dev server |
+| `./start.sh --reset` | Wis database + vul opnieuw |
+| `./start.sh --help` | Toon alle opties |
+
+### Vereisten
+
+- **Python 3.10+** (met `pip` of `uv`)
+- **Node.js 18+** (voor Vite dev server)
+
+### Per platform
+
+- **macOS**: `brew install python node`
+- **Linux**: `sudo apt install python3 python3-pip nodejs npm`
+- **Windows**: `winget install Python.Python.3.11` en `winget install OpenJS.NodeJS`
+
+### Problemen oplossen
+
+**Poort al in gebruik**
+```bash
+# macOS/Linux
+lsof -ti :8001 | xargs kill -9
+lsof -ti :8080 | xargs kill -9
+
+# Windows (PowerShell)
+netstat -ano | findstr :8001
+# taskkill /F /PID <pid>
+```
+
+**Database corrupt**
+```bash
+./start.sh --reset
+```
+
+**npm niet gevonden**
+Installeer Node.js: https://nodejs.org/
+
+**uv vs pip**
+`start.sh` kiest `uv` (sneller) maar valt terug op `python3 -m venv` + pip.
+
+### Productiebuild
+
+```bash
+cd frontend && npm run build
+```
+
+Maakt een `dist/` map. De backend serveert deze automatisch.
 
 ---
 
