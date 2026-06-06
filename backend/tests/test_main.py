@@ -11,7 +11,6 @@ class TestRootEndpoints:
         data = response.json()
         assert "message" in data
         assert "Stage Monitoring Tool API" in data["message"]
-        assert "docs" in data
         assert "version" in data
         assert data["version"] == "1.0.0"
 
@@ -22,21 +21,15 @@ class TestRootEndpoints:
         data = response.json()
         assert data["status"] == "healthy"
 
-    def test_openapi_docs(self, client):
-        """Test OpenAPI docs endpoint is accessible."""
+    def test_openapi_docs_disabled(self, client):
+        """OpenAPI docs are disabled in production."""
         response = client.get("/docs")
-        assert response.status_code == 200
-        assert "text/html" in response.headers["content-type"]
+        assert response.status_code == 404
 
-    def test_openapi_json(self, client):
-        """Test OpenAPI JSON schema is accessible."""
+    def test_openapi_json_disabled(self, client):
+        """OpenAPI JSON schema is disabled in production."""
         response = client.get("/openapi.json")
-        assert response.status_code == 200
-        data = response.json()
-        assert "openapi" in data
-        assert "paths" in data
-        assert "/auth/login" in data["paths"]
-        assert "/internships" in data["paths"]
+        assert response.status_code == 404
 
 
 class TestCORSMiddleware:

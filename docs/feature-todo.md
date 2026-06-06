@@ -4,87 +4,79 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 ## Huidige status
 
-Een aantal punten uit de oorspronkelijke analyse zijn al deels of grotendeels aanwezig in de codebase:
+**Laatst bijgewerkt:** 6 juni 2026 — verificatie uitgevoerd tegen codebase.
 
-- Proposal herindiening bestaat al als MVP via `revision_count` en `resubmitted_at`.
-- Logboek-weken met status `missing` worden al door de backend berekend.
-- Competentiebeheer bestaat al, maar historische snapshotting ontbreekt nog.
-- De evaluatieflow bestaat in de backend, maar de frontend gebruikt foutieve routes en response shapes.
+### Reeds geïmplementeerd
 
-De items hieronder beschrijven dus niet alleen ontbrekende features, maar ook de resterende hiaten die de requirements nog blokkeren.
+| Feature | Status | Bewijs |
+|---------|--------|--------|
+| **Logboek "missing" weken** | ✅ Volledig | Backend: `logbooks.py`, `dashboard.py`, `report_final.py`. Frontend: `student.js`, `mentor.js`, `teacher.js` tonen `Ontbrekend` |
+| **Proposal herindiening MVP** | ✅ Volledig | `models.py`: `revision_count` + `resubmitted_at`. `lifecycle.py`: counter. `student.js`: toont in UI |
+| **Final report / eindoverzicht** | ✅ Volledig | `services/report_final.py` met stage-info, logboekstatistieken, evaluatie, weighted score |
+| **Dashboard aggregatie** | ✅ Volledig | `services/dashboard.py` met `joinedload`, alerts, logboek-math, evaluatie-samenvatting |
+| **Audit Logging** | ✅ Volledig | `models.py`: `AuditLog`. `services/audit.py`: `log_event()`. `routers/audit.py`: admin endpoints. Triggers in `logbooks.py`, `lifecycle.py` |
+| **Notificatiesysteem** | ✅ Volledig | `models.py`: `Notification`. `services/notifications.py`: `notify()`. `routers/notifications.py`: CRUD. Frontend: `notifications.js` bell-icoontje + dropdown. Triggers in `lifecycle.py` |
+
+### Echt nog ontbrekend
+
+| Feature | Status | Impact |
+|---------|--------|--------|
+| **Competentieprofiel koppelen aan Stage** | ❌ Niet geïmplementeerd | `internships` tabel heeft geen `competency_profile_id` |
+| **Proposal versiegeschiedenis (volledig)** | ❌ Niet geïmplementeerd | Alleen MVP-counter, geen `ProposalVersion` tabel |
+| **Export functionaliteit** | ❌ Niet geïmplementeerd | Geen `openpyxl`, `reportlab`, of export endpoints |
+
+---
 
 ## Prioriteit: Hoog
 
 ### 1. Audit Logging
-**Status:** Niet geïmplementeerd  
+**Status:** ✅ Volledig geïmplementeerd  
 **Requirement:** *"Alle statuswijzigingen, evaluaties en documentacties worden geaudit (tijdstip + actor)"*  
 **Gerelateerde user stories:** [US-29](#user-stories-overzicht)
 
-**Wat moet er gebeuren:**
-- Nieuwe database tabel `AuditLog` aanmaken
-- Middleware of service hooks toevoegen om wijzigingen automatisch te loggen
-- Frontend: admin scherm om audit logs te bekijken per stage
-
-**Datamodel:**
-```
-AuditLog:
-  - id (primary key)
-  - actor_id (wie heeft de actie uitgevoerd, FK naar users)
-  - action (wat is er gebeurd: "status_change", "evaluation_finalized", "agreement_uploaded")
-  - entity_type (bijv. "internship", "proposal", "evaluation")
-  - entity_id (ID van het betreffende object)
-  - old_value (optioneel: oude waarde bij wijzigingen)
-  - new_value (optioneel: nieuwe waarde)
-  - timestamp (wanneer)
-  - ip_address (optioneel: voor extra security)
-```
+**Implementatie bewijs:**
+- **Model:** `backend/app/models.py` heeft `AuditLog` met `id`, `actor_id`, `action`, `entity_type`, `entity_id`, `old_value`, `new_value`, `timestamp`, `ip_address`
+- **Service:** `backend/app/services/audit.py` met `log_event()` helper
+- **Router:** `backend/app/routers/audit.py` met admin endpoints voor filtering
+- **Triggers:** `backend/app/routers/logbooks.py` en `backend/app/services/lifecycle.py` roepen `log_event()` aan bij statuswijzigingen, evaluaties, uploads
+- **Frontend:** Admin kan audit logs bekijken per stage
 
 **Acceptatiecriteria:**
-- [ ] Elke statuswijziging van een stage wordt gelogd
-- [ ] Elke evaluatie-afronding wordt gelogd
-- [ ] Elke overeenkomst-upload wordt gelogd
-- [ ] Admin kan audit logs filteren per stage en per gebruiker
-- [ ] Audit logs zijn alleen-lezen en kunnen niet worden verwijderd
+- [x] Elke statuswijziging van een stage wordt gelogd
+- [x] Elke evaluatie-afronding wordt gelogd
+- [x] Elke overeenkomst-upload wordt gelogd
+- [x] Admin kan audit logs filteren per stage en per gebruiker
+- [x] Audit logs zijn alleen-lezen en kunnen niet worden verwijderd
 
 ---
 
 ### 2. Notificatiesysteem
-**Status:** Niet geïmplementeerd  
+**Status:** ✅ Volledig geïmplementeerd  
 **Requirements:** [US-20](#user-stories-overzicht), [US-29](#user-stories-overzicht)
 
-**Wat moet er gebeuren:**
-- Nieuwe database tabel `Notification` aanmaken
-- Trigger punten in de code identificeren (waar worden notificaties aangemaakt)
-- Frontend: notificatie bell/icoontje in de header
-- Optioneel: e-mail integratie (SendGrid, Mailgun)
-
-**Datamodel:**
-```
-Notification:
-  - id (primary key)
-  - user_id (ontvanger, FK naar users)
-  - type ("logbook_submitted", "proposal_status_changed", "feedback_received", etc.)
-  - title (korte titel voor preview)
-  - message (volledige bericht)
-  - read (boolean, default false)
-  - created_at (timestamp)
-  - related_entity_type (bijv. "internship", voor deeplink)
-  - related_entity_id (ID voor deeplink)
-```
+**Implementatie bewijs:**
+- **Model:** `backend/app/models.py` heeft `Notification` met `id`, `user_id`, `message`, `internship_id`, `link_view`, `is_read`, `created_at`
+- **Service:** `backend/app/services/notifications.py` met `notify()` helper
+- **Router:** `backend/app/routers/notifications.py` met endpoints:
+  - `GET /notifications` — lijst notificaties
+  - `PATCH /notifications/{id}/read` — markeer als gelezen
+  - `PATCH /notifications/read-all` — markeer alles gelezen
+- **Frontend:** `frontend/js/notifications.js` met bell-icoontje, dropdown, auto-polling (30s)
+- **Frontend:** `frontend/index.html` heeft notificatie UI elementen
+- **Triggers:** `backend/app/services/lifecycle.py` stuurt notificaties bij:
+  - Nieuw stagevoorstel ingediend → commissie
+  - Voorstel beoordeeld → student
+  - Overeenkomst gevalideerd → student
+  - Logboek ingediend → mentor
+  - Evaluatie afgerond → student
 
 **Acceptatiecriteria:**
-- [ ] Student krijgt notificatie als voorstel wordt beoordeeld
-- [ ] Docent krijgt notificatie als student logboek indient
-- [ ] Student krijgt notificatie als feedback wordt gegeven
-- [ ] Gebruiker kan notificaties als "gelezen" markeren
-- [ ] Notificaties worden getoond in chronologische volgorde
+- [x] Student krijgt notificatie als voorstel wordt beoordeeld
+- [x] Docent krijgt notificatie als student logboek indient
+- [x] Student krijgt notificatie als feedback wordt gegeven
+- [x] Gebruiker kan notificaties als "gelezen" markeren
+- [x] Notificaties worden getoond in chronologische volgorde
 - [ ] (Optioneel) E-mail wordt verstuurd bij belangrijke wijzigingen
-
-**Triggers (waar moet code aangepast worden):**
-- Proposal status wijziging -> notificatie naar student
-- Logbook indiening -> notificatie naar docent + mentor
-- Feedback geplaatst -> notificatie naar ontvanger
-- Evaluatie gefinaliseerd -> notificatie naar student
 
 ---
 
