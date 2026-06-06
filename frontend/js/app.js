@@ -77,12 +77,10 @@ function getSelectedInternship() {
   return allInternships.find(i => i.id == selectedInternshipId) || allInternships[0] || null;
 }
 
-// Header en ambient grid tonen/verbergen
+// Header tonen/verbergen
 function toggleHeaderVisibility(show) {
   const topbar = document.querySelector('.topbar');
-  const ambient = document.querySelector('.ambient');
   if (topbar) topbar.style.display = show ? 'flex' : 'none';
-  if (ambient) ambient.style.display = show ? 'block' : 'none';
 }
 
 // Back-compat alias

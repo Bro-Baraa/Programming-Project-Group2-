@@ -74,20 +74,10 @@ body {
   font-family: "IBM Plex Sans", sans-serif;
   background:
     radial-gradient(circle at 15% 20%, var(--bg-2) 0, transparent 40%),
-    radial-gradient(circle at 85% 10%, #f5d6ba 0, transparent 35%),
     linear-gradient(150deg, var(--bg-1), #f6fbff);
 }
 
-.ambient {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(18, 38, 58, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(18, 38, 58, 0.04) 1px, transparent 1px);
-  background-size: 30px 30px;
-  mask-image: radial-gradient(circle at center, black 45%, transparent 100%);
-}
+/* Ambient grid removed — decorative noise not in the design system */
 
 h1, h2, h3 {
   font-family: "Space Grotesk", sans-serif;
@@ -224,7 +214,7 @@ label {
   background: #ffffff;
 }
 
-.task-card { border: 1px solid rgba(0, 121, 140, 0.2); }
+.task-card { border: 1px solid var(--border); }
 
 select, input, textarea, button { font: inherit; }
 
@@ -329,7 +319,7 @@ input:invalid { border-color: var(--bad); }
 }
 
 .input-with-icon:focus-within {
-  border-color: var(--accent);
+  border-color: var(--accent-2);
   box-shadow: 0 0 0 3px rgba(0, 121, 140, 0.15);
 }
 
@@ -355,7 +345,7 @@ input:invalid { border-color: var(--bad); }
 }
 
 .field-group .input-with-icon:focus-within {
-  border-color: var(--accent);
+  border-color: var(--accent-2);
   box-shadow: 0 0 0 3px rgba(0, 121, 140, 0.15);
 }
 
@@ -838,7 +828,7 @@ input[readonly] {
   font-size: 0.85rem;
   border-radius: 6px;
   border: 1px solid var(--border);
-  background: #f8f9fa;
+  background: var(--bg-1);
   color: var(--ink-soft);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1121,7 +1111,6 @@ body.login-active {
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 0.75rem;
-    box-shadow: var(--shadow);
   }
 
   .table-card .row {
@@ -1171,9 +1160,6 @@ body.login-active {
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1rem;
-  max-width: 1200px;
-  margin-inline: auto;
-  padding: 0.5rem 1rem 0;
 }
 
 .competencies-header h2 {
@@ -1260,7 +1246,7 @@ body.login-active {
   padding: 0.75rem;
   background: rgba(0, 0, 0, 0.03);
   border-radius: 8px;
-  border: 1px dashed var(--border);
+  border: 1px solid var(--border);
 }
 
 .bulk-add-panel textarea {
@@ -1593,7 +1579,7 @@ body.login-active {
   right: 2px;
   width: 9px;
   height: 9px;
-  background: #e53e3e;
+  background: var(--bad);
   border-radius: 50%;
   border: 2px solid var(--bg, #fff);
 }
@@ -1607,7 +1593,7 @@ body.login-active {
   background: var(--surface, #fff);
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 24px rgba(18, 38, 58, 0.12);
   z-index: 1000;
   overflow: hidden;
 }
@@ -1626,7 +1612,7 @@ body.login-active {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--accent, #0079c8);
+  color: var(--accent-2);
   font-size: 0.8rem;
   padding: 0;
 }
