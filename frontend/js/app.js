@@ -480,15 +480,19 @@ async function wireRoleInteractions(role, view) {
 
 // Gedeelde helper voor rapporttabellen
 function formatReportRows(rules) {
-  return rules.map(r => `
-    <tr>
-      <td>${r.competency_name}</td>
-      <td>${r.weight}%</td>
-      <td>${r.score !== null ? r.score : '-'}</td>
-      <td>${r.student_description || '-'}</td>
-      <td>${r.evaluator_feedback || '-'}</td>
-    </tr>
-  `).join('');
+  return rules.map(r => {
+    const name = r.competency?.name || 'Onbekend';
+    const weight = r.competency?.weight !== undefined ? r.competency.weight : '-';
+    return `
+      <tr>
+        <td>${name}</td>
+        <td>${weight !== '-' ? weight + '%' : '-'}</td>
+        <td>${r.score !== null && r.score !== undefined ? r.score : '-'}</td>
+        <td>${r.student_description || '-'}</td>
+        <td>${r.evaluator_feedback || '-'}</td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // ============================================

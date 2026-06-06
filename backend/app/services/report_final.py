@@ -1,9 +1,9 @@
 """Final report generation helpers."""
 
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.models import Internship, Logbook, Evaluation
+from app.models import Internship, Logbook, Evaluation, EvaluationRule
 from app.schemas import (
     FinalReportItem,
     UserResponse,
@@ -37,6 +37,9 @@ def get_final_report(db: Session, current_user, internship_id: int) -> FinalRepo
     )
     final_eval = (
         db.query(Evaluation)
+        .options(
+            joinedload(Evaluation.rules).joinedload(EvaluationRule.competency)
+        )
         .filter(
             Evaluation.internship_id == internship_id,
             Evaluation.eval_type == "final",

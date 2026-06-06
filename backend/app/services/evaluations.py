@@ -1,5 +1,5 @@
 """Evaluation service layer orchestration."""
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from typing import List
 
@@ -35,7 +35,12 @@ def list_evaluations(
     internship = get_internship_or_404(db, internship_id)
     ensure_can_access_internship(current_user, internship)
     return (
-        db.query(Evaluation).filter(Evaluation.internship_id == internship_id).all()
+        db.query(Evaluation)
+        .options(
+            joinedload(Evaluation.rules).joinedload(EvaluationRule.competency)
+        )
+        .filter(Evaluation.internship_id == internship_id)
+        .all()
     )
 
 

@@ -1,6 +1,6 @@
 """Evaluation access and lookup helpers."""
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Internship, Evaluation, EvaluationRule
 from .common import ensure_internship_access
@@ -16,7 +16,14 @@ def get_internship_or_404(db: Session, internship_id: int) -> Internship:
 
 def get_evaluation_or_404(db: Session, evaluation_id: int) -> Evaluation:
     """Return evaluation or raise 404."""
-    evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
+    evaluation = (
+        db.query(Evaluation)
+        .options(
+            joinedload(Evaluation.rules).joinedload(EvaluationRule.competency)
+        )
+        .filter(Evaluation.id == evaluation_id)
+        .first()
+    )
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
     return evaluation
