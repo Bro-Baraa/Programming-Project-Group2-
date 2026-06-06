@@ -1035,3 +1035,39 @@ class TestEvaluations:
         assert data["student_description"] == "Valid description"
         # Feedback moet ongewijzigd blijven (None)
         assert data["evaluator_feedback"] is None
+
+    def test_teacher_cannot_set_student_description(self, client, auth_headers_teacher, created_evaluation, db):
+        """Teacher mag geen student_description overschrijven."""
+        from app.models import EvaluationRule, User
+        from app.auth import get_password_hash
+
+        evaluation_id = created_evaluation["id"]
+        rule = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).first()
+        assert rule is not None
+
+        # Eerst student_description door student laten zetten
+        student_login = db.query(User).filter(User.email == "student@test.com").first()
+        assert student_login is not None
+        student_response = client.post("/auth/login", data={"username": "student@test.com", "password": "student123"})
+        assert student_response.status_code == 200
+        student_token = student_response.json()["access_token"]
+        student_headers = {"Authorization": f"Bearer {student_token}"}
+
+        client.patch(
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            json={"student_description": "Original student text"},
+            headers=student_headers
+        )
+
+        # Teacher probeert student_description te overschrijven
+        response = client.patch(
+            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            json={"student_description": "Teacher override", "score": 4},
+            headers=auth_headers_teacher
+        )
+        assert response.status_code == 200
+        data = response.json()
+        # Score mag wel gewijzigd zijn
+        assert data["score"] == 4
+        # Student description moet ongewijzigd blijven
+        assert data["student_description"] == "Original student text"

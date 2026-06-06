@@ -44,7 +44,7 @@ function wireEvaluationForm() {
               </select>
               <input type="text" class="feedback-input" placeholder="Feedback..." value="${rule?.evaluator_feedback || ''}" ${existingEval?.finalized ? 'disabled' : ''} />
             </div>
-            <textarea class="student-desc-input" rows="2" placeholder="Student beschrijving..." ${existingEval?.finalized ? 'disabled' : ''}>${rule?.student_description || ''}</textarea>
+            <textarea class="student-desc-input" rows="2" placeholder="Zelfreflectie van student (alleen lezen)..." readonly>${rule?.student_description || ''}</textarea>
           </div>
         `;
       }).join('');
@@ -92,15 +92,12 @@ function wireEvaluationForm() {
         const compId = parseInt(row.dataset.compId);
         const score = parseInt(row.querySelector('.score-select')?.value);
         const feedback = row.querySelector('.feedback-input')?.value || null;
-        const studentDesc = row.querySelector('.student-desc-input')?.value || null;
-
         // Vind regel-ID voor deze competentie
         const rule = evaluation.rules?.find(r => r.competency_id === compId);
         if (rule) {
           await EvaluationRulesAPI.update(evaluation.id, rule.id, {
             score,
-            evaluator_feedback: feedback,
-            student_description: studentDesc
+            evaluator_feedback: feedback
           });
         }
       }

@@ -381,6 +381,12 @@ th {
   border: 1px solid var(--border);
   resize: vertical;
 }
+textarea[readonly],
+input[readonly] {
+  background: var(--surface);
+  cursor: not-allowed;
+  color: var(--text-muted);
+}
 
 .score-row { margin-bottom: 0.75rem; }
 .score-row label { margin-bottom: 0.25rem; }

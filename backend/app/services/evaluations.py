@@ -123,8 +123,6 @@ def update_evaluation_rule(
             rule.score = update.score
         if update.evaluator_feedback is not None:
             rule.evaluator_feedback = update.evaluator_feedback
-        if update.student_description is not None:
-            rule.student_description = update.student_description
 
     db.commit()
     db.refresh(rule)
