@@ -156,6 +156,40 @@ const AuthAPI = {
     setCurrentUser(data.user);
     return data;
   },
+
+  async demoLogin(email) {
+    const url = `${API_BASE_URL}/auth/demo-login`;
+
+    let response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+    } catch (networkError) {
+      console.error('[DEBUG] Network error during demo login:', networkError);
+      throw new Error('Kan geen verbinding maken met de server. Is de backend gestart?');
+    }
+
+    if (!response.ok) {
+      let errorText;
+      try {
+        const errorJson = await response.json();
+        errorText = errorJson.detail || JSON.stringify(errorJson);
+      } catch (e) {
+        errorText = `HTTP ${response.status} - ${response.statusText}`;
+      }
+      throw new Error(errorText);
+    }
+
+    const data = await response.json();
+    setToken(data.access_token);
+    setCurrentUser(data.user);
+    return data;
+  },
   
   register(userData) {
     return apiRequest('/auth/register', {

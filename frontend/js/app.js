@@ -169,7 +169,7 @@ function renderLogin() {
             return;
           }
           const options = accounts.map(a =>
-            `<option value="${a.email}" data-password="${a.password}">${a.first_name} ${a.last_name} (${a.role})</option>`
+            `<option value="${a.email}">${a.first_name} ${a.last_name} (${a.role})</option>`
           ).join('');
           quickLogin.textContent = '';
           const lbl = document.createElement('label');
@@ -187,7 +187,7 @@ function renderLogin() {
           quickLogin.appendChild(lbl);
           quickLogin.appendChild(sel);
           quickLogin.appendChild(btn);
-          document.getElementById('quick-login-btn')?.addEventListener('click', (e) => {
+          document.getElementById('quick-login-btn')?.addEventListener('click', async (e) => {
             e.preventDefault();
             const select = document.getElementById('quick-login-select');
             const option = select?.selectedOptions[0];
@@ -195,23 +195,16 @@ function renderLogin() {
               showToast('Selecteer eerst een account', 'warning');
               return;
             }
-            const emailInput = document.getElementById('login-email');
-            const passwordInput = document.getElementById('login-password');
-            if (!emailInput || !passwordInput) {
-              console.error('[DEBUG] Login inputs not found');
-              return;
+            showLoading(btn, 'Inloggen...');
+            try {
+              const data = await AuthAPI.demoLogin(option.value);
+              showToast(`Welkom, ${data.user.first_name}!`, 'success');
+              window.location.href = 'index.html';
+            } catch (error) {
+              showToast(error.message, 'error');
+            } finally {
+              hideLoading(btn);
             }
-            emailInput.value = option.value;
-            passwordInput.value = option.dataset.password;
-            const errorEl = document.getElementById('login-error');
-            if (errorEl) {
-              errorEl.textContent = '';
-              errorEl.classList.remove('show');
-            }
-            handleLogin({
-              preventDefault: () => {},
-              target: form
-            });
           });
         })
         .catch(() => {

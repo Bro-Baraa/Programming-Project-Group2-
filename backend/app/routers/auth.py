@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
+from pathlib import Path
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserResponse, Token
@@ -11,6 +12,19 @@ from app.services.audit import log_event
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
+
+
+def _load_seed_emails() -> set:
+    """Load seed user emails from seed_data.yaml for demo-login validation."""
+    seed_path = Path(__file__).resolve().parents[2] / "seed_data.yaml"
+    try:
+        import yaml
+        with open(seed_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        users = data.get("users", [])
+        return {u["email"] for u in users if "email" in u}
+    except Exception:
+        return set()
 
 
 @router.post("/login", response_model=Token)
@@ -86,6 +100,54 @@ def register(
     db.refresh(db_user)
     
     return db_user
+
+
+@router.post("/demo-login", response_model=Token)
+def demo_login(
+    email: str,
+    db: Session = Depends(get_db)
+):
+    """
+    One-click login for demo accounts. No password required.
+    Restricted to pre-seeded demo users.
+    """
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        logger.warning("[DEMO LOGIN FAILED] Unknown email: %s", email)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    if not user.is_active:
+        logger.warning("[DEMO LOGIN FAILED] Inactive user: %s (id=%s)", user.email, user.id)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User is inactive",
+        )
+
+    # Only allow demo-login for pre-seeded accounts
+    # This prevents bypassing real user passwords.
+    seed_emails = _load_seed_emails()
+    if user.email not in seed_emails:
+        logger.warning("[DEMO LOGIN FAILED] Not a seed account: %s", user.email)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Demo login only available for test accounts",
+        )
+
+    logger.info("[DEMO LOGIN SUCCESS] %s (id=%s, role=%s)", user.email, user.id, user.role)
+    log_event(db, "login", user=user, entity_type="user", entity_id=user.id, detail="Demo login")
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user
+    }
 
 
 @router.get("/me", response_model=UserResponse)

@@ -33,13 +33,12 @@ def _load_seed_users() -> list[dict]:
         return [
             {
                 "email": u["email"],
-                "password": u["password"],
                 "first_name": u["first_name"],
                 "last_name": u["last_name"],
                 "role": u["role"],
             }
             for u in users
-            if "email" in u and "password" in u
+            if "email" in u
         ]
     except Exception:
         return []
