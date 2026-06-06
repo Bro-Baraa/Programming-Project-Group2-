@@ -29,6 +29,7 @@ uploads/
 # OS & tools
 .vscode/
 .idea/
+.impeccable/
 *.swp
 *.swo
 *~
