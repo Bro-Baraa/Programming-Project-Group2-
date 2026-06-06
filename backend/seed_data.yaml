@@ -12,7 +12,7 @@
 # Verwijzingen:
 #   - Users: verwijs naar email (bijv. "student1@school.be")
 #   - Companies: verwijs naar naam (bijv. "TechCorp BV")
-#   - Evaluators: verwijs naar email van een teacher/mentor
+#   - Evaluators: verwijs naar email van een teacher/mentor/student
 #
 # =============================================================================
 
@@ -24,8 +24,8 @@ users:
   # --- Admin ---
   - email: admin@school.be
     password: demo123
-    first_name: Admin
-    last_name: User
+    first_name: Systeem
+    last_name: Beheerder
     role: admin
     is_active: true
 
@@ -44,25 +44,46 @@ users:
     role: teacher
     is_active: true
 
-  # --- Mentors ---
-  - email: mentor1@school.be
+  # --- Mentors (Company Employees) ---
+  - email: b.janssens@techcorp.be
     password: mentor123
     first_name: Bram
     last_name: Janssens
     role: mentor
     is_active: true
 
-  - email: mentor2@school.be
-    password: demo123
+  - email: s.devries@dataflow.be
+    password: mentor123
     first_name: Sofie
     last_name: De Vries
     role: mentor
     is_active: true
 
-  - email: mentor3@school.be
-    password: demo123
+  - email: p.maes@securenet.be
+    password: mentor123
     first_name: Pieter
     last_name: Maes
+    role: mentor
+    is_active: true
+
+  - email: n.kowalski@innovatelab.be
+    password: mentor123
+    first_name: Nina
+    last_name: Kowalski
+    role: mentor
+    is_active: true
+
+  - email: d.ongena@mobilefirst.be
+    password: mentor123
+    first_name: David
+    last_name: Ongena
+    role: mentor
+    is_active: true
+
+  - email: r.decock@gamestudiox.be
+    password: mentor123
+    first_name: Ruben
+    last_name: De Cock
     role: mentor
     is_active: true
 
@@ -133,7 +154,7 @@ users:
 
   # --- Student (inactive) ---
   - email: student6@school.be
-    password: demo123  # inactief
+    password: demo123
     first_name: Sara
     last_name: Neyens
     role: student
@@ -143,78 +164,76 @@ users:
 # =============================================================================
 # COMPANIES
 # =============================================================================
-# Verwijs naar een mentor via diens email (null = geen mentor)
 companies:
   - name: TechCorp BV
     address: Technologielaan 1, 1000 Brussel
-    sector: IT
+    sector: Full-Stack Development
     contact_person: Jan De Smet
     contact_email: j.desmet@techcorp.be
-    mentor: mentor1@school.be
+    mentor: b.janssens@techcorp.be
 
   - name: DataFlow Solutions
     address: Daalmeersekade 123, 2000 Antwerpen
-    sector: Data & Analytics
+    sector: Data Engineering & Analytics
     contact_person: Sophie Willems
     contact_email: s.willems@dataflow.be
-    mentor: mentor2@school.be
+    mentor: s.devries@dataflow.be
 
   - name: WebWise Agency
     address: Koninginnastraat 45, 3000 Leuven
-    sector: Web Development
+    sector: Frontend & UI/UX
     contact_person: Tom Van den Berg
     contact_email: t.vandenberg@webwise.be
     mentor: null
 
   - name: SecureNet
     address: Wisselstraat 67, 9000 Gent
-    sector: Cybersecurity
+    sector: Cybersecurity & Auditing
     contact_person: Laura Peeters
     contact_email: l.peeters@securenet.be
-    mentor: mentor3@school.be
+    mentor: p.maes@securenet.be
 
   - name: CloudScale NV
     address: Avenue de la Renaissance 1, 1050 Brussel
-    sector: Cloud Services
+    sector: Cloud Infrastructure (AWS/Azure)
     contact_person: Mohammed El Amrani
     contact_email: m.amrani@cloudscale.be
     mentor: null
 
   - name: InnovateLab
     address: Industriepark 12, 3500 Hasselt
-    sector: AI & Machine Learning
+    sector: Applied AI & Machine Learning
     contact_person: Nina Kowalski
     contact_email: n.kowalski@innovatelab.be
-    mentor: mentor1@school.be
+    mentor: n.kowalski@innovatelab.be
 
   - name: MobileFirst
     address: Grote Markt 8, 2000 Antwerpen
-    sector: Mobile Development
+    sector: Mobile App Development (Flutter/React Native)
     contact_person: David Ongena
     contact_email: d.ongena@mobilefirst.be
-    mentor: mentor2@school.be
+    mentor: d.ongena@mobilefirst.be
 
   - name: DevOps Masters
     address: Noorderlaan 99, 2030 Antwerpen
-    sector: DevOps & Infrastructure
+    sector: DevOps & CI/CD Pipelines
     contact_person: Fatima Al-Hassan
     contact_email: f.alhassan@devopsmasters.be
     mentor: null
 
   - name: GameStudio X
     address: Gamer Street 42, 8000 Brugge
-    sector: Game Development
+    sector: Game Development (Unity/Unreal)
     contact_person: Ruben De Cock
     contact_email: r.decock@gamestudiox.be
-    mentor: mentor3@school.be
+    mentor: r.decock@gamestudiox.be
 
   - name: E-Com Solutions
     address: E-commerce Boulevard 7, 1000 Brussel
-    sector: E-commerce
+    sector: E-commerce Platforms (Shopify/Magento)
     contact_person: Isabelle Dumont
     contact_email: i.dumont@ecomsolutions.be
     mentor: null
-
 
 # =============================================================================
 # COMPETENCY PROFILES
@@ -226,16 +245,16 @@ competency_profiles:
     active: true
     competencies:
       - name: Analyseren
-        description: Probleemanalyse en requirements bepalen
+        description: Probleemanalyse, requirements verzamelen en modelleren van bedrijfsprocessen.
         weight: 30.0
       - name: Ontwerpen
-        description: Technisch ontwerp en architectuur
+        description: Technisch ontwerp uitwerken, architectuur bepalen en database schema's ontwerpen.
         weight: 25.0
       - name: Realiseren
-        description: Implementatie en coding
+        description: Software implementatie, clean code schrijven en gebruik van versiebeheer.
         weight: 25.0
       - name: Testen
-        description: Kwaliteitsborging en testing
+        description: Kwaliteitsborging, unit testing, integratietesten en CI/CD pipeline opzetten.
         weight: 20.0
 
   - name: Toegepaste Informatica 2023-2024
@@ -259,59 +278,33 @@ competency_profiles:
     active: true
     competencies:
       - name: Grafisch Ontwerp
-        description: UI/UX design
+        description: UI/UX design, wireframing, en visuele identiteit creëren.
         weight: 40.0
       - name: Multimedia
-        description: Audio/video productie
+        description: Audio/video productie, animatie en 3D modellering.
         weight: 30.0
       - name: Webtechnologie
-        description: Frontend development
+        description: Frontend development, responsive design en web animaties.
         weight: 30.0
 
 
 # =============================================================================
 # INTERNSHIPS
 # =============================================================================
-# Status opties:
-#   Ingediend, In Beoordeling, Goedgekeurd, Afgekeurd,
-#   Aanpassingen Vereist, Overeenkomst Ingediend, Lopend, Afgerond
-#
-# Proposal status opties:
-#   Ingediend, In Beoordeling, Goedgekeurd, Afgekeurd, Aanpassingen Vereist
-#
-# Agreement status opties:
-#   Niet Ingediend, Ingediend, Gevalideerd, Onvolledig
-#
-# Logbook opties:
-#   count: aantal weken
-#   all_submitted: true/false
-#   all_validated: true/false
-#
-# Evaluatie opties:
-#   type: tussentijds, final
-#   status: concept, afgerond
-#   finalized: true/false
-#   score: 1-5 (of null)
-#   evaluator: email van de beoordelaar
-#
-# Documenten:
-#   doc_type: agreement, evaluation, other
-#   file_path: pad naar het bestand
-
 internships:
   # ==========================================================================
-  # STUDENT 1: Jan Peeters
+  # STUDENT 1: Jan Peeters (Sterke student, afgeronde stage en nieuwe lopende)
   # ==========================================================================
   - student: student1@school.be
     company: TechCorp BV
     teacher: docent1@school.be
-    mentor: mentor1@school.be
+    mentor: b.janssens@techcorp.be
     status: Afgerond
     start_date: -120
     end_date: -30
     proposal:
       status: Goedgekeurd
-      feedback: Uitstekend voorstel
+      feedback: "Sterk analytisch voorstel. De keuze voor FastAPI in combinatie met React is zeer actueel. De architectuur en scope zijn goed afgebakend."
       revision_count: 0
     agreement:
       status: Gevalideerd
@@ -328,30 +321,41 @@ internships:
         status: afgerond
         finalized: true
         score: 4
-        comments: Sterke start
-        evaluator: docent1@school.be
+        comments: "Ik heb enorm veel bijgeleerd, vooral op vlak van backend architectuur. Testing was aanvankelijk moeilijk maar gaat nu vlotter."
+        student_description: "Ik heb alle taken uit mijn stageplan zelfstandig kunnen uitvoeren. Soms wat moeite met Docker, maar opgelost via documentatie."
+        evaluator: student1@school.be
+
+      - type: tussentijds
+        status: afgerond
+        finalized: true
+        score: 5
+        comments: "Jan toont een enorme inzet en leert snel bij. Neemt initiatief en lost problemen autonoom op."
+        evaluator_feedback: "De code die Jan oplevert is van hoge kwaliteit. We zijn zeer tevreden over zijn technische realisaties."
+        evaluator: b.janssens@techcorp.be
+
       - type: final
         status: afgerond
         finalized: true
         score: 5
-        comments: Uitstekende stage
+        comments: "Uitstekende stage afgewerkt. De opgeleverde applicatie draait in productie en de code is zeer clean. Jan is helemaal klaar voor de arbeidsmarkt!"
+        evaluator_feedback: "Alle competenties zijn met glans behaald."
         evaluator: docent1@school.be
     feedback:
       - from: docent1@school.be
         to: student1@school.be
-        message: Top werk deze week!
+        message: "Dag Jan, ik zag dat je de Docker containerisatie hebt afgerond. Kunnen we morgen even kort de CI/CD pipeline bekijken in ons statusgesprek?"
       - from: student1@school.be
         to: docent1@school.be
-        message: Bedankt voor de begeleiding
-      - from: mentor1@school.be
+        message: "Zeker, mevrouw Claessens. Ik heb ook al een draft van de GitHub Actions workflow klaarstaan."
+      - from: b.janssens@techcorp.be
         to: student1@school.be
-        message: Goede technische inzichten
+        message: "Knap werk met die database migratie gisteren, Jan. Dat heeft ons veel tijd bespaard!"
       - from: student1@school.be
-        to: mentor1@school.be
-        message: Leerrijke ervaring
+        to: b.janssens@techcorp.be
+        message: "Bedankt Bram! Het was even puzzelen met Alembic, maar ik ben blij dat het vlekkeloos werkte."
       - from: commissie1@school.be
         to: student1@school.be
-        message: Proficiat met het resultaat
+        message: "Proficiat met het eindresultaat, de jury was zeer onder de indruk van je presentatie."
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student1_techcorp.pdf
@@ -363,13 +367,13 @@ internships:
   - student: student1@school.be
     company: DataFlow Solutions
     teacher: docent1@school.be
-    mentor: null
+    mentor: s.devries@dataflow.be
     status: Lopend
     start_date: -30
     end_date: +60
     proposal:
       status: Goedgekeurd
-      feedback: Interessant project
+      feedback: "Goed aangepast na de feedback. Het data engineering luik is nu veel duidelijker omschreven. Succes!"
       revision_count: 1
       resubmitted_at: -45
     agreement:
@@ -387,12 +391,12 @@ internships:
         status: concept
         finalized: false
         score: null
-        comments: Nog in opbouw
+        comments: "Nog in opbouw, tussentijdse evaluatie is gepland voor volgende week."
         evaluator: docent1@school.be
     feedback:
       - from: docent1@school.be
         to: student1@school.be
-        message: Hoe gaat het met het project?
+        message: "Vergeet niet je logboek van week 4 te laten valideren door je mentor, Jan."
     documents: []
 
   - student: student1@school.be
@@ -415,18 +419,18 @@ internships:
     documents: []
 
   # ==========================================================================
-  # STUDENT 2: Marie Verhoeven
+  # STUDENT 2: Marie Verhoeven (Cybersecurity focus)
   # ==========================================================================
   - student: student2@school.be
     company: SecureNet
     teacher: docent1@school.be
-    mentor: mentor3@school.be
+    mentor: p.maes@securenet.be
     status: Afgerond
     start_date: -150
     end_date: -60
     proposal:
       status: Goedgekeurd
-      feedback: Zeer goed
+      feedback: "Zeer relevant onderzoeksdomein. Pentesten van interne netwerken is een uitstekende scope voor deze stage."
       revision_count: 0
     agreement:
       status: Gevalideerd
@@ -443,54 +447,44 @@ internships:
         status: afgerond
         finalized: true
         score: 3
-        comments: Goede middenstand
+        comments: "Marie begon wat aarzelend, maar heeft ondertussen haar draai gevonden. Haar security rapportages zijn gedetailleerd."
+        evaluator_feedback: "Marie mag nog iets proactiever communiceren met het security team."
         evaluator: docent1@school.be
       - type: final
         status: afgerond
         finalized: true
         score: 4
-        comments: Goede afgeronde stage
-        evaluator: docent1@school.be
+        comments: "Ik vond de stage erg leerrijk. Ik heb veel praktijkervaring opgedaan met netwerk security."
+        student_description: "Heb kritieke kwetsbaarheden in kaart gebracht en succesvol patches voorgesteld."
+        evaluator: student2@school.be
+      - type: final
+        status: afgerond
+        finalized: true
+        score: 4
+        comments: "Zeer sterke evolutie doorgemaakt. Heeft enkele kritieke kwetsbaarheden gevonden en succesvol helpen patchen."
+        evaluator_feedback: "Zeer professionele houding."
+        evaluator: p.maes@securenet.be
     feedback:
-      - from: mentor3@school.be
+      - from: p.maes@securenet.be
         to: student2@school.be
-        message: Veel potentieel
+        message: "Je verslag over de SQL Injection vulnerability in de testomgeving was haarscherp, Marie. Goed opgemerkt!"
       - from: student2@school.be
-        to: mentor3@school.be
-        message: Bedankt voor de kans
+        to: p.maes@securenet.be
+        message: "Bedankt Pieter! Ik heb gisteren ook de patch getest en alles lijkt nu veilig te zijn."
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student2_securenet.pdf
 
   - student: student2@school.be
-    company: CloudScale NV
-    teacher: docent2@school.be
-    mentor: null
-    status: In Beoordeling
-    start_date: +10
-    end_date: +100
-    proposal:
-      status: In Beoordeling
-      feedback: Wordt beoordeeld door commissie
-      revision_count: 0
-    agreement:
-      status: Niet Ingediend
-      insurance: false
-    logbooks: null
-    evaluations: []
-    feedback: []
-    documents: []
-
-  - student: student2@school.be
     company: InnovateLab
     teacher: docent1@school.be
-    mentor: mentor1@school.be
+    mentor: n.kowalski@innovatelab.be
     status: Overeenkomst Ingediend
     start_date: +5
     end_date: +95
     proposal:
       status: Goedgekeurd
-      feedback: Gaan met dat project
+      feedback: "Machine learning integreren in de bestaande applicatie: een mooi en uitdagend project. Goedgekeurd!"
       revision_count: 0
     agreement:
       status: Ingediend
@@ -502,24 +496,24 @@ internships:
     feedback:
       - from: docent1@school.be
         to: student2@school.be
-        message: Overeenkomst ontvangen, wacht op validatie
+        message: "Ik heb je overeenkomst goed ontvangen, Marie. Ik valideer deze in de loop van de week."
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student2_innovatelab.pdf
 
   # ==========================================================================
-  # STUDENT 3: Luc Van den Broeck
+  # STUDENT 3: Luc Van den Broeck (Moeizame opstart, afgekeurde voorstellen)
   # ==========================================================================
   - student: student3@school.be
     company: MobileFirst
     teacher: docent2@school.be
-    mentor: mentor2@school.be
+    mentor: d.ongena@mobilefirst.be
     status: Afgekeurd
     start_date: null
     end_date: null
     proposal:
       status: Afgekeurd
-      feedback: Het project voldoet niet aan de academische vereisten. Te weinig technische diepgang.
+      feedback: "Het project voldoet niet aan de academische vereisten. Een simpele applicatie bouwen met een no-code tool biedt onvoldoende technische diepgang voor een eindstage."
       revision_count: 0
     agreement:
       status: Niet Ingediend
@@ -529,48 +523,22 @@ internships:
     feedback:
       - from: docent2@school.be
         to: student3@school.be
-        message: Helaas, zoek een ander project
+        message: "Dag Luc, zoals besproken voldoet dit helaas niet. Je moet echt focussen op custom development en architectuur."
       - from: commissie1@school.be
         to: student3@school.be
-        message: Motivatiebrief ontbreekt
-    documents: []
-
-  - student: student3@school.be
-    company: DevOps Masters
-    teacher: docent2@school.be
-    mentor: null
-    status: Aanpassingen Vereist
-    start_date: +20
-    end_date: +110
-    proposal:
-      status: Aanpassingen Vereist
-      feedback: Voeg een duidelijke planning toe en specifieer de technische requirements.
-      revision_count: 2
-      resubmitted_at: -5
-    agreement:
-      status: Niet Ingediend
-      insurance: false
-    logbooks: null
-    evaluations: []
-    feedback:
-      - from: docent2@school.be
-        to: student3@school.be
-        message: Graag aanpassingen tegen volgende week
-      - from: student3@school.be
-        to: docent2@school.be
-        message: Werk eraan, komt in orde
+        message: "Dit voorstel werd unaniem afgekeurd door de stagecommissie wegens gebrek aan complexiteit."
     documents: []
 
   - student: student3@school.be
     company: TechCorp BV
     teacher: docent1@school.be
-    mentor: mentor1@school.be
+    mentor: b.janssens@techcorp.be
     status: Goedgekeurd
     start_date: +45
     end_date: +135
     proposal:
       status: Goedgekeurd
-      feedback: Goedgekeurd, start voorbereiding
+      feedback: "Eindelijk een solide voorstel. Goedgekeurd, start maar met de voorbereiding en het contract."
       revision_count: 0
     agreement:
       status: Niet Ingediend
@@ -581,18 +549,18 @@ internships:
     documents: []
 
   # ==========================================================================
-  # STUDENT 4: Emma Dubois
+  # STUDENT 4: Emma Dubois (Uitstekende game dev stagiaire)
   # ==========================================================================
   - student: student4@school.be
     company: GameStudio X
     teacher: docent1@school.be
-    mentor: mentor3@school.be
+    mentor: r.decock@gamestudiox.be
     status: Lopend
     start_date: -45
     end_date: +45
     proposal:
       status: Goedgekeurd
-      feedback: Fantastisch project
+      feedback: "Fantastisch project. C++ in combinatie met Unreal Engine 5 is een steile leercurve, maar past perfect bij jouw profiel."
       revision_count: 0
     agreement:
       status: Gevalideerd
@@ -608,79 +576,48 @@ internships:
       - type: tussentijds
         status: afgerond
         finalized: true
+        score: 4
+        comments: "Het is stevig doorwerken, maar ik kan me goed vinden in het C++ team."
+        student_description: "Heb de physics engine optimizations grotendeels zelfstandig kunnen doorvoeren."
+        evaluator: student4@school.be
+      - type: tussentijds
+        status: afgerond
+        finalized: true
         score: 5
-        comments: Geweldige prestaties
+        comments: "Geweldige prestaties tot nu toe. Emma werkt heel zelfstandig en haar code rond de physics engine is zeer efficiënt."
+        evaluator_feedback: "Ze snapt de Unreal Engine architectuur enorm goed."
         evaluator: docent1@school.be
+      - type: tussentijds
+        status: afgerond
+        finalized: true
+        score: 5
+        comments: "Een echte aanwinst voor ons team."
+        evaluator_feedback: "Kan naadloos integreren in ons git-flow proces en neemt verantwoordelijkheid over haar tickets."
+        evaluator: r.decock@gamestudiox.be
     feedback:
-      - from: mentor3@school.be
+      - from: r.decock@gamestudiox.be
         to: student4@school.be
-        message: Je code is echt van hoog niveau
+        message: "Je optimalisatie van de rendering pipeline was cruciaal deze week, Emma. We hebben nu stabiel 60 FPS op de test build."
       - from: student4@school.be
-        to: mentor3@school.be
-        message: Leer veel van het team
+        to: r.decock@gamestudiox.be
+        message: "Fijn om te horen! Ik ben nu bezig met het refactoren van het AI-gedrag van de NPC's."
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student4_gamestudio.pdf
 
-  - student: student4@school.be
-    company: E-Com Solutions
-    teacher: null
-    mentor: null
-    status: Ingediend
-    start_date: null
-    end_date: null
-    proposal:
-      status: Ingediend
-      feedback: null
-      revision_count: 0
-    agreement:
-      status: Niet Ingediend
-      insurance: false
-    logbooks: null
-    evaluations: []
-    feedback: []
-    documents: []
-
   # ==========================================================================
-  # STUDENT 5: Thomas Wouters
+  # STUDENT 5: Thomas Wouters (Moeilijkheden met planning & communicatie)
   # ==========================================================================
-  - student: student5@school.be
-    company: CloudScale NV
-    teacher: docent2@school.be
-    mentor: null
-    status: Overeenkomst Ingediend
-    start_date: +8
-    end_date: +98
-    proposal:
-      status: Goedgekeurd
-      feedback: Prima
-      revision_count: 1
-      resubmitted_at: -10
-    agreement:
-      status: Ingediend
-      insurance: false
-      file_path: uploads/agreements/student5_cloudscale.pdf
-      uploaded_at: +5
-    logbooks: null
-    evaluations: []
-    feedback:
-      - from: docent2@school.be
-        to: student5@school.be
-        message: Overeenkomst ontvangen
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student5_cloudscale.pdf
-
   - student: student5@school.be
     company: DataFlow Solutions
     teacher: docent2@school.be
-    mentor: mentor2@school.be
+    mentor: s.devries@dataflow.be
     status: Afgerond
     start_date: -90
     end_date: -10
     proposal:
       status: Goedgekeurd
-      feedback: Ok
+      feedback: "Project goedgekeurd, let wel goed op de data privacy vereisten."
       revision_count: 0
     agreement:
       status: Gevalideerd
@@ -696,99 +633,54 @@ internships:
       - type: tussentijds
         status: afgerond
         finalized: true
+        score: 3
+        comments: "Ik heb moeite gehad om de deadlines te halen omdat het inwerken in AWS langer duurde dan verwacht."
+        student_description: "Heb het data pipeline script deels afgerond, mist nog logging."
+        evaluator: student5@school.be
+      - type: tussentijds
+        status: afgerond
+        finalized: true
         score: 2
-        comments: Heeft moeite met plannen
+        comments: "Thomas presteert ondermaats qua planning. Zijn technische werk is oké, maar hij mist steevast deadlines en vult zijn logboek te laat in."
+        evaluator_feedback: "Moet dringend werken aan communicatie."
         evaluator: docent2@school.be
+      - type: tussentijds
+        status: afgerond
+        finalized: true
+        score: 2
+        comments: "Technisch capabel, maar de soft skills zijn een probleem. Deadlines worden vaak verschoven zonder dit tijdig te melden."
+        evaluator_feedback: "Code reviews duren vaak lang omdat feedback niet meteen verwerkt wordt."
+        evaluator: s.devries@dataflow.be
       - type: final
         status: afgerond
         finalized: true
         score: 3
-        comments: Voldoende, maar kan beter
+        comments: "Na een stevig gesprek tijdens de tussentijdse evaluatie heeft Thomas zich herpakt. Uiteindelijk een voldoende, maar de professionele communicatie blijft een werkpunt."
         evaluator: docent2@school.be
     feedback:
       - from: docent2@school.be
         to: student5@school.be
-        message: Werk aan je communicatie
+        message: "Thomas, je bent nu al voor de 3de week op rij te laat met je logboek. Dit moet écht verbeteren, anders brengt dit je eindbeoordeling in gevaar."
+      - from: s.devries@dataflow.be
+        to: student5@school.be
+        message: "Zou je de openstaande pull request van gisteren nog kunnen nakijken? Dit blokkeert momenteel een andere developer."
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student5_dataflow.pdf
 
   # ==========================================================================
-  # STUDENT 6: Sara Neyens (inactive)
+  # STUDENT 7: Kevin Hendrickx (Focus op AI, goedgekeurd)
   # ==========================================================================
-  - student: student6@school.be
-    company: TechCorp BV
-    teacher: docent1@school.be
-    mentor: mentor1@school.be
-    status: Afgerond
-    start_date: -200
-    end_date: -100
-    proposal:
-      status: Goedgekeurd
-      feedback: OK
-      revision_count: 0
-    agreement:
-      status: Gevalideerd
-      insurance: true
-      file_path: uploads/agreements/student6_greentech.pdf
-      uploaded_at: -195
-      validated_at: -190
-    logbooks:
-      count: 8
-      all_submitted: true
-      all_validated: true
-    evaluations:
-      - type: tussentijds
-        status: afgerond
-        finalized: true
-        score: 3
-        comments: Voldoende
-        evaluator: docent1@school.be
-      - type: final
-        status: afgerond
-        finalized: true
-        score: 3
-        comments: Voldoende
-        evaluator: docent1@school.be
-    feedback: []
-    documents: []
-
-  # ==========================================================================
-  # STUDENT 7: Kevin Hendrickx
-  # ==========================================================================
-  - student: student7@school.be
-    company: WebWise Agency
-    teacher: docent2@school.be
-    mentor: null
-    status: Aanpassingen Vereist
-    start_date: +25
-    end_date: +115
-    proposal:
-      status: Aanpassingen Vereist
-      feedback: De scope is te breed. Beperk je tot de core functionaliteit.
-      revision_count: 1
-      resubmitted_at: null
-    agreement:
-      status: Niet Ingediend
-      insurance: false
-    logbooks: null
-    evaluations: []
-    feedback:
-      - from: docent2@school.be
-        to: student7@school.be
-        message: Graag aanpassingen voor vrijdag
-    documents: []
-
   - student: student7@school.be
     company: InnovateLab
     teacher: docent1@school.be
-    mentor: mentor1@school.be
+    mentor: n.kowalski@innovatelab.be
     status: Lopend
     start_date: -15
     end_date: +75
     proposal:
       status: Goedgekeurd
-      feedback: Geweldig
+      feedback: "Prachtig AI project. De integratie van LLMs in interne bedrijfsprocessen is erg innovatief."
       revision_count: 0
     agreement:
       status: Gevalideerd
@@ -802,73 +694,29 @@ internships:
       all_validated: true
     evaluations: []
     feedback:
-      - from: mentor1@school.be
+      - from: n.kowalski@innovatelab.be
         to: student7@school.be
-        message: Je hebt een talent voor AI
+        message: "Je RAG (Retrieval-Augmented Generation) implementatie van gisteren werkt verrassend goed, Kevin. Je hebt een echt talent voor AI."
+      - from: student7@school.be
+        to: n.kowalski@innovatelab.be
+        message: "Dank je Nina! Ik ga vandaag kijken hoe we de latency kunnen verlagen door de vector database te optimaliseren."
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student7_innovatelab.pdf
 
-  - student: student7@school.be
-    company: E-Com Solutions
-    teacher: docent2@school.be
-    mentor: null
-    status: In Beoordeling
-    start_date: +40
-    end_date: +130
-    proposal:
-      status: In Beoordeling
-      feedback: Wacht op goedkeuring commissie
-      revision_count: 0
-    agreement:
-      status: Niet Ingediend
-      insurance: false
-    logbooks: null
-    evaluations: []
-    feedback:
-      - from: commissie2@school.be
-        to: student7@school.be
-        message: Wij beoordelen dit voorstel
-    documents: []
-
   # ==========================================================================
-  # STUDENT 8: Lisa Jacobs
+  # STUDENT 8: Lisa Jacobs (Opstartproblemen met onvolledige overeenkomst)
   # ==========================================================================
-  - student: student8@school.be
-    company: SecureNet
-    teacher: docent1@school.be
-    mentor: mentor3@school.be
-    status: Afgekeurd
-    start_date: null
-    end_date: null
-    proposal:
-      status: Afgekeurd
-      feedback: Het bedrijf heeft geen stagebegeleiding. Ook ontbreekt er een duidelijk projectplan.
-      revision_count: 0
-    agreement:
-      status: Niet Ingediend
-      insurance: false
-    logbooks: null
-    evaluations: []
-    feedback:
-      - from: docent1@school.be
-        to: student8@school.be
-        message: Zoek een ander bedrijf
-      - from: student8@school.be
-        to: docent1@school.be
-        message: Begrepen, ik ga op zoek
-    documents: []
-
   - student: student8@school.be
     company: MobileFirst
     teacher: docent2@school.be
-    mentor: mentor2@school.be
+    mentor: d.ongena@mobilefirst.be
     status: Lopend
     start_date: -20
     end_date: +70
     proposal:
       status: Goedgekeurd
-      feedback: Goed
+      feedback: "Mooi project rond React Native. Zorg ervoor dat state management goed beschreven staat in je technisch dossier."
       revision_count: 0
     agreement:
       status: Onvolledig
@@ -879,49 +727,20 @@ internships:
       count: 3
       all_submitted: false
       all_validated: false
-    evaluations: []
+    evaluations:
+      - type: tussentijds
+        status: concept
+        finalized: false
+        score: null
+        comments: "Zelfevaluatie in voorbereiding."
+        evaluator: student8@school.be
     feedback:
       - from: docent2@school.be
         to: student8@school.be
-        message: Overeenkomst is onvolledig, graag aanvullen
+        message: "Lisa, de overeenkomst die je hebt geüpload mist nog de handtekening van de stagebedrijf verantwoordelijke op de laatste pagina. Graag z.s.m. aanpassen!"
+      - from: student8@school.be
+        to: docent2@school.be
+        message: "Oh excuses, ik bezorg de ondertekende versie ten laatste morgenochtend."
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student8_mobilefirst.pdf
-
-  - student: student8@school.be
-    company: DevOps Masters
-    teacher: null
-    mentor: null
-    status: Ingediend
-    start_date: null
-    end_date: null
-    proposal:
-      status: Ingediend
-      feedback: null
-      revision_count: 0
-    agreement:
-      status: Niet Ingediend
-      insurance: false
-    logbooks: null
-    evaluations: []
-    feedback: []
-    documents: []
-
-  - student: student8@school.be
-    company: CloudScale NV
-    teacher: docent1@school.be
-    mentor: null
-    status: Goedgekeurd
-    start_date: +50
-    end_date: +140
-    proposal:
-      status: Goedgekeurd
-      feedback: Goedgekeurd
-      revision_count: 0
-    agreement:
-      status: Niet Ingediend
-      insurance: false
-    logbooks: null
-    evaluations: []
-    feedback: []
-    documents: []
