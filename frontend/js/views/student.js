@@ -56,7 +56,7 @@ async function renderStudentDashboard() {
           if (w.status === 'missing') {
             return `
               <tr class="missing-row">
-                <td>${w.week_number}</td>
+                <td>${escapeHtml(w.week_number)}</td>
                 <td><span class="status-pill status-warn">Ontbrekend</span></td>
                 <td>-</td>
                 <td>-</td>
@@ -65,10 +65,10 @@ async function renderStudentDashboard() {
           }
           return `
             <tr>
-              <td>${w.week_number}</td>
+              <td>${escapeHtml(w.week_number)}</td>
               <td>${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
               <td>${w.mentor_validated ? 'Goedgekeurd' : (w.status === 'submitted' ? 'In afwachting' : '-')}</td>
-              <td>${w.mentor_feedback ? w.mentor_feedback : '<span class="hint">-</span>'}</td>
+              <td>${w.mentor_feedback ? escapeHtml(w.mentor_feedback) : '<span class="hint">-</span>'}</td>
             </tr>
           `;
         });
@@ -78,10 +78,10 @@ async function renderStudentDashboard() {
         // Fallback to raw logbook list
         tbody.innerHTML = currentLogbooks.map(lb => `
           <tr>
-            <td>${lb.week_number}</td>
+            <td>${escapeHtml(lb.week_number)}</td>
             <td>${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
             <td>${lb.mentor_validated ? 'Goedgekeurd' : (lb.status === 'submitted' ? 'In afwachting' : '-')}</td>
-            <td>${lb.mentor_feedback ? lb.mentor_feedback : '<span class="hint">-</span>'}</td>
+            <td>${lb.mentor_feedback ? escapeHtml(lb.mentor_feedback) : '<span class="hint">-</span>'}</td>
           </tr>
         `).join('') || '<tr><td colspan="4">Geen logboeken gevonden</td></tr>';
       }
@@ -136,8 +136,8 @@ async function renderStudentDashboard() {
       if (currentFeedback.length > 0) {
         feedbackDiv.innerHTML = currentFeedback.map(fb => `
           <div style="margin-bottom: 0.75rem; padding: 0.75rem; background: rgba(0,121,140,0.08); border-radius: 8px;">
-            <p style="margin: 0 0 0.25rem 0;"><strong>${fb.from_user?.first_name || 'Onbekend'} ${fb.from_user?.last_name || ''}</strong> (${formatDate(fb.created_at)})</p>
-            <p style="margin: 0; color: var(--ink-soft);">${fb.message}</p>
+            <p style="margin: 0 0 0.25rem 0;"><strong>${escapeHtml(fb.from_user?.first_name || 'Onbekend')} ${escapeHtml(fb.from_user?.last_name || '')}</strong> (${formatDate(fb.created_at)})</p>
+            <p style="margin: 0; color: var(--ink-soft);">${escapeHtml(fb.message)}</p>
           </div>
         `).join('');
       } else {
@@ -160,28 +160,34 @@ async function renderStudentDashboard() {
       const mentorSelect = document.getElementById('mentor-select');
 
       if (teacherSelect) {
-        teacherSelect.innerHTML = '<option value="">-- Kies een docent --</option>';
+        teacherSelect.innerHTML = '<option value="">Laden...</option>';
+        teacherSelect.disabled = true;
         UsersAPI.list('teacher').then(teachers => {
+          teacherSelect.innerHTML = '<option value="">-- Kies een docent --</option>';
           teachers.forEach(t => {
             const option = document.createElement('option');
             option.value = t.id;
             option.textContent = `${t.first_name} ${t.last_name} (${t.email})`;
             teacherSelect.appendChild(option);
           });
+          teacherSelect.disabled = false;
         }).catch(() => {
           teacherSelect.innerHTML = '<option value="">Kon docenten niet laden</option>';
         });
       }
 
       if (mentorSelect) {
-        mentorSelect.innerHTML = '<option value="">-- Kies een mentor --</option>';
+        mentorSelect.innerHTML = '<option value="">Laden...</option>';
+        mentorSelect.disabled = true;
         UsersAPI.list('mentor').then(mentors => {
+          mentorSelect.innerHTML = '<option value="">-- Kies een mentor --</option>';
           mentors.forEach(m => {
             const option = document.createElement('option');
             option.value = m.id;
             option.textContent = `${m.first_name} ${m.last_name} (${m.email})`;
             mentorSelect.appendChild(option);
           });
+          mentorSelect.disabled = false;
         }).catch(() => {
           mentorSelect.innerHTML = '<option value="">Kon mentors niet laden</option>';
         });
@@ -444,15 +450,19 @@ async function renderStudentDashboard() {
 
     // Wire withdraw button
     document.getElementById('btn-withdraw-proposal')?.addEventListener('click', async () => {
-      if (!confirm('Weet je zeker dat je je stagevoorstel wilt intrekken? Dit kan niet ongedaan gemaakt worden.')) return;
-
       try {
+        await showConfirmModal({
+          title: 'Voorstel intrekken',
+          message: 'Weet je zeker dat je je stagevoorstel wilt intrekken? Dit kan niet ongedaan gemaakt worden.',
+          okText: 'Intrekken',
+          okClass: 'danger'
+        });
         await ProposalsAPI.withdraw(currentInternship.id);
         showToast('Voorstel succesvol ingetrokken', 'success');
         await refreshInternshipData();
         renderView();
-      } catch (error) {
-        showToast(error.message, 'error');
+      } catch {
+        // User cancelled — do nothing
       }
     });
 
@@ -548,28 +558,34 @@ async function renderStudentDashboard() {
       const mentorSelect = document.getElementById('new-mentor-select');
 
       if (teacherSelect) {
-        teacherSelect.innerHTML = '<option value="">-- Kies een docent --</option>';
+        teacherSelect.innerHTML = '<option value="">Laden...</option>';
+        teacherSelect.disabled = true;
         UsersAPI.list('teacher').then(teachers => {
+          teacherSelect.innerHTML = '<option value="">-- Kies een docent --</option>';
           teachers.forEach(t => {
             const option = document.createElement('option');
             option.value = t.id;
             option.textContent = `${t.first_name} ${t.last_name} (${t.email})`;
             teacherSelect.appendChild(option);
           });
+          teacherSelect.disabled = false;
         }).catch(() => {
           teacherSelect.innerHTML = '<option value="">Kon docenten niet laden</option>';
         });
       }
 
       if (mentorSelect) {
-        mentorSelect.innerHTML = '<option value="">-- Kies een mentor --</option>';
+        mentorSelect.innerHTML = '<option value="">Laden...</option>';
+        mentorSelect.disabled = true;
         UsersAPI.list('mentor').then(mentors => {
+          mentorSelect.innerHTML = '<option value="">-- Kies een mentor --</option>';
           mentors.forEach(m => {
             const option = document.createElement('option');
             option.value = m.id;
             option.textContent = `${m.first_name} ${m.last_name} (${m.email})`;
             mentorSelect.appendChild(option);
           });
+          mentorSelect.disabled = false;
         }).catch(() => {
           mentorSelect.innerHTML = '<option value="">Kon mentors niet laden</option>';
         });
@@ -684,11 +700,20 @@ async function renderStudentDashboard() {
         const cell = document.createElement('div');
         cell.className = `week-cell ${statusClass}`;
         cell.dataset.week = w;
+        cell.setAttribute('role', 'button');
+        cell.setAttribute('tabindex', '0');
+        cell.setAttribute('aria-label', `Week ${w}: ${statusLabel}`);
         cell.innerHTML = `
           <span class="week-number">${w}</span>
           <span class="week-status">${statusLabel}</span>
         `;
         cell.addEventListener('click', () => openWeek(w));
+        cell.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openWeek(w);
+          }
+        });
         gridEl.appendChild(cell);
       }
     }

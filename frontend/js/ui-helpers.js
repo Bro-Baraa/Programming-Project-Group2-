@@ -52,11 +52,26 @@ function iconHtml(name, size = 16, opts = {}) {
 }
 
 function showToast(message, type = "success", duration = 3000) {
-  const existing = document.querySelector(".toast-notification");
+  // Ensure aria-live region exists
+  let toastRegion = document.getElementById('toast-region');
+  if (!toastRegion) {
+    toastRegion = document.createElement('div');
+    toastRegion.id = 'toast-region';
+    toastRegion.setAttribute('aria-live', 'polite');
+    toastRegion.setAttribute('aria-atomic', 'true');
+    toastRegion.style.position = 'fixed';
+    toastRegion.style.top = '20px';
+    toastRegion.style.right = '20px';
+    toastRegion.style.zIndex = '1000';
+    document.body.appendChild(toastRegion);
+  }
+
+  const existing = toastRegion.querySelector(".toast-notification");
   if (existing) existing.remove();
 
   const toast = document.createElement("div");
   toast.className = `toast-notification toast-${type}`;
+  toast.setAttribute('role', 'status');
   const icons = {
     success: iconHtml('check-circle', 16),
     error: iconHtml('x-circle', 16),
@@ -66,11 +81,11 @@ function showToast(message, type = "success", duration = 3000) {
 
   toast.innerHTML = `
     <span class="toast-icon">${icons[type] || "•"}</span>
-    <span class="toast-message">${message}</span>
+    <span class="toast-message">${escapeHtml(message)}</span>
     <button class="toast-close" onclick="this.parentElement.remove()">×</button>
   `;
 
-  document.body.appendChild(toast);
+  toastRegion.appendChild(toast);
   requestAnimationFrame(() => toast.classList.add("show"));
 
   setTimeout(() => {
@@ -173,5 +188,59 @@ function attachAgreementDownload(internshipId, buttonId = 'download-agreement-bt
       hideLoading(btn);
       showToast(error.message, 'error');
     }
+  });
+}
+
+// Generic confirm modal — returns a Promise that resolves when user clicks OK or rejects on cancel
+function showConfirmModal({ title = 'Bevestigen', message, okText = 'Bevestigen', okClass = 'danger' }) {
+  return new Promise((resolve, reject) => {
+    const modal = document.getElementById('confirm-modal');
+    const titleEl = document.getElementById('confirm-modal-title');
+    const messageEl = document.getElementById('confirm-modal-message');
+    const okBtn = document.getElementById('confirm-modal-ok');
+    const cancelBtn = document.getElementById('confirm-modal-cancel');
+    if (!modal || !okBtn || !cancelBtn) {
+      // Fallback to native confirm if modal markup is missing
+      if (confirm(message)) resolve();
+      else reject();
+      return;
+    }
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    okBtn.textContent = okText;
+    okBtn.className = `btn ${okClass}`;
+    modal.style.display = 'flex';
+
+    // Focus trap: focus on OK button
+    okBtn.focus();
+
+    function cleanup() {
+      modal.style.display = 'none';
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      document.removeEventListener('keydown', onKey);
+    }
+
+    function onOk() {
+      cleanup();
+      resolve();
+    }
+
+    function onCancel() {
+      cleanup();
+      reject();
+    }
+
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCancel();
+      }
+    }
+
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    document.addEventListener('keydown', onKey);
   });
 }

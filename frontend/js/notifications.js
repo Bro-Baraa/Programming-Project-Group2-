@@ -207,15 +207,34 @@ function toggleDropdown() {
 
 function openDropdown() {
   const dropdown = document.getElementById('notif-dropdown');
+  const bell = document.getElementById('notif-bell');
   if (dropdown) dropdown.style.display = 'block';
   _dropdownOpen = true;
+  if (bell) {
+    bell.setAttribute('aria-expanded', 'true');
+    // Focus naar eerste notificatie of "Alles gelezen" knop
+    const firstItem = dropdown?.querySelector('.notif-item, .notif-read-all');
+    if (firstItem) firstItem.focus();
+  }
 }
 
 function closeDropdown() {
   const dropdown = document.getElementById('notif-dropdown');
+  const bell = document.getElementById('notif-bell');
   if (dropdown) dropdown.style.display = 'none';
   _dropdownOpen = false;
+  if (bell) {
+    bell.setAttribute('aria-expanded', 'false');
+    bell.focus();
+  }
 }
+
+// Escape key sluit dropdown
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && _dropdownOpen) {
+    closeDropdown();
+  }
+});
 
 /**
  * Mark a notification as read without navigating anywhere.

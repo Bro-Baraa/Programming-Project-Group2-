@@ -9,9 +9,6 @@
   <meta http-equiv="Expires" content="0" />
   <title>Stage Monitoring Tool</title>
   <link rel="icon" href="icons/favicon.svg" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=2026-06-06" />
 </head>
 
@@ -37,7 +34,7 @@
       </div>
       <!-- Bell notification button — shows unread dot when there are unread notifications -->
       <div class="notif-wrapper" id="notif-wrapper" style="display:none;">
-        <button class="notif-bell" id="notif-bell" aria-label="Notificaties">
+        <button class="notif-bell" id="notif-bell" aria-label="Notificaties" aria-expanded="false" aria-controls="notif-dropdown">
           <img src="icons/bell.svg" alt="" width="20" height="20" />
           <span class="notif-dot" id="notif-dot" style="display:none;"></span>
         </button>
@@ -75,11 +72,11 @@
         <form id="login-form" class="login-form" novalidate>
           <div class="field-group">
             <label for="login-email">E-mailadres</label>
-            <input type="email" id="login-email" required placeholder="naam@school.be" autocomplete="email" />
+            <input type="email" id="login-email" required placeholder="naam@school.be" autocomplete="email" aria-describedby="login-error" />
           </div>
           <div class="field-group">
             <label for="login-password">Wachtwoord</label>
-            <input type="password" id="login-password" required placeholder="••••••" autocomplete="current-password" />
+            <input type="password" id="login-password" required placeholder="••••••" autocomplete="current-password" aria-describedby="login-error" />
           </div>
           <button type="submit" class="login-btn">Inloggen</button>
           <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
@@ -98,7 +95,7 @@
 
   <!-- Student Templates -->
   <template id="student-dashboard-template">
-    <div class="grid two-col reveal">
+    <div class="grid two-col">
       <article class="panel card hero">
         <h2>Mijn Stage</h2>
         <p><strong>Bedrijf:</strong> Laden...</p>
@@ -115,7 +112,7 @@
       </article>
     </div>
 
-    <div class="grid two-col reveal">
+    <div class="grid two-col">
       <article class="panel card">
         <h2>Logboeken Overzicht</h2>
         <table>
@@ -144,7 +141,7 @@
       </article>
     </div>
 
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Feedback</h2>
       <div id="student-feedback">
         <p class="hint">Je hebt nog geen feedback ontvangen.</p>
@@ -153,7 +150,7 @@
   </template>
 
   <template id="student-voorstel-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Stagevoorstel Indienen</h2>
       <form id="proposal-form">
         <div class="row full">
@@ -207,7 +204,7 @@
   </template>
 
   <template id="student-logboek-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Logboeken Overzicht</h2>
       <p class="hint">Klik op een week om het logboek te bewerken of in te vullen.</p>
       <div id="logbook-week-grid" class="week-grid"></div>
@@ -218,7 +215,7 @@
       </div>
     </div>
 
-    <div id="logbook-form-panel" class="panel card reveal" style="display:none;">
+    <div id="logbook-form-panel" class="panel card" style="display:none;">
       <h2>Logboek Week <span id="form-week-label">—</span></h2>
       <form id="logbook-form">
         <input type="hidden" id="log-week" />
@@ -244,7 +241,7 @@
   </template>
 
   <template id="student-evaluatie-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Mijn Evaluaties</h2>
       <table>
         <thead>
@@ -262,7 +259,7 @@
         </tbody>
       </table>
     </div>
-    <div class="panel card reveal" id="student-self-eval-panel" style="display: none;">
+    <div class="panel card" id="student-self-eval-panel" style="display: none;">
       <h2>Mijn Zelfevaluatie</h2>
       <p class="hint">Beschrijf per competentie wat je geleerd hebt tijdens deze stage.</p>
       <div id="student-self-eval-form">
@@ -270,7 +267,7 @@
       </div>
       <button id="btn-save-self-eval" class="btn" style="margin-top: 1rem;">Beschrijvingen Opslaan</button>
     </div>
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Eindoverzicht</h2>
       <div id="final-summary">
         <p>Laden...</p>
@@ -279,7 +276,7 @@
   </template>
 
   <template id="student-overeenkomst-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Stageovereenkomst</h2>
       <p>Upload hier je getekende stageovereenkomst (PDF, max 5MB).</p>
       <p class="hint" id="agreement-hint">Let op: Je kan pas een overeenkomst uploaden als je stagevoorstel is
@@ -302,7 +299,7 @@
 
   <!-- Commissie Templates -->
   <template id="commissie-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Stagevoorstellen Beoordelen</h2>
       <p class="hint">Klik op een rij om een voorstel te selecteren en te beoordelen.</p>
       <table id="proposals-table">
@@ -323,7 +320,7 @@
       </table>
     </div>
 
-    <div id="proposal-detail-panel" class="panel card reveal" style="display: none;">
+    <div id="proposal-detail-panel" class="panel card" style="display: none;">
       <h2>Beoordeling: <span id="selected-student-name">Student</span></h2>
       <p><strong>Bedrijf:</strong> <span id="selected-company">-</span></p>
       <p><strong>Status:</strong> <span id="selected-status">-</span></p>
@@ -344,7 +341,7 @@
   </template>
 
   <template id="commissie-overeenkomsten-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Overeenkomsten Beoordelen</h2>
       <p class="hint">Controleer of de overeenkomst is opgeladen en markeer de verzekering als in orde.</p>
       <table id="agreements-table">
@@ -366,7 +363,7 @@
       </table>
     </div>
 
-    <div id="agreement-detail-panel" class="panel card reveal" style="display: none;">
+    <div id="agreement-detail-panel" class="panel card" style="display: none;">
       <h2>Overeenkomst Detail: <span id="agreement-student-name">Student</span></h2>
       <p><strong>Bedrijf:</strong> <span id="agreement-company">-</span></p>
       <p><strong>Stage status:</strong> <span id="agreement-internship-status">-</span></p>
@@ -380,7 +377,7 @@
   </template>
 
   <template id="commissie-overzicht-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Alle Stages - Overzicht</h2>
       <table>
         <thead>
@@ -401,13 +398,13 @@
     </div>
 
     <div class="grid two-col">
-      <div class="panel card reveal">
+      <div class="panel card">
         <h2>Statistieken</h2>
         <ul>
           <li>Laden...</li>
         </ul>
       </div>
-      <div class="panel card reveal">
+      <div class="panel card">
         <h2>Overeenkomsten</h2>
         <ul>
           <li>Laden...</li>
@@ -418,7 +415,7 @@
 
   <!-- Docent Templates -->
   <template id="docent-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Logboeken Opvolging</h2>
       <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te bekijken.</p>
       <table id="teacher-logbooks-table">
@@ -439,7 +436,7 @@
       </table>
     </div>
 
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Feedback Geven</h2>
       <div class="row full">
         <label>Bericht voor student</label>
@@ -450,7 +447,7 @@
   </template>
 
   <template id="docent-evaluatie-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Evaluatie Formulier</h2>
       <form id="eval-form">
         <div class="eval-type">
@@ -480,7 +477,7 @@
   </template>
 
   <template id="docent-eindoverzicht-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Eindoverzicht</h2>
       <p class="hint">Selecteer een stage via het navigatiemenu om het eindoverzicht te bekijken.</p>
       <div id="final-report-content">
@@ -491,7 +488,7 @@
 
   <!-- Mentor Templates -->
   <template id="mentor-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Wekelijkse Validatie</h2>
       <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te valideren.</p>
       <table id="mentor-logbooks-table">
@@ -515,7 +512,7 @@
   </template>
 
   <template id="mentor-evaluatie-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Feedback per competentie</h2>
       <div id="mentor-eval-content"></div>
     </div>
@@ -535,7 +532,7 @@
       </div>
     </div>
 
-    <div class="grid two-col reveal">
+    <div class="grid two-col">
       <article class="panel card">
         <h3>Competenties</h3>
         <div class="competency-search-bar">
@@ -570,16 +567,29 @@
       </article>
     </div>
 
-    <div class="panel card reveal" style="margin-top: 1rem;">
+    <div class="panel card" style="margin-top: 1rem;">
       <h3>Gewichtsverdeling</h3>
       <div id="weight-chart" class="weight-chart"></div>
     </div>
 
-    <!-- Profile Management Modal -->
-    <div id="profile-modal" class="modal" style="display: none;">
+    <!-- Generic Confirm Modal -->
+    <div id="confirm-modal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
       <div class="modal-overlay"></div>
       <div class="modal-card">
-        <h3>Profielen Beheren</h3>
+        <h3 id="confirm-modal-title">Bevestigen</h3>
+        <p id="confirm-modal-message"></p>
+        <div class="btn-group">
+          <button class="btn secondary" id="confirm-modal-cancel">Annuleren</button>
+          <button class="btn danger" id="confirm-modal-ok">Bevestigen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Management Modal -->
+    <div id="profile-modal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+      <div class="modal-overlay"></div>
+      <div class="modal-card">
+        <h3 id="profile-modal-title">Profielen Beheren</h3>
         <div id="profile-list" class="profile-list"></div>
         <form id="profile-form" class="profile-form">
           <div class="row compact">
@@ -598,7 +608,7 @@
   </template>
 
   <template id="admin-overeenkomsten-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Overeenkomsten Overzicht</h2>
       <p class="hint">Overzicht van alle studenten en hun overeenkomststatus. Alleen studenten met een goedgekeurd voorstel worden getoond.</p>
       <table id="admin-agreements-table">
@@ -619,7 +629,7 @@
       </table>
     </div>
 
-    <div id="admin-agreement-detail-panel" class="panel card reveal" style="display: none;">
+    <div id="admin-agreement-detail-panel" class="panel card" style="display: none;">
       <h2>Overeenkomst Detail: <span id="admin-agreement-student-name">Student</span></h2>
       <p><strong>Stage ID:</strong> <span id="admin-agreement-internship-id">-</span></p>
       <p><strong>Stage status:</strong> <span id="admin-agreement-internship-status">-</span></p>
@@ -631,7 +641,7 @@
   </template>
 
   <template id="admin-auditlog-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Audit Log</h2>
       <p class="hint">Overzicht van alle acties in het systeem. Enkel zichtbaar voor admins.</p>
 
@@ -668,7 +678,7 @@
   </template>
 
   <template id="admin-gebruikers-template">
-    <div class="panel card reveal">
+    <div class="panel card">
       <h2>Gebruikersbeheer</h2>
       <div class="row compact" style="margin-bottom: 1rem; gap: 0.5rem; flex-wrap: wrap;">
         <input type="text" id="user-search" placeholder="Zoek op naam of email..." style="flex: 1; min-width: 200px;" />
@@ -704,7 +714,7 @@
       <div id="user-pagination" class="row compact" style="margin-top: 1rem; justify-content: center; gap: 0.5rem;"></div>
     </div>
 
-    <div id="user-form-panel" class="panel card reveal" style="display: none;">
+    <div id="user-form-panel" class="panel card" style="display: none;">
       <h2 id="user-form-title">Gebruiker aanmaken</h2>
       <form id="user-form">
         <input type="hidden" id="user-form-id" />

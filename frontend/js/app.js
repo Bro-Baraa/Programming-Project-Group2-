@@ -46,6 +46,7 @@ let currentCompetencies = [];
 let currentLogbooks = [];
 let currentEvaluations = [];
 let currentFeedback = [];
+let _renderGeneration = 0;
 
 // Geeft de geselecteerde stage terug
 function getSelectedInternship() {
@@ -89,8 +90,10 @@ function updateUIForUser(user) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+  const email = emailInput.value;
+  const password = passwordInput.value;
   const submitBtn = e.target.querySelector('button[type="submit"]');
   const errorEl = document.getElementById('login-error');
 
@@ -101,6 +104,8 @@ async function handleLogin(e) {
     errorEl.textContent = '';
     errorEl.classList.remove('show');
   }
+  emailInput?.removeAttribute('aria-invalid');
+  passwordInput?.removeAttribute('aria-invalid');
 
   showLoading(submitBtn, "Inloggen...");
 
@@ -121,6 +126,8 @@ async function handleLogin(e) {
     } else {
       alert('Login fout: ' + error.message);
     }
+    emailInput?.setAttribute('aria-invalid', 'true');
+    passwordInput?.setAttribute('aria-invalid', 'true');
   }
 }
 
@@ -149,71 +156,77 @@ function renderLogin() {
     const form = document.getElementById('login-form');
     form?.addEventListener('submit', handleLogin);
     
-    // Quick-login dropdown vullen vanuit seed data
+    // Quick-login dropdown vullen vanuit seed data (lazy load)
     const quickLogin = document.getElementById('quick-login');
     if (quickLogin) {
       quickLogin.textContent = '';
-      const pLoad = document.createElement('p');
-      pLoad.className = 'hint';
-      pLoad.textContent = 'Test accounts laden...';
-      quickLogin.appendChild(pLoad);
-      fetch(`${API_BASE_URL}/users/seed`)
-        .then(r => r.ok ? r.json() : [])
-        .then(accounts => {
-          if (!accounts.length) {
-            quickLogin.textContent = '';
-            const pNone = document.createElement('p');
-            pNone.className = 'hint';
-            pNone.textContent = 'Geen test accounts beschikbaar';
-            quickLogin.appendChild(pNone);
-            return;
-          }
-          const options = accounts.map(a =>
-            `<option value="${a.email}">${a.first_name} ${a.last_name} (${a.role})</option>`
-          ).join('');
-          quickLogin.textContent = '';
-          const lbl = document.createElement('label');
-          lbl.htmlFor = 'quick-login-select';
-          lbl.style.cssText = 'display:block; margin-bottom:0.25rem; font-size:0.85rem; color:var(--ink-soft);';
-          lbl.textContent = 'Kies een test account:';
-          const sel = document.createElement('select');
-          sel.id = 'quick-login-select';
-          sel.style.cssText = 'width:100%; margin-bottom:0.5rem;';
-          sel.innerHTML = '<option value="">-- Account selecteren --</option>' + options;
-          const btn = document.createElement('button');
-          btn.className = 'btn';
-          btn.id = 'quick-login-btn';
-          btn.textContent = 'Inloggen';
-          quickLogin.appendChild(lbl);
-          quickLogin.appendChild(sel);
-          quickLogin.appendChild(btn);
-          document.getElementById('quick-login-btn')?.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const select = document.getElementById('quick-login-select');
-            const option = select?.selectedOptions[0];
-            if (!option || !option.value) {
-              showToast('Selecteer eerst een account', 'warning');
+      const loadBtn = document.createElement('button');
+      loadBtn.className = 'btn secondary';
+      loadBtn.style.cssText = 'width:100%; font-size:0.9rem;';
+      loadBtn.textContent = 'Test accounts laden';
+      quickLogin.appendChild(loadBtn);
+
+      loadBtn.addEventListener('click', () => {
+        loadBtn.disabled = true;
+        loadBtn.textContent = 'Laden...';
+        fetch(`${API_BASE_URL}/users/seed`)
+          .then(r => r.ok ? r.json() : [])
+          .then(accounts => {
+            if (!accounts.length) {
+              quickLogin.textContent = '';
+              const pNone = document.createElement('p');
+              pNone.className = 'hint';
+              pNone.textContent = 'Geen test accounts beschikbaar';
+              quickLogin.appendChild(pNone);
               return;
             }
-            showLoading(btn, 'Inloggen...');
-            try {
-              const data = await AuthAPI.demoLogin(option.value);
-              showToast(`Welkom, ${data.user.first_name}!`, 'success');
-              window.location.href = 'index.html';
-            } catch (error) {
-              showToast(error.message, 'error');
-            } finally {
-              hideLoading(btn);
-            }
+            const options = accounts.map(a =>
+              `<option value="${a.email}">${a.first_name} ${a.last_name} (${a.role})</option>`
+            ).join('');
+            quickLogin.textContent = '';
+            const lbl = document.createElement('label');
+            lbl.htmlFor = 'quick-login-select';
+            lbl.style.cssText = 'display:block; margin-bottom:0.25rem; font-size:0.85rem; color:var(--ink-soft);';
+            lbl.textContent = 'Kies een test account:';
+            const sel = document.createElement('select');
+            sel.id = 'quick-login-select';
+            sel.style.cssText = 'width:100%; margin-bottom:0.5rem;';
+            sel.innerHTML = '<option value="">-- Account selecteren --</option>' + options;
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.id = 'quick-login-btn';
+            btn.textContent = 'Inloggen';
+            quickLogin.appendChild(lbl);
+            quickLogin.appendChild(sel);
+            quickLogin.appendChild(btn);
+            document.getElementById('quick-login-btn')?.addEventListener('click', async (e) => {
+              e.preventDefault();
+              const select = document.getElementById('quick-login-select');
+              const option = select?.selectedOptions[0];
+              if (!option || !option.value) {
+                showToast('Selecteer eerst een account', 'warning');
+                return;
+              }
+              showLoading(btn, 'Inloggen...');
+              try {
+                const data = await AuthAPI.demoLogin(option.value);
+                showToast(`Welkom, ${data.user.first_name}!`, 'success');
+                window.location.href = 'index.html';
+              } catch (error) {
+                showToast(error.message, 'error');
+              } finally {
+                hideLoading(btn);
+              }
+            });
+          })
+          .catch(() => {
+            quickLogin.textContent = '';
+            const pErr = document.createElement('p');
+            pErr.className = 'hint';
+            pErr.textContent = 'Kon test accounts niet laden';
+            quickLogin.appendChild(pErr);
           });
-        })
-        .catch(() => {
-          quickLogin.textContent = '';
-          const pErr = document.createElement('p');
-          pErr.className = 'hint';
-          pErr.textContent = 'Kon test accounts niet laden';
-          quickLogin.appendChild(pErr);
-        });
+      });
     }
   }
 }
@@ -283,6 +296,20 @@ async function renderMainApp() {
   renderView();
 }
 
+// Track first render so we only animate entry on initial load
+let _firstRender = true;
+
+// Views die stage-specifieke data nodig hebben
+const _internshipViews = new Set([
+  'dashboard', 'voorstel', 'logboek', 'overeenkomst', 'evaluaties',
+  'opvolging', 'validatie', 'eindoverzicht', 'teacher-evaluatie', 'mentor-evaluatie'
+]);
+
+// Views die competenties nodig hebben
+const _competencyViews = new Set([
+  'evaluatie', 'teacher-evaluatie', 'mentor-evaluatie', 'competenties', 'eindoverzicht'
+]);
+
 async function renderView() {
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
@@ -296,7 +323,10 @@ async function renderView() {
 
   // Actieve tab markeren
   document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.classList.toggle('active', tab.dataset.view === view);
+    const isActive = tab.dataset.view === view;
+    tab.classList.toggle('active', isActive);
+    tab.setAttribute('aria-selected', String(isActive));
+    tab.setAttribute('tabindex', isActive ? '0' : '-1');
   });
 
   const loadingOverlay = document.createElement('div');
@@ -310,6 +340,8 @@ async function renderView() {
   const key = view ? `${role}-${view}` : role;
   const templateId = templates[key] || templates[role];
 
+  const gen = ++_renderGeneration;
+
   try {
     // Geselecteerde stage uit URL
     urlParams = new URLSearchParams(window.location.search);
@@ -319,33 +351,79 @@ async function renderView() {
     // Laad alle stages zichtbaar voor gebruiker
     allInternships = await InternshipsAPI.list();
 
+    // Stale render check
+    if (gen !== _renderGeneration) return;
+
     // Vul stage-selector (voor meerdere rollen)
     populateInternshipSelector(role);
 
     // Stel huidige stage in (back-compat)
     currentInternship = getSelectedInternship();
 
-    // Laad stage-specifieke data
-    if (currentInternship) {
+    // Laad stage-specifieke data ALLEEN als deze view het nodig heeft
+    const needsInternshipData = _internshipViews.has(view);
+    if (needsInternshipData && currentInternship) {
       [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
         InternshipsAPI.getLogbooks(currentInternship.id),
         InternshipsAPI.getEvaluations(currentInternship.id),
         InternshipsAPI.getFeedback(currentInternship.id)
       ]);
+    } else {
+      currentLogbooks = [];
+      currentEvaluations = [];
+      currentFeedback = [];
     }
 
-    if (role === 'admin' || view === 'evaluatie') {
+    // Stale render check
+    if (gen !== _renderGeneration) return;
+
+    // Laad competenties ALLEEN als deze view het nodig heeft
+    const needsCompetencies = _competencyViews.has(view);
+    if (needsCompetencies) {
       currentCompetencies = await CompetenciesAPI.list();
+    } else {
+      currentCompetencies = [];
     }
+
+    // Stale render check
+    if (gen !== _renderGeneration) return;
 
     // Template renderen
     content.textContent = '';
     const tpl = document.getElementById(templateId);
     if (tpl) {
       content.appendChild(tpl.content.cloneNode(true));
+      // Add reveal animation only on first render
+      if (_firstRender) {
+        content.querySelectorAll('.panel, .grid').forEach(el => el.classList.add('reveal'));
+        _firstRender = false;
+      }
       await wireRoleInteractions(role, view);
     }
+
+    // Stale render check
+    if (gen !== _renderGeneration) return;
+
+    // Focus management: zet focus op de eerste heading in de nieuwe view
+    const firstHeading = content.querySelector('h2');
+    if (firstHeading) {
+      firstHeading.setAttribute('tabindex', '-1');
+      firstHeading.focus({ preventScroll: true });
+    }
+
+    // Als er geen stage is voor een view die dat wel nodig heeft, toon empty state
+    if (needsInternshipData && !currentInternship && !content.querySelector('.error-message')) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'panel card info-message';
+      emptyDiv.innerHTML = `
+        <h2>Geen stage gevonden</h2>
+        <p>Je hebt nog geen stage ingediend. Dien een voorstel in via het tabblad <strong>Voorstel</strong>.</p>
+        <a href="?view=voorstel" class="btn">Stagevoorstel indienen</a>
+      `;
+      content.replaceChildren(emptyDiv);
+    }
   } catch (error) {
+    if (gen !== _renderGeneration) return;
     const errorDiv = document.createElement('div');
     errorDiv.className = 'error-message';
     errorDiv.textContent = `Fout bij laden: ${error.message}`;
@@ -418,12 +496,17 @@ async function refreshInternshipData() {
     const role = AuthAPI.getRole();
     populateInternshipSelector(role);
 
+    // Alleen data laden als er een stage is
     if (currentInternship) {
       [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
         InternshipsAPI.getLogbooks(currentInternship.id),
         InternshipsAPI.getEvaluations(currentInternship.id),
         InternshipsAPI.getFeedback(currentInternship.id)
       ]);
+    } else {
+      currentLogbooks = [];
+      currentEvaluations = [];
+      currentFeedback = [];
     }
   } catch (error) {
     console.error('Failed to refresh internship data:', error);
@@ -474,15 +557,15 @@ async function wireRoleInteractions(role, view) {
 // Gedeelde helper voor rapporttabellen
 function formatReportRows(rules) {
   return rules.map(r => {
-    const name = r.competency?.name || 'Onbekend';
+    const name = escapeHtml(r.competency?.name || 'Onbekend');
     const weight = r.competency?.weight !== undefined ? r.competency.weight : '-';
     return `
       <tr>
         <td>${name}</td>
         <td>${weight !== '-' ? weight + '%' : '-'}</td>
         <td>${r.score !== null && r.score !== undefined ? r.score : '-'}</td>
-        <td>${r.student_description || '-'}</td>
-        <td>${r.evaluator_feedback || '-'}</td>
+        <td>${escapeHtml(r.student_description || '-')}</td>
+        <td>${escapeHtml(r.evaluator_feedback || '-')}</td>
       </tr>
     `;
   }).join('');

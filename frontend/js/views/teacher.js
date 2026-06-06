@@ -112,7 +112,16 @@ function wireEvaluationForm() {
 
   // Evaluatie finaliseren
   finalizeBtn?.addEventListener('click', async () => {
-    if (!confirm('Evaluatie definitief afsluiten? Dit kan niet ongedaan gemaakt worden.')) return;
+    try {
+      await showConfirmModal({
+        title: 'Evaluatie afsluiten',
+        message: 'Evaluatie definitief afsluiten? Dit kan niet ongedaan gemaakt worden.',
+        okText: 'Afsluiten',
+        okClass: 'danger'
+      });
+    } catch {
+      return;
+    }
 
     if (!currentInternship) {
       showToast('Geen stage geselecteerd', 'error');

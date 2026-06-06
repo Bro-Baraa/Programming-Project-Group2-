@@ -56,6 +56,15 @@ function buildTableCards() {
 
     table.insertAdjacentElement('afterend', container);
     table.dataset.cardsId = 'true';
+    table.setAttribute('data-table-cards', 'true');
+  });
+}
+
+function removeTableCards() {
+  document.querySelectorAll('.table-cards').forEach(c => c.remove());
+  document.querySelectorAll('table').forEach(t => {
+    delete t.dataset.cardsId;
+    t.removeAttribute('data-table-cards');
   });
 }
 

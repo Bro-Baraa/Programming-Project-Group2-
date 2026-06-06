@@ -451,9 +451,13 @@ async function activateCompetency(id) {
 async function deleteCompetency(id) {
   const comp = currentCompetencies.find(c => c.id === id);
   const name = comp ? comp.name : 'deze competentie';
-  if (!confirm(`Competentie "${name}" definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return;
-
   try {
+    await showConfirmModal({
+      title: 'Competentie verwijderen',
+      message: `Competentie "${name}" definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`,
+      okText: 'Verwijderen',
+      okClass: 'danger'
+    });
     await CompetenciesAPI.delete(id);
     currentCompetencies = currentCompetencies.filter(c => c.id !== id);
     renderCompetencyManager();
@@ -529,7 +533,7 @@ async function renderUserManager() {
       currentUsers = users;
       renderUserList();
     } catch (error) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="5">Fout: ${error.message}</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5">Fout: ${escapeHtml(error.message)}</td></tr>`;
     }
   }
 
@@ -764,7 +768,7 @@ function changeUserPage(delta) {
     })
     .catch(error => {
       const tbody2 = document.getElementById('users-table')?.querySelector('tbody');
-      if (tbody2) tbody2.innerHTML = `<tr><td colspan="5">Fout: ${error.message}</td></tr>`;
+      if (tbody2) tbody2.innerHTML = `<tr><td colspan="5">Fout: ${escapeHtml(error.message)}</td></tr>`;
     });
 }
 
@@ -896,7 +900,7 @@ async function renderAuditLog() {
       );
       renderLogs(logs);
     } catch (error) {
-      if (tbody) tbody.innerHTML = `<tr><td colspan="7">Fout: ${error.message}</td></tr>`;
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7">Fout: ${escapeHtml(error.message)}</td></tr>`;
     }
   }
 

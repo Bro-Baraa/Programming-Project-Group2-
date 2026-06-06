@@ -60,6 +60,18 @@ function setCurrentUser(user) {
 // 401 redirect guard — voorkomt meerdere redirects tegelijk
 let _redirectingToLogin = false;
 
+// Helper: format FastAPI error detail (string or array) into readable message
+function formatError(error) {
+  if (Array.isArray(error.detail)) {
+    return error.detail.map(d => d.msg || String(d)).join(', ');
+  }
+  if (typeof error.detail === 'string') return error.detail;
+  if (typeof error.detail === 'object' && error.detail !== null) {
+    return JSON.stringify(error.detail);
+  }
+  return JSON.stringify(error);
+}
+
 // Generic API request
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -96,10 +108,11 @@ async function apiRequest(endpoint, options = {}) {
         setCurrentUser(null);
         window.location.href = 'index.html?view=login';
       }
-      throw new Error('Sessie verlopen, opnieuw inloggen...');
+      return Promise.reject(new Error('Sessie verlopen, opnieuw inloggen...'));
     }
     
-    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+    const errorMsg = formatError(error);
+    throw new Error(errorMsg || `HTTP error! status: ${response.status}`);
   }
   
   // Handle empty responses
@@ -142,7 +155,7 @@ const AuthAPI = {
       let errorText;
       try {
         const errorJson = await response.json();
-        errorText = errorJson.detail || JSON.stringify(errorJson);
+        errorText = formatError(errorJson) || JSON.stringify(errorJson);
       } catch (e) {
         errorText = `HTTP ${response.status} - ${response.statusText}`;
       }
@@ -178,7 +191,7 @@ const AuthAPI = {
       let errorText;
       try {
         const errorJson = await response.json();
-        errorText = errorJson.detail || JSON.stringify(errorJson);
+        errorText = formatError(errorJson) || JSON.stringify(errorJson);
       } catch (e) {
         errorText = `HTTP ${response.status} - ${response.statusText}`;
       }
