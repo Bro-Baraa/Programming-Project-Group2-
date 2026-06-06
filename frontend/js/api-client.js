@@ -84,7 +84,12 @@ async function apiRequest(endpoint, options = {}) {
     delete config.headers['Content-Type'];
   }
   
-  const response = await fetch(url, config);
+  let response;
+  try {
+    response = await fetch(url, config);
+  } catch (networkError) {
+    throw new Error('Kan geen verbinding maken met de server. Controleer je internetverbinding of probeer het later opnieuw.');
+  }
   
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'An error occurred' }));

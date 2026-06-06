@@ -419,6 +419,13 @@ async function renderView() {
         _firstRender = false;
       }
       await wireRoleInteractions(role, view);
+      // Rebuild table cards after data is rendered (so cards contain actual data, not "Laden...")
+      if (typeof removeTableCards === 'function' && typeof buildTableCards === 'function') {
+        removeTableCards();
+        if (window.innerWidth <= 720) {
+          buildTableCards();
+        }
+      }
     }
 
     // Stale render check

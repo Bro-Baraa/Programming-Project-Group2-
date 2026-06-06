@@ -68,11 +68,6 @@ function removeTableCards() {
   });
 }
 
-function removeTableCards() {
-  document.querySelectorAll('.table-cards').forEach(c => c.remove());
-  document.querySelectorAll('table').forEach(t => delete t.dataset.cardsId);
-}
-
 function ensureTableCards() {
   if (window.innerWidth <= 720) {
     buildTableCards();

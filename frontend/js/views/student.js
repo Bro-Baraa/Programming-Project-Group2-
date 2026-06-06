@@ -47,6 +47,47 @@ async function renderStudentDashboard() {
       `;
     }
 
+    // Openstaande Taken bijwerken - vervang skeletons door actuele taken
+    const taskCard = document.querySelector('.task-card');
+    if (taskCard) {
+      const tasks = [];
+      const status = currentInternship.status;
+      const agreement = currentInternship.agreement_status || 'Niet Ingediend';
+
+      if (status === 'Ingediend') {
+        tasks.push('Wacht op goedkeuring van de commissie');
+      }
+      if (status === 'Aanpassingen Vereist') {
+        tasks.push('Pas je stagevoorstel aan op basis van de feedback');
+      }
+      if (status === 'Goedgekeurd' && agreement === 'Niet Ingediend') {
+        tasks.push('Upload je getekende stageovereenkomst');
+      }
+      if (status === 'Goedgekeurd' && agreement === 'Onvolledig') {
+        tasks.push('Upload een volledige versie van je overeenkomst');
+      }
+      if (status === 'Lopend' || status === 'Afgerond') {
+        const missing = currentLogbooks.filter(lb => !lb.status || lb.status === 'missing');
+        if (missing.length > 0) {
+          tasks.push(`Vul ${missing.length} ontbrekend(e) logboek(en) in`);
+        }
+      }
+
+      if (tasks.length > 0) {
+        taskCard.innerHTML = `
+          <h2>Openstaande Taken</h2>
+          <ul class="list">
+            ${tasks.map(t => `<li>${iconHtml('alert-circle', 14)} ${escapeHtml(t)}</li>`).join('')}
+          </ul>
+        `;
+      } else {
+        taskCard.innerHTML = `
+          <h2>Openstaande Taken</h2>
+          <p class="hint">${iconHtml('check-circle', 14)} Alles is in orde!</p>
+        `;
+      }
+    }
+
     // Logboeken tabel bijwerken - toon alle weken inclusief ontbrekende (US-08)
     const tbody = document.querySelector('table tbody');
     if (tbody && currentInternship) {

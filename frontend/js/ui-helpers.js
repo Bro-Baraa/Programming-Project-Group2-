@@ -215,6 +215,13 @@ function showConfirmModal({ title = 'Bevestigen', message, okText = 'Bevestigen'
     // Focus trap: focus on OK button
     okBtn.focus();
 
+    // Focus trap: collect focusable elements within the modal card
+    const focusable = Array.from(
+      modal.querySelectorAll('.modal-card button, .modal-card [href], .modal-card input, .modal-card select, .modal-card textarea, .modal-card [tabindex]:not([tabindex="-1"])')
+    ).filter(el => !el.disabled && el.offsetParent !== null);
+    const firstFocusable = focusable[0] || okBtn;
+    const lastFocusable = focusable[focusable.length - 1] || okBtn;
+
     function cleanup() {
       modal.style.display = 'none';
       okBtn.removeEventListener('click', onOk);
@@ -236,6 +243,21 @@ function showConfirmModal({ title = 'Bevestigen', message, okText = 'Bevestigen'
       if (e.key === 'Escape') {
         e.preventDefault();
         onCancel();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const active = document.activeElement;
+        if (e.shiftKey) {
+          if (active === firstFocusable || !focusable.includes(active)) {
+            e.preventDefault();
+            lastFocusable.focus();
+          }
+        } else {
+          if (active === lastFocusable || !focusable.includes(active)) {
+            e.preventDefault();
+            firstFocusable.focus();
+          }
+        }
       }
     }
 
