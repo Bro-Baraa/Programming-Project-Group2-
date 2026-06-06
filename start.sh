@@ -109,6 +109,8 @@ else
     INIT_RUNNER="$PROJECT_DIR/backend/.venv/bin/python"
     PIP_RUNNER="$PROJECT_DIR/backend/.venv/bin/pip"
     echo -e "${BLUE}Gebruik .venv/bin/python${NC}"
+  else
+    INIT_RUNNER="$PYTHON_RUNNER"
   fi
 fi
 
@@ -213,11 +215,40 @@ if [ "$BACKEND_ONLY" = false ]; then
   fi
 fi
 
+# ── Afsluiten (definieer vóór server start) ──────────────────────────────
+CLEANED_UP=false
+cleanup() {
+  if [ "$CLEANED_UP" = true ]; then
+    return
+  fi
+  CLEANED_UP=true
+  echo ""
+  echo -e "${YELLOW}Afsluiten...${NC}"
+  if [ "$FRONTEND_ONLY" = false ]; then
+    kill $BACKEND_PID 2>/dev/null || true
+    wait $BACKEND_PID 2>/dev/null || true
+  fi
+  if [ "$BACKEND_ONLY" = false ]; then
+    # npm forwards signals niet naar child vite; dood vite expliciet via poort
+    FRONTEND_PID_OLD=$(lsof -ti :$FRONTEND_PORT 2>/dev/null || true)
+    if [ -n "$FRONTEND_PID_OLD" ]; then
+      kill -9 $FRONTEND_PID_OLD 2>/dev/null || true
+    fi
+    kill $FRONTEND_PID 2>/dev/null || true
+    wait $FRONTEND_PID 2>/dev/null || true
+  fi
+  echo -e "${GREEN}Gestopt.${NC}"
+}
+trap cleanup EXIT INT TERM
+
 # ── Start backend ───────────────────────────────────────────────────────
 if [ "$FRONTEND_ONLY" = false ]; then
   echo -e "${GREEN}Backend starten op http://localhost:$BACKEND_PORT${NC}"
   cd "$PROJECT_DIR/backend"
-  $PYTHON_RUNNER -m uvicorn app.main:app --reload --port $BACKEND_PORT --host 0.0.0.0 &
+  $PYTHON_RUNNER -m uvicorn app.main:app --reload \
+    --reload-exclude "*.db" --reload-exclude "*.db-journal" \
+    --reload-exclude "__pycache__" --reload-exclude "*.pyc" \
+    --port $BACKEND_PORT --host 0.0.0.0 &
   BACKEND_PID=$!
   sleep 2
 
@@ -231,9 +262,19 @@ fi
 if [ "$BACKEND_ONLY" = false ]; then
   echo -e "${GREEN}Frontend starten op http://localhost:$FRONTEND_PORT${NC}"
   cd "$PROJECT_DIR/frontend"
-  npm run dev &
+  # Draai vite rechtstreeks (niet via npm) zodat signalen correct doorgestuurd worden
+  if [ -f "$PROJECT_DIR/frontend/node_modules/.bin/vite" ]; then
+    "$PROJECT_DIR/frontend/node_modules/.bin/vite" --host &
+  else
+    npx vite --host &
+  fi
   FRONTEND_PID=$!
   sleep 2
+
+  if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+    echo -e "${RED}Frontend starten mislukt!${NC}"
+    exit 1
+  fi
 fi
 
 # ── Browser openen ───────────────────────────────────────────────────────
@@ -270,21 +311,6 @@ echo ""
 echo "Druk Ctrl+C om te stoppen"
 echo -e "${GREEN}================================================${NC}"
 echo ""
-
-# ── Afsluiten ────────────────────────────────────────────────────────────
-cleanup() {
-  echo ""
-  echo -e "${YELLOW}Afsluiten...${NC}"
-  if [ "$FRONTEND_ONLY" = false ]; then
-    kill $BACKEND_PID 2>/dev/null || true
-  fi
-  if [ "$BACKEND_ONLY" = false ]; then
-    kill $FRONTEND_PID 2>/dev/null || true
-  fi
-  wait 2>/dev/null || true
-  echo -e "${GREEN}Gestopt.${NC}"
-}
-trap cleanup EXIT INT TERM
 
 # ── Wachten ──────────────────────────────────────────────────────────────
 wait
