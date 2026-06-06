@@ -29,6 +29,22 @@ class ProposalResponse(ProposalBase):
     submitted_at: datetime
     revision_count: int = 0
     resubmitted_at: Optional[datetime] = None
+    version: int = 1
+    revised_at: Optional[datetime] = None
+
+
+class ProposalVersionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    proposal_id: int
+    version: int
+    description: str
+    status: str
+    feedback: Optional[str] = None
+    submitted_at: Optional[datetime] = None
+    resubmitted_at: Optional[datetime] = None
+    created_at: datetime
 
 
 class EditProposalRequest(BaseModel):

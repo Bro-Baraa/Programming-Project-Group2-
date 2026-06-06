@@ -23,7 +23,6 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 | Feature | Status | Impact |
 |---------|--------|--------|
-| **Proposal versiegeschiedenis (volledig)** | ❌ Niet geïmplementeerd | Alleen MVP-counter (`revision_count` + `resubmitted_at`), geen `version`/`revised_at` velden en geen `ProposalVersion` tabel |
 | **Export functionaliteit (Excel/PDF)** | ❌ Niet geïmplementeerd | Geen `openpyxl`, `reportlab`, of generieke export endpoints. Wel: JSON rapportages (`/reports`) en agreement PDF download |
 
 ---
@@ -81,42 +80,36 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 ---
 
+### Reeds geïmplementeerd (branch `feature/proposal-versiegeschiedenis`)
+
+| Feature | Status | Bewijs |
+|---------|--------|--------|
+| **Proposal versiegeschiedenis (volledig)** | ✅ Volledig | `models.py`: `Proposal.version` + `Proposal.revised_at`. `ProposalVersion` tabel. `lifecycle.py`: `edit_proposal` + `resubmit_proposal` bewaren oude versies. `proposals.py`: `GET /{id}/proposal/versions` endpoint. `student.js`: toont versie + laatst bewerkt. |
+
+---
+
 ## Prioriteit: Medium
 
 ### 3. Versiegeschiedenis voor Proposals
-**Status:** Gedeeltelijk (MVP-counter aanwezig, volledige historiek niet)  
+**Status:** ✅ Volledig geïmplementeerd  
 **Requirement:** *"Student kan aanpassen en opnieuw indienen"* bij status "Aanpassingen vereist"  
 **Gerelateerde user stories:** [US-01](#user-stories-overzicht), [US-11](#user-stories-overzicht)
 
-**Huidige stand:**
-- `Proposal` heeft al `revision_count` en `resubmitted_at`.
-- De student kan na "Aanpassingen Vereist" opnieuw indienen.
-- Er is nog geen echte versiehistoriek of vergelijking tussen versies.
+**Implementatie bewijs:**
+- **Model:** `backend/app/models.py` heeft `Proposal.version` (integer, default 1) en `Proposal.revised_at` (datetime, nullable)
+- **Model:** `backend/app/models.py` heeft `ProposalVersion` tabel met `id`, `proposal_id`, `version`, `description`, `status`, `feedback`, `submitted_at`, `resubmitted_at`, `created_at`
+- **Service:** `backend/app/services/lifecycle.py`: `edit_proposal` en `resubmit_proposal` slaan oude versie op in `ProposalVersion` vooraleer te updaten, incrementeren `version`, zetten `revised_at`
+- **Router:** `backend/app/routers/proposals.py`: `GET /{internship_id}/proposal/versions` — geeft volledige versiegeschiedenis terug
+- **Schema:** `backend/app/schemas/proposal.py`: `ProposalVersionResponse` schema
+- **Frontend:** `frontend/js/views/student.js`: toont "Versie X" en "Laatst bewerkt" bij proposal
 
-**Vraag:** Willen we oude versies bewaren of alleen de laatste?
-
-**Optie A (simpel):** Overschrijven
-- Student past proposal aan, oude versie gaat verloren
-- Veld `version` bijhouden (1, 2, 3...)
-- Veld `revised_at` bijhouden
-
-**Optie B (compleet):** Volledige historiek
-- Nieuwe tabel `ProposalVersion`
-- Elke wijziging slaat een nieuwe rij op
-- Admin kan alle versies vergelijken
-
-**Aanbeveling:** Optie A voor MVP, Optie B als later vereist.
-
-**Acceptatiecriteria (Optie A):**
-- [ ] `Proposal` heeft veld `version` (integer, default 1)
-- [ ] `Proposal` heeft veld `revised_at` (datetime, nullable)
-- [ ] Bij elke herindiening: version +1, revised_at = now()
-- [ ] Frontend toont "Versie X" bij proposal bekijken
-
-**Acceptatiecriteria (Optie B):**
-- [ ] Nieuwe tabel `ProposalVersion` met volledige kopie
-- [ ] Bij wijziging: oude versie wordt opgeslagen in `ProposalVersion`
-- [ ] Admin kan historiek bekijken en vergelijken
+**Acceptatiecriteria:**
+- [x] `Proposal` heeft veld `version` (integer, default 1)
+- [x] `Proposal` heeft veld `revised_at` (datetime, nullable)
+- [x] Bij elke wijziging: oude versie wordt opgeslagen in `ProposalVersion` tabel
+- [x] Bij elke herindiening: version +1, revised_at = now()
+- [x] Admin kan historiek bekijken via `GET /{internship_id}/proposal/versions`
+- [x] Frontend toont "Versie X" bij proposal bekijken
 
 ---
 
@@ -156,5 +149,5 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 | 2 | **Notificatiesysteem** | ✅ Done | Veel user stories verwachten dit (US-20, US-29) |
 | 3 | **Competentieprofiel koppeling** | ✅ Done | Voorkomt data-inconsistentie bij profielwijzigingen |
 | 4 | **Logboek "ontbrekend"** | ✅ Done | UI verbetering; backend + frontend compleet |
-| 5 | **Proposal versiegeschiedenis** | ⚠️ MVP only | Herindiening werkt, maar geen volledige historiek |
+| 5 | **Proposal versiegeschiedenis** | ✅ Done | Herindiening werkt + volledige historiek in `ProposalVersion` tabel |
 | 6 | **Export functionaliteit** | ❌ Niet | Rapportage-eis voor administratie |

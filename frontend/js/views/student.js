@@ -219,6 +219,8 @@ async function renderStudentDashboard() {
     const feedback = proposal?.feedback;
     const revisionCount = proposal?.revision_count || 0;
     const resubmittedAt = proposal?.resubmitted_at;
+    const version = proposal?.version || 1;
+    const revisedAt = proposal?.revised_at;
 
     let proposalStatusText;
     switch (currentInternship.status) {
@@ -238,7 +240,9 @@ async function renderStudentDashboard() {
         <p><strong>Contactpersoon:</strong> ${escapeHtml(company.contact_person || 'Onbekend')}</p>
         <p><strong>E-mail:</strong> ${escapeHtml(company.contact_email || 'Onbekend')}</p>
         <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} - ${formatDate(currentInternship.end_date)}</p>
+        <p><strong>Versie:</strong> ${version}</p>
         ${revisionCount > 0 ? `<p><strong>Aantal herzieningen:</strong> ${revisionCount}</p>` : ''}
+        ${revisedAt ? `<p><strong>Laatst bewerkt:</strong> ${formatDate(revisedAt)}</p>` : ''}
         ${resubmittedAt ? `<p><strong>Laatst herzien:</strong> ${formatDate(resubmittedAt)}</p>` : ''}
         <div class="proposal-description">
           <p><strong>Omschrijving opdracht:</strong></p>

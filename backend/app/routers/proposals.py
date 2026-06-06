@@ -4,12 +4,13 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Internship, User
-from app.schemas import ProposalResponse, ProposalUpdate, ProposalCreate, ResubmitRequest, EditProposalRequest
+from app.models import Internship, ProposalVersion, User
+from app.schemas import ProposalResponse, ProposalUpdate, ProposalCreate, ProposalVersionResponse, ResubmitRequest, EditProposalRequest
 from app.auth import get_current_active_user, require_committee, require_student
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 from app.services.audit import log_event
+from typing import List
 
 router = APIRouter(prefix="/internships", tags=["proposals"])
 
@@ -129,6 +130,29 @@ def resubmit_proposal_endpoint(
     )
     log_event(db, "proposal.resubmit", user=current_user, entity_type="internship", entity_id=internship_id, detail="Voorstel herindienen")
     return result.internship.proposal
+
+
+@router.get("/{internship_id}/proposal/versions", response_model=List[ProposalVersionResponse])
+def get_proposal_versions(
+    internship_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """Get full version history of a proposal (admin, committee, or involved student)."""
+    internship = db.query(Internship).filter(Internship.id == internship_id).first()
+    if not internship:
+        raise HTTPException(status_code=404, detail="Internship not found")
+    
+    ensure_internship_access(current_user, internship)
+
+    if not internship.proposal:
+        raise HTTPException(status_code=404, detail="Proposal not found")
+    
+    versions = db.query(ProposalVersion).filter(
+        ProposalVersion.proposal_id == internship.proposal.id
+    ).order_by(ProposalVersion.version.desc()).all()
+    
+    return versions
 
 
 @router.delete("/{internship_id}/proposal")

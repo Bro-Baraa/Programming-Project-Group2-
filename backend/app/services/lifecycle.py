@@ -13,7 +13,7 @@ from typing import BinaryIO, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models import Agreement, Company, CompetencyProfile, Internship, Proposal, User
+from app.models import Agreement, Company, CompetencyProfile, Internship, Proposal, ProposalVersion, User
 from app.services.notifications import notify
 from app.services.common import get_active_competency_profile
 
@@ -389,8 +389,22 @@ class InternshipLifecycle:
                 detail="Can only edit proposals that have not yet been reviewed",
             )
 
+        # Save current version to history before editing
+        old_version = ProposalVersion(
+            proposal_id=internship.proposal.id,
+            version=internship.proposal.version,
+            description=internship.proposal.description,
+            status=internship.proposal.status,
+            feedback=internship.proposal.feedback,
+            submitted_at=internship.proposal.submitted_at,
+            resubmitted_at=internship.proposal.resubmitted_at,
+        )
+        self.db.add(old_version)
+
         if description is not None:
             internship.proposal.description = description
+        internship.proposal.version = (internship.proposal.version or 1) + 1
+        internship.proposal.revised_at = self._now()
         internship.proposal.submitted_at = self._now()
 
         if internship.company:
@@ -481,12 +495,26 @@ class InternshipLifecycle:
 
         self._assert_transition(internship.status, "In Beoordeling")
 
+        # Save current version to history before resubmitting
+        old_version = ProposalVersion(
+            proposal_id=internship.proposal.id,
+            version=internship.proposal.version,
+            description=internship.proposal.description,
+            status=internship.proposal.status,
+            feedback=internship.proposal.feedback,
+            submitted_at=internship.proposal.submitted_at,
+            resubmitted_at=internship.proposal.resubmitted_at,
+        )
+        self.db.add(old_version)
+
         internship.proposal.description = new_description
         internship.proposal.status = "In Beoordeling"
         internship.proposal.submitted_at = self._now()
         internship.proposal.feedback = None
         internship.proposal.revision_count = (internship.proposal.revision_count or 0) + 1
         internship.proposal.resubmitted_at = self._now()
+        internship.proposal.version = (internship.proposal.version or 1) + 1
+        internship.proposal.revised_at = self._now()
         internship.status = "In Beoordeling"
 
         if internship.company:

@@ -94,8 +94,27 @@ class Proposal(Base):
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
     revision_count = Column(Integer, default=0)
     resubmitted_at = Column(DateTime(timezone=True), nullable=True)
+    version = Column(Integer, default=1, nullable=False)
+    revised_at = Column(DateTime(timezone=True), nullable=True)
 
     internship = relationship("Internship", back_populates="proposal")
+    versions = relationship("ProposalVersion", back_populates="proposal", cascade="all, delete-orphan", order_by="ProposalVersion.version")
+
+
+class ProposalVersion(Base):
+    __tablename__ = "proposal_versions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    proposal_id = Column(Integer, ForeignKey("proposals.id"), nullable=False)
+    version = Column(Integer, nullable=False)
+    description = Column(Text, nullable=False)
+    status = Column(String, nullable=False)
+    feedback = Column(Text, nullable=True)
+    submitted_at = Column(DateTime(timezone=True), nullable=True)
+    resubmitted_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    proposal = relationship("Proposal", back_populates="versions")
 
 
 class Agreement(Base):

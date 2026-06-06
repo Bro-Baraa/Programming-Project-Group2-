@@ -34,6 +34,7 @@ from .proposal import (
     ProposalCreate,
     ProposalUpdate,
     ProposalResponse,
+    ProposalVersionResponse,
     ResubmitRequest,
     EditProposalRequest,
 )
@@ -116,6 +117,7 @@ __all__ = [
     "ProposalCreate",
     "ProposalUpdate",
     "ProposalResponse",
+    "ProposalVersionResponse",
     "ResubmitRequest",
     "EditProposalRequest",
     # Agreement
