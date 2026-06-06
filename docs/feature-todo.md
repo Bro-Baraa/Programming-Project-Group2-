@@ -16,14 +16,15 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 | **Dashboard aggregatie** | ✅ Volledig | `services/dashboard.py` met `joinedload`, alerts, logboek-math, evaluatie-samenvatting |
 | **Audit Logging** | ✅ Volledig | `models.py`: `AuditLog`. `services/audit.py`: `log_event()`. `routers/audit.py`: admin endpoints. Triggers in `logbooks.py`, `lifecycle.py` |
 | **Notificatiesysteem** | ✅ Volledig | `models.py`: `Notification`. `services/notifications.py`: `notify()`. `routers/notifications.py`: CRUD. Frontend: `notifications.js` bell-icoontje + dropdown. Triggers in `lifecycle.py` |
+| **Competentieprofiel koppelen aan Stage** | ✅ Volledig | `models.py`: `Internship.competency_profile_id`. `lifecycle.py`: kopieert actief profiel bij stage-aanmaak. `evaluations.py`: gebruikt stage-profiel, niet systeem-default. Historische stages ongewijzigd bij profielwijziging |
+| **"Ontbrekend" status Logboeken (frontend)** | ✅ Volledig | Frontend: `student.js`, `mentor.js`, `teacher.js` renderen `missing`-weeks met `status-warn` / `status-missing` CSS. `index.html` legenda aanwezig |
 
 ### Echt nog ontbrekend
 
 | Feature | Status | Impact |
 |---------|--------|--------|
-| **Competentieprofiel koppelen aan Stage** | ❌ Niet geïmplementeerd | `internships` tabel heeft geen `competency_profile_id` |
-| **Proposal versiegeschiedenis (volledig)** | ❌ Niet geïmplementeerd | Alleen MVP-counter, geen `ProposalVersion` tabel |
-| **Export functionaliteit** | ❌ Niet geïmplementeerd | Geen `openpyxl`, `reportlab`, of export endpoints |
+| **Proposal versiegeschiedenis (volledig)** | ❌ Niet geïmplementeerd | Alleen MVP-counter (`revision_count` + `resubmitted_at`), geen `version`/`revised_at` velden en geen `ProposalVersion` tabel |
+| **Export functionaliteit (Excel/PDF)** | ❌ Niet geïmplementeerd | Geen `openpyxl`, `reportlab`, of generieke export endpoints. Wel: JSON rapportages (`/reports`) en agreement PDF download |
 
 ---
 
@@ -82,32 +83,7 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 ## Prioriteit: Medium
 
-### 3. Competentieprofiel Koppelen aan Stage
-**Status:** Gedeeltelijk: profiel wordt opgehaald, maar niet opgeslagen op stage-niveau  
-**Requirement:** *"Wijzigingen gelden enkel voor nieuwe stageperiodes; historische evaluaties blijven ongewijzigd"*  
-**Gerelateerde user stories:** [US-25](#user-stories-overzicht)
-
-**Probleem:** Als een admin het actieve competentieprofiel wijzigt, gebruiken lopende stages meteen het nieuwe profiel. Dat mag niet.
-
-**Wat moet er gebeuren:**
-- `Internship` model uitbreiden met `competency_profile_id`
-- Bij aanmaken van stage: kopieer het dan-actieve profiel ID
-- Bij evaluatie: gebruik altijd het profiel gekoppeld aan de stage, niet het "huidige actieve profiel"
-
-**Acceptatiecriteria:**
-- [ ] `Internship` heeft veld `competency_profile_id`
-- [ ] Bij aanmaken stage wordt profiel ID opgeslagen
-- [ ] Evaluaties gebruiken het profiel van de stage, niet het systeem-default
-- [ ] Oude stages blijven het oude profiel gebruiken ook als admin wijzigt
-
-**Impact:**
-- Database migratie nodig (nieuw veld)
-- Backend: aanpassen waar evaluaties worden aangemaakt
-- Frontend: geen wijzigingen
-
----
-
-### 4. Versiegeschiedenis voor Proposals
+### 3. Versiegeschiedenis voor Proposals
 **Status:** Gedeeltelijk (MVP-counter aanwezig, volledige historiek niet)  
 **Requirement:** *"Student kan aanpassen en opnieuw indienen"* bij status "Aanpassingen vereist"  
 **Gerelateerde user stories:** [US-01](#user-stories-overzicht), [US-11](#user-stories-overzicht)
@@ -146,14 +122,19 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 ## Prioriteit: Laag
 
-### 5. Export Functionaliteit (Rapporten)
+### 4. Export Functionaliteit (Excel/PDF)
 **Status:** Niet geïmplementeerd  
 **Requirement:** *"rapportages exporteren zodat data bruikbaar is voor rapportering"*  
 **Gerelateerde user stories:** [US-28](#user-stories-overzicht)
 
+**Huidige stand:**
+- JSON rapportages bestaan wel: `/internships/reports/agreements`, `/internships/{id}/final-report`
+- Agreement PDF download bestaat: `/internships/{id}/agreement/download` (geüploade bestand)
+- Generieke export (Excel/PDF met gegenereerde rapportage) ontbreekt
+
 **Wat moet er gebeuren:**
-- Excel export voor admin/dashboard data
-- PDF export voor eindrapporten (mooi geformatteerd)
+- Excel export voor admin/dashboard data (`openpyxl`)
+- PDF export voor eindrapporten (`reportlab` of `WeasyPrint`)
 - Backend endpoints toevoegen `/internships/reports/export`
 
 **Technologie opties:**
@@ -167,32 +148,13 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 ---
 
-### 6. "Ontbrekend" Status voor Logboeken
-**Status:** Gedeeltelijk: backend berekent missing-weken, frontend toont ze nog niet  
-**Requirement:** *"Niet-ingevulde weken gemarkeerd als 'Ontbrekend'"*  
-**Gerelateerde user stories:** [US-08](#user-stories-overzicht)
-
-**Opmerking:** Dit is geen database wijziging, maar frontend logica. De backend heeft al een week-overzicht en `missing` status.
-
-**Wat moet er gebeuren:**
-- Frontend toont lijst van alle weken in de stageperiode
-- Voor elke week: check of er een `Logbook` bestaat
-- Zo nee: toon "Ontbrekend" (rood/oranje markeren)
-
-**Acceptatiecriteria:**
-- [ ] Student ziet voor elke week of logboek is ingevuld, ontbrekend, of nog toekomstig
-- [ ] Ontbrekende weken zijn visueel duidelijk (bijv. rood/oranje)
-- [ ] Docent/mentor ziet welke studenten ontbrekende logboeken hebben
-
----
-
 ## Samenvatting: Wat Moet Eerst?
 
-| Volgorde | Feature | Reden |
-|----------|---------|-------|
-| 1 | **Audit Logging** | Vereist voor traceerbaarheid en auditbaar gedrag |
-| 2 | **Notificatiesysteem** | Veel user stories verwachten dit (US-20, US-29) |
-| 3 | **Competentieprofiel koppeling** | Voorkomt data-inconsistentie bij profielwijzigingen |
-| 4 | **Proposal versiegeschiedenis** | Nodig voor volledige herindiening flow |
-| 5 | **Export functionaliteit** | Rapportage-eis voor administratie |
-| 6 | **Logboek "ontbrekend"** | UI verbetering; backend bestaat al grotendeels |
+| Volgorde | Feature | Status | Reden |
+|----------|---------|--------|-------|
+| 1 | **Audit Logging** | ✅ Done | Vereist voor traceerbaarheid en auditbaar gedrag |
+| 2 | **Notificatiesysteem** | ✅ Done | Veel user stories verwachten dit (US-20, US-29) |
+| 3 | **Competentieprofiel koppeling** | ✅ Done | Voorkomt data-inconsistentie bij profielwijzigingen |
+| 4 | **Logboek "ontbrekend"** | ✅ Done | UI verbetering; backend + frontend compleet |
+| 5 | **Proposal versiegeschiedenis** | ⚠️ MVP only | Herindiening werkt, maar geen volledige historiek |
+| 6 | **Export functionaliteit** | ❌ Niet | Rapportage-eis voor administratie |
