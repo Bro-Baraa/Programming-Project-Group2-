@@ -18,9 +18,8 @@ Docs: `http://localhost:8001/docs`
 ### Testdata seeden
 
 ```bash
-python seed.py           # basis users + competenties
-# of
-python seed_complete.py  # uitgebreidere testdata
+python seed_loader.py    # uitgebreide testdata (YAML-backed)
+# of: python seed.py      # alias voor hetzelfde
 ```
 
 ## Belangrijke Endpoints
@@ -69,7 +68,7 @@ backend/
 ├── tests/                   # pytest suite
 ├── uploads/agreements/      # PDF uploads
 ├── init_admin.py            # Eerste setup
-├── seed.py / seed_complete.py
+├── seed.py / seed_loader.py
 ├── requirements.txt
 └── pytest.ini
 ```

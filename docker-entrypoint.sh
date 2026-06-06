@@ -17,7 +17,7 @@ mkdir -p "$(dirname "$DATABASE_PATH")"
 if [ ! -f "$DATABASE_PATH" ]; then
     echo "📦 Database not found. Running seed..."
     cd /app/backend
-    python3 seed_complete.py || echo "⚠️  Seed script had issues (may be OK if DB already created)"
+    python3 seed_loader.py
     echo ""
 fi
 

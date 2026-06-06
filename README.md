@@ -158,8 +158,8 @@ Programming-Project-Group2-/
 │   ├── tests/                   # pytest testsuite
 │   ├── uploads/agreements/      # PDF uploads
 │   ├── init_admin.py            # Eerste keer setup
-│   ├── seed.py                  # Testdata seeding (basis)
-│   ├── seed_complete.py         # Testdata seeding (uitgebreid)
+│   ├── seed.py                  # Testdata seeding (alias → seed_loader.py)
+│   ├── seed_loader.py            # Testdata seeding (YAML-backed, core)
 │   ├── requirements.txt         # Python dependencies
 │   ├── .env.example             # Template voor env-variabelen
 │   └── pytest.ini               # Testconfiguratie
@@ -196,8 +196,8 @@ cd backend
 ### Testdata seeden
 ```bash
 cd backend
-python seed.py          # basis users + competenties
-python seed_complete.py  # uitgebreidere testdata
+python seed_loader.py   # uitgebreide testdata (YAML-backed)
+# of: python seed.py     # alias voor hetzelfde
 ```
 
 > **Windows:** Gebruik `python` in plaats van `python3` en `pytest` via `python -m pytest` als het commando niet in PATH staat.

@@ -337,14 +337,14 @@ def seed_database_if_empty(init_runner: str) -> None:
         return
 
     log("Database leeg of niet gevonden. Seeding met demo-data...")
-    seed_script = PROJECT_DIR / "backend" / "seed_complete.py"
+    seed_script = PROJECT_DIR / "backend" / "seed_loader.py"
     cmd = base_cmd + [str(seed_script)]
     log_command(cmd, PROJECT_DIR / "backend")
     try:
         result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
         log_result(result)
         if result.returncode != 0:
-            log_fatal_error(f"seed_complete.py failed with exit code {result.returncode}")
+            log_fatal_error(f"seed script failed with exit code {result.returncode}")
     except Exception as e:
         log_fatal_error(f"seed script failed: {e}\n{traceback.format_exc()}")
     log("Database gevuld!")

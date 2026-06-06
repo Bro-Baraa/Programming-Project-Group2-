@@ -38,7 +38,7 @@ users:
     is_active: true
 
   - email: docent2@school.be
-    password: demo123  # niet in DB, enkel in yaml
+    password: demo123
     first_name: Karel
     last_name: Vermeiren
     role: teacher
@@ -53,14 +53,14 @@ users:
     is_active: true
 
   - email: mentor2@school.be
-    password: demo123  # niet in DB
+    password: demo123
     first_name: Sofie
     last_name: De Vries
     role: mentor
     is_active: true
 
   - email: mentor3@school.be
-    password: demo123  # niet in DB
+    password: demo123
     first_name: Pieter
     last_name: Maes
     role: mentor
@@ -75,7 +75,7 @@ users:
     is_active: true
 
   - email: commissie2@school.be
-    password: demo123  # niet in DB
+    password: demo123
     first_name: Elena
     last_name: Rodriguez
     role: committee
@@ -97,35 +97,35 @@ users:
     is_active: true
 
   - email: student3@school.be
-    password: demo123  # niet in DB
+    password: demo123
     first_name: Luc
     last_name: Van den Broeck
     role: student
     is_active: true
 
   - email: student4@school.be
-    password: demo123  # niet in DB
+    password: demo123
     first_name: Emma
     last_name: Dubois
     role: student
     is_active: true
 
   - email: student5@school.be
-    password: demo123  # niet in DB
+    password: demo123
     first_name: Thomas
     last_name: Wouters
     role: student
     is_active: true
 
   - email: student7@school.be
-    password: demo123  # niet in DB
+    password: demo123
     first_name: Kevin
     last_name: Hendrickx
     role: student
     is_active: true
 
   - email: student8@school.be
-    password: demo123  # niet in DB
+    password: demo123
     first_name: Lisa
     last_name: Jacobs
     role: student
@@ -133,7 +133,7 @@ users:
 
   # --- Student (inactive) ---
   - email: student6@school.be
-    password: demo123  # niet in DB, inactief
+    password: demo123  # inactief
     first_name: Sara
     last_name: Neyens
     role: student
