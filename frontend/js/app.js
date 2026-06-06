@@ -119,8 +119,6 @@ async function handleLogin(e) {
   const submitBtn = e.target.querySelector('button[type="submit"]');
   const errorEl = document.getElementById('login-error');
 
-  console.log('[DEBUG] handleLogin called for email:', email);
-
   // Vorige fout wissen
   if (errorEl) {
     errorEl.textContent = '';
@@ -133,7 +131,6 @@ async function handleLogin(e) {
 
   try {
     const data = await AuthAPI.login(email, password);
-    console.log('[DEBUG] Login successful, redirecting...');
     hideLoading(submitBtn);
     showToast(`Welkom, ${data.user.first_name}!`, 'success');
 
@@ -427,9 +424,18 @@ async function renderView() {
     const tpl = document.getElementById(templateId);
     if (tpl) {
       content.appendChild(tpl.content.cloneNode(true));
-      // Add reveal animation only on first render
+      content.classList.add('content-fade-in');
+      // Stagger panel reveals
+      const panels = content.querySelectorAll('.panel, .grid');
+      panels.forEach((el, i) => {
+        el.classList.add('reveal-stagger');
+        el.style.setProperty('--panel-i', i);
+      });
+      // Clean up animation class after it completes
+      content.addEventListener('animationend', () => {
+        content.classList.remove('content-fade-in');
+      }, { once: true });
       if (_firstRender) {
-        content.querySelectorAll('.panel, .grid').forEach(el => el.classList.add('reveal'));
         _firstRender = false;
       }
       await wireRoleInteractions(role, view);
@@ -458,7 +464,7 @@ async function renderView() {
       emptyDiv.className = 'panel card info-message';
       emptyDiv.innerHTML = `
         <h2>Geen stage gevonden</h2>
-        <p>Je hebt nog geen stage ingediend. Dien een voorstel in via het tabblad <strong>Voorstel</strong>.</p>
+        <p>Je hebt nog geen stage ingediend. Dien een voorstel in via het tabblad <strong>Voorstel</strong> om te beginnen.</p>
         <a href="?view=voorstel" class="btn">Stagevoorstel indienen</a>
       `;
       content.replaceChildren(emptyDiv);
@@ -500,8 +506,8 @@ function populateInternshipSelector(role) {
     const option = document.createElement('option');
     option.value = i.id;
     const label = i.student
-      ? `${i.student.first_name} ${i.student.last_name} — ${i.company?.name || 'Onbekend'} (${i.status})`
-      : `Stage ${i.id} — ${i.status}`;
+      ? `${i.student.first_name} ${i.student.last_name}, ${i.company?.name || 'Onbekend'} (${i.status})`
+      : `Stage ${i.id}, ${i.status}`;
     option.textContent = label;
     select.appendChild(option);
   });

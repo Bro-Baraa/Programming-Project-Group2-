@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -13,18 +13,13 @@
 </head>
 
 <body>
+  <a href="#content" class="skip-link">Ga naar inhoud</a>
   <header class="topbar">
     <div class="brand">
-      <img src="icons/logo.svg" alt="" class="brand-logo" width="32" height="32" />
+      <img src="icons/logo.svg" alt="Stage Monitoring Tool" class="brand-logo" width="32" height="32" />
       <h1>Stage Monitoring Tool</h1>
     </div>
     <div class="user-info" id="user-info">
-      <div class="user-context" id="internship-selector-wrapper" style="display: none;">
-        <label for="internship-select">Stage</label>
-        <select id="internship-select" aria-label="Kies stage">
-          <option value="">Laden...</option>
-        </select>
-      </div>
       <div class="user-badge">
         <img src="icons/user.svg" alt="" width="16" height="16" class="icon-img" />
         <span class="user-name" id="user-name">Gebruiker</span>
@@ -42,16 +37,22 @@
             <button class="notif-read-all" id="notif-read-all"><img src="icons/check-circle.svg" alt="" width="14" height="14" class="icon-img" /> Alles gelezen</button>
           </div>
           <ul class="notif-list" id="notif-list">
-            <li class="notif-empty">Geen notificaties</li>
+            <li class="notif-empty">Geen ongelezen notificaties</li>
           </ul>
         </div>
       </div>
-      <button class="btn logout" id="logout-btn"><img src="icons/log-out.svg" alt="" width="14" height="14" class="icon-img" /> Uitloggen</button>
+      <button class="btn logout" id="logout-btn" aria-label="Uitloggen"><img src="icons/log-out.svg" alt="" width="16" height="16" class="icon-img" /></button>
     </div>
   </header>
 
   <nav class="nav-bar" id="nav-panel" style="display: none;">
     <ul class="nav-tabs" id="view-tabs"></ul>
+    <div class="nav-stage-selector" id="internship-selector-wrapper" style="display: none;">
+      <label for="internship-select">Stage</label>
+      <select id="internship-select" aria-label="Kies stage">
+        <option value="">Laden...</option>
+      </select>
+    </div>
   </nav>
 
   <main id="app" class="layout">
@@ -132,7 +133,7 @@
           </thead>
           <tbody>
             <tr>
-              <td colspan="4">Geen logboeken gevonden</td>
+              <td colspan="4">Nog geen logboeken. Klik op een week in het overzicht om te beginnen.</td>
             </tr>
           </tbody>
         </table>
@@ -150,7 +151,7 @@
     <div class="panel card">
       <h2>Feedback</h2>
       <div id="student-feedback">
-        <p class="hint">Je hebt nog geen feedback ontvangen.</p>
+        <p class="hint">Je hebt nog geen feedback ontvangen. Je docent of mentor stuurt feedback zodra je logboek is beoordeeld.</p>
       </div>
     </div>
   </template>
@@ -218,7 +219,7 @@
   <template id="student-logboek-template">
     <div class="panel card">
       <h2>Logboeken Overzicht</h2>
-      <p class="hint">Klik op een week om het logboek te bewerken of in te vullen.</p>
+      <p class="hint">Klik op een week om het logboek te bewerken of in te vullen. Groen = ingediend, oranje = concept.</p>
       <div id="logbook-week-grid" class="week-grid"></div>
       <div id="logbook-legend" style="margin-top: 0.75rem; display: flex; gap: 1rem; font-size: 0.8rem;">
         <span><span class="dot" style="background:var(--good);"></span> Ingediend</span>
@@ -266,7 +267,7 @@
         </thead>
         <tbody>
           <tr>
-            <td colspan="4">Geen evaluaties gevonden</td>
+            <td colspan="4">Nog geen evaluaties beschikbaar. Evaluaties worden toegevoegd door je docent of mentor.</td>
           </tr>
         </tbody>
       </table>
@@ -291,8 +292,7 @@
     <div class="panel card">
       <h2>Stageovereenkomst</h2>
       <p>Upload hier je getekende stageovereenkomst (PDF, max 5MB).</p>
-      <p class="hint" id="agreement-hint">Let op: Je kan pas een overeenkomst uploaden als je stagevoorstel is
-        goedgekeurd.</p>
+          <p class="hint" id="agreement-hint">Je kan pas een overeenkomst uploaden als je stagevoorstel is goedgekeurd door de stagecommissie.</p>
 
       <form id="agreement-form">
         <div class="row full">
@@ -313,7 +313,7 @@
   <template id="commissie-template">
     <div class="panel card">
       <h2>Stagevoorstellen Beoordelen</h2>
-      <p class="hint">Klik op een rij om een voorstel te selecteren en te beoordelen.</p>
+      <p class="hint">Klik op een rij om een voorstel te selecteren en te beoordelen. Je kan goedkeuren, afkeuren of aanpassingen vragen.</p>
       <table id="proposals-table">
         <thead>
           <tr>
@@ -355,7 +355,7 @@
   <template id="commissie-overeenkomsten-template">
     <div class="panel card">
       <h2>Overeenkomsten Beoordelen</h2>
-      <p class="hint">Controleer of de overeenkomst is opgeladen en markeer de verzekering als in orde.</p>
+      <p class="hint">Controleer of de overeenkomst is opgeladen en markeer de verzekering als in orde. Alleen studenten met een goedgekeurd voorstel kunnen een overeenkomst uploaden.</p>
       <table id="agreements-table">
         <thead>
           <tr>

@@ -87,6 +87,22 @@ function initNotifications() {
         closeDropdown();
       }
     });
+
+    // Arrow key navigation within dropdown
+    document.getElementById('notif-dropdown')?.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      e.preventDefault();
+      const items = Array.from(document.querySelectorAll('.notif-item, .notif-read-all'));
+      const focused = document.activeElement;
+      const idx = items.indexOf(focused);
+      if (e.key === 'ArrowDown') {
+        const next = idx < items.length - 1 ? idx + 1 : 0;
+        items[next]?.focus();
+      } else if (e.key === 'ArrowUp') {
+        const prev = idx > 0 ? idx - 1 : items.length - 1;
+        items[prev]?.focus();
+      }
+    });
   }
 
   // Initial fetch
@@ -133,7 +149,18 @@ function renderNotifications(notifications) {
 
   // Count unread to decide whether to show the red dot
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const hadNew = dot.style.display === 'block';
   dot.style.display = unreadCount > 0 ? 'block' : 'none';
+
+  // Pulse the bell when new notifications arrive
+  if (unreadCount > 0 && !hadNew) {
+    const bell = document.getElementById('notif-bell');
+    if (bell) {
+      bell.classList.remove('has-new');
+      void bell.offsetWidth; // force reflow to restart animation
+      bell.classList.add('has-new');
+    }
+  }
 
   if (notifications.length === 0) {
     list.textContent = '';
@@ -152,6 +179,7 @@ function renderNotifications(notifications) {
     li.dataset.id = n.id;
     li.dataset.internship = n.internship_id || '';
     li.dataset.view = n.link_view || '';
+    li.tabIndex = 0;
 
     const body = document.createElement('div');
     body.className = 'notif-item-body';
