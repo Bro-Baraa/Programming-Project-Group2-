@@ -33,6 +33,9 @@ async function renderStudentDashboard() {
         <p><strong>Periode:</strong> ${startDate} - ${endDate}</p>
         <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(currentInternship.status)}">${currentInternship.status}</span></p>
         <p><strong>Overeenkomst:</strong> ${agreementLabel}</p>
+        <div style="margin-top: 1rem;">
+          <a href="?view=voorstel" class="btn">+ Nieuw stagevoorstel</a>
+        </div>
       `;
     }
 
@@ -230,7 +233,10 @@ async function renderStudentDashboard() {
     }
 
     container.innerHTML = `
-      <h2>Mijn Stagevoorstel</h2>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+        <h2 style="margin:0;">Mijn Stagevoorstel</h2>
+        <button id="btn-new-proposal" class="btn">+ Nieuw stagevoorstel</button>
+      </div>
 
       <div class="proposal-summary">
         <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(currentInternship.status)}">${currentInternship.status}</span></p>
@@ -355,6 +361,24 @@ async function renderStudentDashboard() {
           <p>Je voorstel is ${proposalStatusText}. Je kunt het op dit moment niet meer wijzigen.</p>
         </div>
       ` : ''}
+
+      ${allInternships.length > 1 ? `
+        <div style="margin-top: 2rem;">
+          <h3>Mijn andere stagevoorstellen</h3>
+          ${allInternships.filter(i => i.id !== currentInternship.id).map(i => {
+            const company = i.company || {};
+            return `
+              <div class="panel card" style="margin-top: 0.75rem;">
+                <p><strong>Bedrijf:</strong> ${escapeHtml(company.name || 'Onbekend')}</p>
+                <p><strong>Status:</strong> <span class="status-pill ${getStatusClass(i.status)}">${i.status}</span></p>
+                <p><strong>Periode:</strong> ${formatDate(i.start_date)} - ${formatDate(i.end_date)}</p>
+                <p><strong>Opdracht:</strong> ${escapeHtml(i.proposal?.description?.substring(0, 100) || 'Geen omschrijving')}${i.proposal?.description?.length > 100 ? '...' : ''}</p>
+                <a href="?view=voorstel&internship=${i.id}" class="btn small">Bekijken</a>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      ` : ''}
     `;
 
     // Wire edit form
@@ -456,6 +480,130 @@ async function renderStudentDashboard() {
         hideLoading(submitBtn);
         showToast(error.message, 'error');
       }
+    });
+
+    // Wire new proposal button
+    document.getElementById('btn-new-proposal')?.addEventListener('click', () => {
+      container.innerHTML = `
+        <h2>Nieuw stagevoorstel indienen</h2>
+        <form id="new-proposal-form">
+          <div class="row full">
+            <label>Bedrijfsnaam *</label>
+            <input type="text" id="new-company-name" placeholder="Naam van het bedrijf" required />
+          </div>
+          <div class="row full">
+            <label>Adres</label>
+            <input type="text" id="new-company-address" placeholder="Straat en nummer" />
+          </div>
+          <div class="row full">
+            <label>Sector</label>
+            <input type="text" id="new-company-sector" placeholder="Bijv. IT, Data & Analytics..." />
+          </div>
+          <div class="row full">
+            <label>Contactpersoon *</label>
+            <input type="text" id="new-contact-person" placeholder="Naam contactpersoon" required />
+          </div>
+          <div class="row full">
+            <label>E-mail contactpersoon *</label>
+            <input type="email" id="new-contact-email" placeholder="email@bedrijf.be" required />
+          </div>
+          <div class="row full">
+            <label>Stageperiode *</label>
+            <div class="date-range">
+              <input type="date" id="new-start-date" required />
+              <span>tot</span>
+              <input type="date" id="new-end-date" required />
+            </div>
+          </div>
+          <div class="row full">
+            <label>Omschrijving opdracht * (min. 20 karakters)</label>
+            <textarea id="new-assignment-desc" rows="4" placeholder="Beschrijf de stageopdracht in detail..." required minlength="20"></textarea>
+          </div>
+          <div class="row full">
+            <label>Docent (optioneel)</label>
+            <select id="new-teacher-select">
+              <option value="">-- Kies een docent --</option>
+            </select>
+          </div>
+          <div class="row full">
+            <label>Mentor (optioneel)</label>
+            <select id="new-mentor-select">
+              <option value="">-- Kies een mentor --</option>
+            </select>
+          </div>
+          <button type="submit" class="btn">Voorstel Indienen</button>
+          <button type="button" id="btn-cancel-new-proposal" class="btn secondary">Annuleren</button>
+        </form>
+      `;
+
+      const teacherSelect = document.getElementById('new-teacher-select');
+      const mentorSelect = document.getElementById('new-mentor-select');
+
+      if (teacherSelect) {
+        teacherSelect.innerHTML = '<option value="">-- Kies een docent --</option>';
+        UsersAPI.list('teacher').then(teachers => {
+          teachers.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = `${t.first_name} ${t.last_name} (${t.email})`;
+            teacherSelect.appendChild(option);
+          });
+        }).catch(() => {
+          teacherSelect.innerHTML = '<option value="">Kon docenten niet laden</option>';
+        });
+      }
+
+      if (mentorSelect) {
+        mentorSelect.innerHTML = '<option value="">-- Kies een mentor --</option>';
+        UsersAPI.list('mentor').then(mentors => {
+          mentors.forEach(m => {
+            const option = document.createElement('option');
+            option.value = m.id;
+            option.textContent = `${m.first_name} ${m.last_name} (${m.email})`;
+            mentorSelect.appendChild(option);
+          });
+        }).catch(() => {
+          mentorSelect.innerHTML = '<option value="">Kon mentors niet laden</option>';
+        });
+      }
+
+      document.getElementById('btn-cancel-new-proposal')?.addEventListener('click', () => {
+        renderView();
+      });
+
+      const newForm = document.getElementById('new-proposal-form');
+      newForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = newForm.querySelector('button[type="submit"]');
+
+        const data = {
+          company_name: document.getElementById('new-company-name').value,
+          company_address: document.getElementById('new-company-address').value || null,
+          company_sector: document.getElementById('new-company-sector').value || null,
+          contact_person: document.getElementById('new-contact-person').value,
+          contact_email: document.getElementById('new-contact-email').value,
+          start_date: document.getElementById('new-start-date').value,
+          end_date: document.getElementById('new-end-date').value,
+          description: document.getElementById('new-assignment-desc').value,
+        };
+
+        const teacherId = parseInt(document.getElementById('new-teacher-select')?.value);
+        const mentorId = parseInt(document.getElementById('new-mentor-select')?.value);
+        if (teacherId) data.teacher_id = teacherId;
+        if (mentorId) data.mentor_id = mentorId;
+
+        showLoading(submitBtn, 'Indienen...');
+
+        try {
+          await InternshipsAPI.create(data);
+          hideLoading(submitBtn);
+          showToast('Stagevoorstel succesvol ingediend!', 'success');
+          setTimeout(() => window.location.href = '?view=dashboard', 1000);
+        } catch (error) {
+          hideLoading(submitBtn);
+          showToast(error.message, 'error');
+        }
+      });
     });
   }
 
