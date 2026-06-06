@@ -52,12 +52,18 @@ def seed_rules_from_active_profile(db: Session, evaluation_id: int, profile_id: 
 
 
 def ensure_can_finalize(evaluation: Evaluation, current_user) -> None:
-    """Guard finalize permissions and state."""
-    if evaluation.evaluator_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Only the evaluator can finalize")
-
+    """Guard finalize permissions and state.
+    Evaluator can always finalize. Teachers can finalize evaluations for their assigned internships."""
     if evaluation.finalized:
         raise HTTPException(status_code=400, detail="Evaluation already finalized")
+
+    if evaluation.evaluator_id == current_user.id:
+        return
+
+    if current_user.role == "teacher" and evaluation.internship.teacher_id == current_user.id:
+        return
+
+    raise HTTPException(status_code=403, detail="Only the evaluator or assigned teacher can finalize")
 
 
 def ensure_all_rules_scored(db: Session, evaluation_id: int) -> None:

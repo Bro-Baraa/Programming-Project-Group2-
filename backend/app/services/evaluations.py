@@ -52,6 +52,13 @@ def create_evaluation(
     ensure_internship_is_evaluable(internship)
     ensure_final_not_exists(db, internship_id, data.eval_type)
 
+    # Students can only create self-evaluations for their own internship
+    if current_user.role == "student":
+        if data.eval_type not in ("tussentijds", "self"):
+            raise HTTPException(status_code=403, detail="Students can only create tussentijds evaluations")
+        if internship.student_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Not authorized for this internship")
+
     evaluation = Evaluation(
         internship_id=internship_id,
         evaluator_id=current_user.id,

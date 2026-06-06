@@ -43,9 +43,9 @@ def create_evaluation(
     internship_id: int,
     data: EvaluationCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_teacher),
+    current_user: User = Depends(get_current_active_user),
 ):
-    """US-17, US-18: Teacher creates an evaluation (tussentijds or final)"""
+    """US-06, US-17, US-18: Create an evaluation (teacher, mentor, or student self-eval)."""
     result = create_evaluation_svc(db, current_user, internship_id, data)
     log_event(db, "evaluation.create", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Evaluatie aangemaakt: {data.eval_type}")
 
@@ -125,7 +125,13 @@ def finalize_evaluation_endpoint(
 ):
     """US-18: Finalize an evaluation - cannot be modified after.
     If this is a final evaluation, the internship is also marked as completed."""
-    evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
+    from sqlalchemy.orm import joinedload
+    evaluation = (
+        db.query(Evaluation)
+        .options(joinedload(Evaluation.internship))
+        .filter(Evaluation.id == evaluation_id)
+        .first()
+    )
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
 

@@ -939,76 +939,113 @@ async function renderStudentDashboard() {
 
     // US-09: Eindoverzicht ophalen
     const finalSummary = document.getElementById('final-summary');
-    if (!finalSummary || !currentInternship) return;
+    if (finalSummary && currentInternship) {
+      try {
+        const report = await InternshipsAPI.getFinalReport(currentInternship.id);
+        const evalData = report?.final_evaluation;
+        if (!evalData || !evalData.rules || evalData.rules.length === 0) {
+          finalSummary.innerHTML = `
+            <p><strong>Status:</strong> Afwachten</p>
+            <p>De finale evaluatie is nog niet ingediend.</p>
+          `;
+        } else {
+          const rows = formatReportRows(evalData.rules);
+          const weightedScore = report.weighted_final_score !== null && report.weighted_final_score !== undefined
+            ? (report.weighted_final_score / 20).toFixed(2)
+            : '-';
 
-    try {
-      const report = await InternshipsAPI.getFinalReport(currentInternship.id);
-      const evalData = report?.final_evaluation;
-      if (!evalData || !evalData.rules || evalData.rules.length === 0) {
-        finalSummary.innerHTML = `
-          <p><strong>Status:</strong> Afwachten</p>
-          <p>De finale evaluatie is nog niet ingediend.</p>
-        `;
-        return;
+          finalSummary.innerHTML = `
+            <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
+            <table style="margin-top: 0.5rem;">
+              <thead>
+                <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Mijn beschrijving</th><th>Feedback</th></tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          `;
+        }
+      } catch (error) {
+        console.error('Failed to load final report:', error);
+        finalSummary.innerHTML = '<p class="error">Kon eindoverzicht niet laden.</p>';
       }
-
-      const rows = formatReportRows(evalData.rules);
-      const weightedScore = report.weighted_final_score !== null && report.weighted_final_score !== undefined
-        ? (report.weighted_final_score / 20).toFixed(2)
-        : '-';
-
-      finalSummary.innerHTML = `
-        <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
-        <table style="margin-top: 0.5rem;">
-          <thead>
-            <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Mijn beschrijving</th><th>Feedback</th></tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      `;
-    } catch (error) {
-      console.error('Failed to load final report:', error);
-      finalSummary.innerHTML = '<p class="error">Kon eindoverzicht niet laden.</p>';
     }
 
     // US-06: Student zelfevaluatie - beschrijving per competentie
     const selfEvalPanel = document.getElementById('student-self-eval-panel');
     const selfEvalForm = document.getElementById('student-self-eval-form');
-    const saveBtn = document.getElementById('btn-save-self-eval');
+    let saveBtn = document.getElementById('btn-save-self-eval');
 
-    if (selfEvalPanel && selfEvalForm) {
-      const activeEval = currentEvaluations.find(e => !e.finalized);
-      if (activeEval && activeEval.rules && activeEval.rules.length > 0) {
-        selfEvalPanel.style.display = 'block';
-        selfEvalForm.innerHTML = activeEval.rules.map(rule => {
-          const compName = rule.competency?.name || 'Onbekend';
-          return `
-            <div class="row full" style="margin-bottom: 0.75rem;">
-              <label>${compName}</label>
-              <textarea class="student-desc-field" data-rule-id="${rule.id}" data-eval-id="${activeEval.id}" rows="2" placeholder="Beschrijf wat je geleerd hebt...">${rule.student_description || ''}</textarea>
-            </div>
-          `;
-        }).join('');
+    if (!selfEvalPanel || !selfEvalForm) return;
 
-        saveBtn?.addEventListener('click', async () => {
-          const fields = selfEvalForm.querySelectorAll('.student-desc-field');
-          showLoading(saveBtn, 'Opslaan...');
-          try {
-            for (const field of fields) {
-              const ruleId = parseInt(field.dataset.ruleId);
-              const evalId = parseInt(field.dataset.evalId);
-              const description = field.value || null;
-              await EvaluationRulesAPI.update(evalId, ruleId, { student_description: description });
-            }
-            showToast('Beschrijvingen opgeslagen!', 'success');
-          } catch (error) {
-            showToast(error.message, 'error');
-          } finally {
-            hideLoading(saveBtn);
+    const canEvaluate = currentInternship && (currentInternship.status === 'Lopend' || currentInternship.status === 'Afgerond');
+    const activeEval = currentEvaluations.find(e => !e.finalized);
+
+    if (!canEvaluate) {
+      selfEvalPanel.style.display = 'none';
+      return;
+    }
+
+    if (activeEval && activeEval.rules && activeEval.rules.length > 0) {
+      selfEvalPanel.style.display = 'block';
+      selfEvalForm.innerHTML = activeEval.rules.map(rule => {
+        const compName = rule.competency?.name || 'Onbekend';
+        return `
+          <div class="row full" style="margin-bottom: 0.75rem;">
+            <label>${compName}</label>
+            <textarea class="student-desc-field" data-rule-id="${rule.id}" data-eval-id="${activeEval.id}" rows="2" placeholder="Beschrijf wat je geleerd hebt...">${rule.student_description || ''}</textarea>
+          </div>
+        `;
+      }).join('');
+
+      // Replace the save button to prevent duplicate event listeners
+      const newSaveBtn = saveBtn.cloneNode(true);
+      newSaveBtn.style.display = '';
+      saveBtn.replaceWith(newSaveBtn);
+      saveBtn = newSaveBtn;
+
+      saveBtn.addEventListener('click', async () => {
+        const fields = selfEvalForm.querySelectorAll('.student-desc-field');
+        showLoading(saveBtn, 'Opslaan...');
+        try {
+          for (const field of fields) {
+            const ruleId = parseInt(field.dataset.ruleId);
+            const evalId = parseInt(field.dataset.evalId);
+            const description = field.value || null;
+            await EvaluationRulesAPI.update(evalId, ruleId, { student_description: description });
           }
-        });
-      } else {
-        selfEvalPanel.style.display = 'none';
-      }
+          showToast('Beschrijvingen opgeslagen!', 'success');
+          await refreshInternshipData();
+        } catch (error) {
+          showToast(error.message, 'error');
+        } finally {
+          hideLoading(saveBtn);
+        }
+      });
+    } else {
+      // No active evaluation: show a button to create a self-evaluation
+      selfEvalPanel.style.display = 'block';
+      selfEvalForm.innerHTML = `
+        <p class="hint">Er is nog geen actieve evaluatie beschikbaar. Start een zelfevaluatie om per competentie te beschrijven wat je geleerd hebt.</p>
+        <button id="btn-start-self-eval" class="btn" style="margin-top: 1rem;">Start Zelfevaluatie</button>
+      `;
+
+      if (saveBtn) saveBtn.style.display = 'none';
+
+      const startBtn = document.getElementById('btn-start-self-eval');
+      startBtn?.addEventListener('click', async () => {
+        showLoading(startBtn, 'Aanmaken...');
+        try {
+          await InternshipsAPI.createEvaluation(currentInternship.id, {
+            eval_type: 'tussentijds',
+            comments: 'Zelfevaluatie gestart door student'
+          });
+          showToast('Zelfevaluatie aangemaakt!', 'success');
+          await refreshInternshipData();
+          renderStudentEvaluations();
+        } catch (error) {
+          hideLoading(startBtn);
+          showToast(error.message, 'error');
+        }
+      });
     }
   }
