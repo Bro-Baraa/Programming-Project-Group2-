@@ -1,7 +1,7 @@
 # User Stories Overzicht - Stagetool Groep 2
 
 Bron: `analyse-finaal.md` x codebase audit
-Datum: 2026-06-02
+Datum: 2026-06-06
 
 ---
 
@@ -19,7 +19,7 @@ Datum: 2026-06-02
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-01 | Student dient stagevoorstel in met bedrijfs- en opdrachtgegevens | PART | `POST /internships` maakt Internship + Company + Proposal in een keer. `teacher_id`/`mentor_id` worden ondersteund met validatie. | Stagevoorstel-formulier mist velden om docent/mentor te kiezen. | Backend kan de relaties opslaan, maar de student kan ze niet zelf aanduiden in de UI. |
+| US-01 | Student dient stagevoorstel in met bedrijfs- en opdrachtgegevens | OK | `POST /internships` maakt Internship + Company + Proposal in een keer. `teacher_id`/`mentor_id` worden ondersteund met validatie. | `student.js` laadt `teacher-select` en `mentor-select` dropdowns via `UsersAPI.list('teacher')` / `UsersAPI.list('mentor')`. | Backend en frontend ondersteunen beide de selectie en validatie. |
 | US-02 | Student bekijkt status stagevoorstel | OK | `GET /internships/{id}`, `GET /internships/{id}/proposal`, `GET /me/dashboard` retourneren status. | Dashboard toont status-pill; proposal status zichtbaar in detail. | - |
 | US-10 | Commissie ziet lijst voorstellen | OK | `GET /internships` retourneert stages met `proposal_status`, zoeken, filteren en paginatie. | Tabel met sorteerbare rijen; overzichtelijke weergave student + bedrijf + status. | - |
 | US-24 | Mentor ziet stagecontext | OK | `GET /internships/{id}` toont context; rol-gefilterde toegang. | Stage-selector dropdown; mentor ziet alleen stages waar `mentor_id` op hem staat. | - |
@@ -60,7 +60,7 @@ Datum: 2026-06-02
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-09 | Student raadpleegt eindevaluatierapport | BUG | `GET /internships/{id}/final-report` gebruikt `require_any_staff`; student krijgt `403`. | Frontend verwacht `final_evaluation` en `weighted_final_score` — backend levert dit correct. | Student kan eigen eindrapport niet laden. Fix: `ensure_internship_access` gebruiken i.p.v. `require_any_staff`. |
+| US-09 | Student raadpleegt eindevaluatierapport | OK | `GET /internships/{id}/final-report` gebruikt `get_current_active_user` + `ensure_internship_access` in service. | Frontend verwacht `final_evaluation` en `weighted_final_score` — backend levert dit correct. | Student kan eigen eindrapport laden. `reports.py` gebruikt `get_current_active_user`, service valideert toegang. |
 | US-18 | Docent vult finale evaluatie in met score per competentie | OK | `POST /internships/evaluations` + `PATCH /internships/evaluations/{id}/rules/{rule_id}` + `POST /internships/evaluations/{id}/finalize` bestaan. | Frontend roept correcte routes aan (`/internships/evaluations/...`). | - |
 | US-19 | Docent genereert eindoverzicht per student | OK | `GET /internships/{id}/final-report` bestaat. | Docent-view leest `final_evaluation` en `weighted_final_score` correct. | - |
 | US-23 | Mentor geeft feedback per competentie | OK | Zelfde endpoint als US-16; mentor toegang via `require_any_staff`. | Mentor view roept correcte `/internships/evaluations/{id}/rules/{rule_id}` route aan. | - |
@@ -69,7 +69,7 @@ Datum: 2026-06-02
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-25 | Administratie beheert competenties en gewichten | PART | Volledige CRUD: CompetencyProfile + Competency endpoints. Gewichten-validatie (som = 100%). Actief/inactief toggelen. | Admin competentiebeheer: toevoegen, verwijderen, gewichten zien, score simulator. | Geen versiebeheer of snapshotting; `Internship` bewaart geen `competency_profile_id`. |
+| US-25 | Administratie beheert competenties en gewichten | OK | Volledige CRUD: CompetencyProfile + Competency endpoints. Gewichten-validatie (som = 100%). Actief/inactief toggelen. `Internship.competency_profile_id` kopieert actief profiel bij aanmaak. | Admin competentiebeheer: toevoegen, verwijderen, gewichten zien, score simulator. | Profiel wordt gekopieerd naar stage bij aanmaak; historische stages ongewijzigd bij profielwijziging. Evaluaties gebruiken stage-profiel. |
 | US-27 | Administratie beheert gebruikers | OK | Volledige CRUD: `GET /users`, `GET /users/{id}`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}`. Alleen admin toegang. | Admin UI bestaat (`admin-gebruikers-template`); `renderUserManager()` in `admin.js` implementeert volledige CRUD met zoeken, paginatie, en formulier. | - |
 | US-28 | Administratie exporteert rapportages | NOK | Rapportage endpoints retourneren JSON. | Geen export UI (download CSV/XLSX/PDF knoppen). | Geen CSV/XLSX/PDF export. Zie `feature-todo.md` item 5. |
 
@@ -77,7 +77,7 @@ Datum: 2026-06-02
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-29 | Gebruiker krijgt melding bij relevante wijziging | PART | Notificatie-infrastructuur is volledig: `Notification` model, `/notifications` endpoints, `notify()` helper, frontend bell met polling. | Notificatie UI (bell, badge, dropdown) is volledig geïmplementeerd. | Ontbrekende triggers: (1) feedback aangemaakt, (2) evaluatie gefinaliseerd, (3) docent bij logboek-indiening. |
+| US-29 | Gebruiker krijgt melding bij relevante wijziging | PART | Notificatie-infrastructuur is volledig: `Notification` model, `/notifications` endpoints, `notify()` helper, frontend bell met polling. | Notificatie UI (bell, badge, dropdown) is volledig geïmplementeerd. | Ontbrekende triggers: (1) feedback aangemaakt → ontvanger, (2) evaluatie gefinaliseerd → student, (3) docent bij logboek-indiening. |
 
 ---
 
@@ -85,17 +85,14 @@ Datum: 2026-06-02
 
 | Status | Aantal |
 |--------|--------|
-| OK | 23 |
+| OK | 26 |
 | BE-OK | 0 |
-| PART | 4 |
-| BUG | 1 |
-| NOK | 2 |
+| PART | 2 |
+| BUG | 0 |
+| NOK | 1 |
 
 ## Top prioriteiten (gesorteerd)
 
-1. **US-09 (BUG)** - Student toegang tot eindrapport: `require_any_staff` vervangen door `ensure_internship_access` in `backend/app/routers/reports.py`
-2. **US-28 (NOK)** - Export rapportages (CSV/XLSX/PDF)
-3. **US-01 (PART)** - Stagevoorstel-formulier uitbreiden met docent/mentor selectie in frontend
-4. **US-25 (PART)** - Competency snapshots/versioning: `competency_profile_id` toevoegen aan `Internship` en evaluaties laten gebruiken
-5. **US-20 + US-29 (PART)** - Ontbrekende notificatietriggers: feedback aangemaakt, evaluatie gefinaliseerd, docent bij logboek-indiening
-6. **US-30 (Audit Logging)** - Audit logging is volledig geïmplementeerd maar staat niet in de user story lijst
+1. **US-28 (NOK)** - Export rapportages (CSV/XLSX/PDF)
+2. **US-20 (PART)** - Docent notificatie bij logboek-indiening: `teacher_id` toevoegen in `logbooks.py` naast `mentor_id`
+3. **US-29 (PART)** - Ontbrekende notificatietriggers: (a) feedback aangemaakt in `feedback.py`, (b) evaluatie gefinaliseerd in `evaluations.py`
