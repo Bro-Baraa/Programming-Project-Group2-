@@ -59,11 +59,16 @@ def create_evaluation(
     db.add(evaluation)
     db.flush()
 
-    profile = get_active_competency_profile(db)
-    if not profile:
-        raise HTTPException(status_code=400, detail="No active competency profile found")
+    # ── Use the internship's captured competency profile, not the current active one ──
+    profile_id = internship.competency_profile_id
+    if not profile_id:
+        # Fallback: if no profile was captured (legacy internships), use the active one
+        profile = get_active_competency_profile(db)
+        if not profile:
+            raise HTTPException(status_code=400, detail="No active competency profile found")
+        profile_id = profile.id
 
-    seed_rules_from_active_profile(db, evaluation.id, profile.id)
+    seed_rules_from_active_profile(db, evaluation.id, profile_id)
 
     db.commit()
     db.refresh(evaluation)

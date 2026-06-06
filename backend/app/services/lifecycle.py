@@ -13,8 +13,9 @@ from typing import BinaryIO, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models import Agreement, Company, Internship, Proposal, User
+from app.models import Agreement, Company, CompetencyProfile, Internship, Proposal, User
 from app.services.notifications import notify
+from app.services.common import get_active_competency_profile
 
 
 # ── Internal: legal status transitions ──
@@ -172,6 +173,9 @@ class InternshipLifecycle:
         self.db.add(company)
         self.db.flush()
 
+        # ── Capture the active competency profile at creation time ──
+        active_profile = get_active_competency_profile(self.db)
+
         internship = Internship(
             student_id=actor.id,
             company_id=company.id,
@@ -180,6 +184,7 @@ class InternshipLifecycle:
             status="Ingediend",
             teacher_id=teacher_id,
             mentor_id=mentor_id,
+            competency_profile_id=active_profile.id if active_profile else None,
         )
         self.db.add(internship)
         self.db.flush()

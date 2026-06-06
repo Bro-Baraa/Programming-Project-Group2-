@@ -44,6 +44,7 @@ class InternshipResponse(BaseModel):
     teacher_id: Optional[int] = None
     mentor_id: Optional[int] = None
     company_id: Optional[int] = None
+    competency_profile_id: Optional[int] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: str

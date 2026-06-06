@@ -51,6 +51,7 @@ class Internship(Base):
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     mentor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    competency_profile_id = Column(Integer, ForeignKey("competency_profiles.id"), nullable=True)
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
     status = Column(String, default="Ingediend")  # Ingediend, In Beoordeling, Goedgekeurd, Afgekeurd, Aanpassingen Vereist, Overeenkomst Ingediend, Lopend, Afgerond
@@ -58,6 +59,7 @@ class Internship(Base):
 
     # Relationships
     student = relationship("User", foreign_keys=[student_id], back_populates="internships_as_student")
+    competency_profile = relationship("CompetencyProfile", foreign_keys=[competency_profile_id])
     teacher = relationship("User", foreign_keys=[teacher_id], back_populates="internships_as_teacher")
     mentor = relationship("User", foreign_keys=[mentor_id], back_populates="internships_as_mentor")
     company = relationship("Company", back_populates="internships")
