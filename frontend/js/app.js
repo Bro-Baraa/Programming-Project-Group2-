@@ -136,7 +136,7 @@ function handleLogout() {
 
 function renderLogin() {
   app.className = 'login-layout';
-  app.innerHTML = '';
+  app.textContent = '';
   navPanel.style.display = 'none';
   document.body.classList.add('login-active');
   
@@ -152,25 +152,41 @@ function renderLogin() {
     // Quick-login dropdown vullen vanuit seed data
     const quickLogin = document.getElementById('quick-login');
     if (quickLogin) {
-      quickLogin.innerHTML = '<p class="hint">Test accounts laden...</p>';
+      quickLogin.textContent = '';
+      const pLoad = document.createElement('p');
+      pLoad.className = 'hint';
+      pLoad.textContent = 'Test accounts laden...';
+      quickLogin.appendChild(pLoad);
       fetch(`${API_BASE_URL}/users/seed`)
         .then(r => r.ok ? r.json() : [])
         .then(accounts => {
           if (!accounts.length) {
-            quickLogin.innerHTML = '<p class="hint">Geen test accounts beschikbaar</p>';
+            quickLogin.textContent = '';
+            const pNone = document.createElement('p');
+            pNone.className = 'hint';
+            pNone.textContent = 'Geen test accounts beschikbaar';
+            quickLogin.appendChild(pNone);
             return;
           }
           const options = accounts.map(a =>
             `<option value="${a.email}" data-password="${a.password}">${a.first_name} ${a.last_name} (${a.role})</option>`
           ).join('');
-          quickLogin.innerHTML = `
-            <label for="quick-login-select" style="display:block; margin-bottom:0.25rem; font-size:0.85rem; color:var(--ink-soft);">Kies een test account:</label>
-            <select id="quick-login-select" style="width:100%; margin-bottom:0.5rem;">
-              <option value="">-- Account selecteren --</option>
-              ${options}
-            </select>
-            <button class="btn" id="quick-login-btn">Inloggen</button>
-          `;
+          quickLogin.textContent = '';
+          const lbl = document.createElement('label');
+          lbl.htmlFor = 'quick-login-select';
+          lbl.style.cssText = 'display:block; margin-bottom:0.25rem; font-size:0.85rem; color:var(--ink-soft);';
+          lbl.textContent = 'Kies een test account:';
+          const sel = document.createElement('select');
+          sel.id = 'quick-login-select';
+          sel.style.cssText = 'width:100%; margin-bottom:0.5rem;';
+          sel.innerHTML = '<option value="">-- Account selecteren --</option>' + options;
+          const btn = document.createElement('button');
+          btn.className = 'btn';
+          btn.id = 'quick-login-btn';
+          btn.textContent = 'Inloggen';
+          quickLogin.appendChild(lbl);
+          quickLogin.appendChild(sel);
+          quickLogin.appendChild(btn);
           document.getElementById('quick-login-btn')?.addEventListener('click', (e) => {
             e.preventDefault();
             const select = document.getElementById('quick-login-select');
@@ -199,7 +215,11 @@ function renderLogin() {
           });
         })
         .catch(() => {
-          quickLogin.innerHTML = '<p class="hint">Kon test accounts niet laden</p>';
+          quickLogin.textContent = '';
+          const pErr = document.createElement('p');
+          pErr.className = 'hint';
+          pErr.textContent = 'Kon test accounts niet laden';
+          quickLogin.appendChild(pErr);
         });
     }
   }
@@ -217,7 +237,7 @@ async function renderMainApp() {
 
   // Tabs vullen
   const viewTabs = document.getElementById('view-tabs');
-  viewTabs.innerHTML = '';
+  viewTabs.textContent = '';
   // ARIA: markeer als tablist
   viewTabs.setAttribute('role', 'tablist');
   views.forEach((view) => {
@@ -286,7 +306,13 @@ async function renderView() {
     tab.classList.toggle('active', tab.dataset.view === view);
   });
 
-  content.innerHTML = '<div class="loading-overlay"><span class="loading-spinner"></span> Laden...</div>';
+  const loadingOverlay = document.createElement('div');
+  loadingOverlay.className = 'loading-overlay';
+  const spinner = document.createElement('span');
+  spinner.className = 'loading-spinner';
+  loadingOverlay.appendChild(spinner);
+  loadingOverlay.appendChild(document.createTextNode(' Laden...'));
+  content.replaceChildren(loadingOverlay);
 
   const key = view ? `${role}-${view}` : role;
   const templateId = templates[key] || templates[role];
@@ -320,14 +346,17 @@ async function renderView() {
     }
 
     // Template renderen
-    content.innerHTML = '';
+    content.textContent = '';
     const tpl = document.getElementById(templateId);
     if (tpl) {
       content.appendChild(tpl.content.cloneNode(true));
       await wireRoleInteractions(role, view);
     }
   } catch (error) {
-    content.innerHTML = `<div class="error-message">Fout bij laden: ${error.message}</div>`;
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message';
+    errorDiv.textContent = `Fout bij laden: ${error.message}`;
+    content.replaceChildren(errorDiv);
   }
 }
 
@@ -350,7 +379,7 @@ function populateInternshipSelector(role) {
   }
 
   wrapper.style.display = 'block';
-  select.innerHTML = '';
+  select.textContent = '';
 
   allInternships.forEach(i => {
     const option = document.createElement('option');

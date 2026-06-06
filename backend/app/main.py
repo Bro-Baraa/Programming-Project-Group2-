@@ -5,6 +5,7 @@ import time
 from collections import defaultdict
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.database import engine, Base
 from app.routers import (
     auth,
@@ -30,8 +31,11 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Create database tables only if they don't exist (skip on startup for speed)
+from sqlalchemy import inspect
+inspector = inspect(engine)
+if not inspector.get_table_names():
+    Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Stage Monitoring Tool API",
@@ -63,7 +67,8 @@ app.add_middleware(
     max_age=600,
 )
 
-# Simple in-memory rate limiter
+# Simple in-memory rate limiter with hard cap to prevent memory leaks
+_MAX_RATE_LIMIT_IPS = 10_000
 _rate_limit: dict[str, list] = defaultdict(list)
 _last_cleanup = time.time()
 
@@ -75,7 +80,13 @@ async def rate_limit(request: Request, call_next):
         ip = request.client.host if request.client else "unknown"
         now = time.time()
 
-        # Cleanup verlopen entries elke 5 minuten om geheugenlek te voorkomen
+        # Hard cap: evict oldest entries if dict exceeds max size
+        if len(_rate_limit) > _MAX_RATE_LIMIT_IPS:
+            oldest_keys = sorted(_rate_limit.keys(), key=lambda k: max(_rate_limit[k]) if _rate_limit[k] else 0)[:_MAX_RATE_LIMIT_IPS // 10]
+            for k in oldest_keys:
+                del _rate_limit[k]
+
+        # Cleanup verlopen entries elke 5 minuten
         if now - _last_cleanup > 300:
             cutoff = now - 60
             stale = [k for k, v in _rate_limit.items() if not [t for t in v if t > cutoff]]
@@ -105,13 +116,21 @@ app.include_router(notifications)
 app.include_router(me)
 app.include_router(audit)
 
+# Serve frontend static files with cache headers for performance
+_frontend_dir = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
 
-@app.get("/")
-def root():
-    return {
-        "message": "Stage Monitoring Tool API",
-        "version": "1.0.0",
-    }
+class CachedStaticFiles(StaticFiles):
+    def __init__(self, *args, cache_max_age: int = 3600, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cache_max_age = cache_max_age
+
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = f"public, max-age={self.cache_max_age}"
+        return response
+
+app.mount("/", CachedStaticFiles(directory=_frontend_dir, html=True, cache_max_age=3600), name="frontend")
 
 
 @app.get("/health")

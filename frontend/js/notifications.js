@@ -136,32 +136,50 @@ function renderNotifications(notifications) {
   dot.style.display = unreadCount > 0 ? 'block' : 'none';
 
   if (notifications.length === 0) {
-    list.innerHTML = '<li class="notif-empty">Geen notificaties</li>';
+    list.textContent = '';
+    const emptyLi = document.createElement('li');
+    emptyLi.className = 'notif-empty';
+    emptyLi.textContent = 'Geen notificaties';
+    list.appendChild(emptyLi);
     return;
   }
 
-  // Build the list items
-  list.innerHTML = notifications.map(n => `
-    <li
-      class="notif-item ${n.is_read ? '' : 'unread'}"
-      data-id="${n.id}"
-      data-internship="${n.internship_id || ''}"
-      data-view="${n.link_view || ''}"
-    >
-      <div class="notif-item-body">
-        <span class="notif-message">${_escapeHtml(n.message)}</span>
-        <span class="notif-time">${formatRelativeTime(n.created_at)}</span>
-      </div>
-      ${n.internship_id && n.link_view ? `
-        <button class="notif-view-btn" title="Bekijken" data-id="${n.id}" data-internship="${n.internship_id}" data-view="${n.link_view}">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </button>
-      ` : ''}
-    </li>
-  `).join('');
+  // Build the list items using DocumentFragment (no innerHTML thrashing)
+  const fragment = document.createDocumentFragment();
+  notifications.forEach(n => {
+    const li = document.createElement('li');
+    li.className = 'notif-item' + (n.is_read ? '' : ' unread');
+    li.dataset.id = n.id;
+    li.dataset.internship = n.internship_id || '';
+    li.dataset.view = n.link_view || '';
+
+    const body = document.createElement('div');
+    body.className = 'notif-item-body';
+    const msg = document.createElement('span');
+    msg.className = 'notif-message';
+    msg.textContent = n.message;
+    const time = document.createElement('span');
+    time.className = 'notif-time';
+    time.textContent = formatRelativeTime(n.created_at);
+    body.appendChild(msg);
+    body.appendChild(time);
+    li.appendChild(body);
+
+    if (n.internship_id && n.link_view) {
+      const btn = document.createElement('button');
+      btn.className = 'notif-view-btn';
+      btn.title = 'Bekijken';
+      btn.dataset.id = n.id;
+      btn.dataset.internship = n.internship_id;
+      btn.dataset.view = n.link_view;
+      btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+      li.appendChild(btn);
+    }
+
+    fragment.appendChild(li);
+  });
+  list.textContent = '';
+  list.appendChild(fragment);
 
   // Wire up click handler for each item (marks as read)
   list.querySelectorAll('.notif-item').forEach(item => {

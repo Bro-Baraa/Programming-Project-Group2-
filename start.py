@@ -22,7 +22,6 @@ from pathlib import Path
 
 PROJECT_DIR = Path(__file__).resolve().parent
 BACKEND_PORT = 8001
-FRONTEND_PORT = 8080
 
 # Setup logging to file + console
 LOG_FILE = PROJECT_DIR / "startup.log"
@@ -358,7 +357,7 @@ def start_backend(python_runner: str) -> subprocess.Popen:
     cmd = base_cmd + [
         "-m", "uvicorn",
         "app.main:app",
-        "--reload",
+        "--workers", "4",
         "--port", str(BACKEND_PORT),
         "--host", "0.0.0.0",
     ]
@@ -372,14 +371,6 @@ def start_backend(python_runner: str) -> subprocess.Popen:
     if platform.system() == "Windows":
         kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
     return subprocess.Popen(cmd, **kwargs)
-
-
-def start_frontend() -> subprocess.Popen:
-    """Start the frontend HTTP server."""
-    log(f"Frontend starten op http://localhost:{FRONTEND_PORT}")
-    cmd = [sys.executable, "-m", "http.server", str(FRONTEND_PORT)]
-    log_command(cmd, PROJECT_DIR / "frontend")
-    return subprocess.Popen(cmd, cwd=PROJECT_DIR / "frontend", stderr=subprocess.PIPE, stdout=subprocess.PIPE)
 
 
 def wait_for_backend(proc: subprocess.Popen, timeout: int = 10) -> bool:
@@ -424,19 +415,15 @@ def main() -> None:
             msg += "  cd backend && pip install -r requirements.txt"
         log_fatal_error(msg)
 
-    frontend_proc = start_frontend()
-    _children.append(frontend_proc)
-
     time.sleep(1)
 
-    url = f"http://localhost:{FRONTEND_PORT}"
+    url = f"http://localhost:{BACKEND_PORT}"
 
     log("")
     log("=" * 36)
     log("✓ Alles draait!")
     log("")
-    log(f"  Frontend:  {url}")
-    log(f"  Backend:   http://localhost:{BACKEND_PORT}")
+    log(f"  App:       {url}")
     log(f"  API docs:  http://localhost:{BACKEND_PORT}/docs")
     log("")
     log("Testaccounts:")
@@ -453,11 +440,10 @@ def main() -> None:
     except Exception as e:
         log(f"Kon browser niet openen: {e}")
 
-    # Keep the main thread alive while children run
+    # Keep the main thread alive while backend runs
     try:
         while True:
             backend_alive = backend_proc.poll() is None
-            frontend_alive = frontend_proc.poll() is None
             if not backend_alive:
                 log("Backend process stopped unexpectedly!")
                 try:
@@ -467,9 +453,6 @@ def main() -> None:
                         log(stderr_data.decode("utf-8", errors="replace").strip())
                 except Exception:
                     pass
-                break
-            if not frontend_alive:
-                log("Frontend process stopped unexpectedly!")
                 break
             time.sleep(1)
     except KeyboardInterrupt:
