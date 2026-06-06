@@ -1,6 +1,7 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from pathlib import Path
@@ -102,18 +103,22 @@ def register(
     return db_user
 
 
+class DemoLoginRequest(BaseModel):
+    email: str
+
+
 @router.post("/demo-login", response_model=Token)
 def demo_login(
-    email: str,
+    request: DemoLoginRequest,
     db: Session = Depends(get_db)
 ):
     """
     One-click login for demo accounts. No password required.
     Restricted to pre-seeded demo users.
     """
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(User.email == request.email).first()
     if not user:
-        logger.warning("[DEMO LOGIN FAILED] Unknown email: %s", email)
+        logger.warning("[DEMO LOGIN FAILED] Unknown email: %s", request.email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
