@@ -214,6 +214,17 @@ class InternshipLifecycle:
                 internship_id=internship.id,
                 link_view="voorstellen",  # sends committee to the proposals review tab
             )
+
+        # ── Notify the mentor when assigned to an internship ──
+        if mentor_id:
+            notify(
+                self.db,
+                user_id=mentor_id,
+                message=f"Je bent aangeduid als mentor voor de stage van {student_name}.",
+                internship_id=internship.id,
+                link_view="logboek",
+            )
+
         self.db.commit()
 
         return NewInternship(internship=internship)
@@ -275,6 +286,16 @@ class InternshipLifecycle:
                 message=messages[decision],
                 internship_id=internship.id,
                 link_view="voorstel",  # sends student to their proposal view
+            )
+
+        # ── Notify the teacher when assigned to an internship ──
+        if decision == "Goedgekeurd" and teacher_id:
+            notify(
+                self.db,
+                user_id=teacher_id,
+                message=f"Je bent aangeduid als docent-begeleider voor de stage van {student_name}.",
+                internship_id=internship.id,
+                link_view="logboek",
             )
 
         self.db.commit()
@@ -627,6 +648,15 @@ class InternshipLifecycle:
                 internship_id=internship.id,
                 link_view="overeenkomst",  # sends student to their agreement view
             )
+            # ── Notify the mentor that the stage is now active ──
+            if internship.mentor_id:
+                notify(
+                    self.db,
+                    user_id=internship.mentor_id,
+                    message="De stageovereenkomst is gevalideerd. De stage is nu actief.",
+                    internship_id=internship.id,
+                    link_view="logboek",
+                )
         elif agreement_status == "Onvolledig" and internship.status == "Lopend":
             # Revert internship status so student can re-upload
             self._assert_transition(internship.status, "Overeenkomst Ingediend")
@@ -663,6 +693,24 @@ class InternshipLifecycle:
 
         self._assert_transition(internship.status, "Afgerond")
         internship.status = "Afgerond"
+
+        # ── Notify the student that their internship is completed ──
+        notify(
+            self.db,
+            user_id=internship.student_id,
+            message="Je stage is afgerond. Gefeliciteerd!",
+            internship_id=internship.id,
+            link_view="dashboard",
+        )
+        # ── Notify the mentor that the internship is completed ──
+        if internship.mentor_id:
+            notify(
+                self.db,
+                user_id=internship.mentor_id,
+                message="De stage is afgerond.",
+                internship_id=internship.id,
+                link_view="logboek",
+            )
 
         self.db.commit()
         self.db.refresh(internship)

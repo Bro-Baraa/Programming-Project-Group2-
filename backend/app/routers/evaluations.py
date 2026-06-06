@@ -48,6 +48,20 @@ def create_evaluation(
     """US-17, US-18: Teacher creates an evaluation (tussentijds or final)"""
     result = create_evaluation_svc(db, current_user, internship_id, data)
     log_event(db, "evaluation.create", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Evaluatie aangemaakt: {data.eval_type}")
+
+    # ── Notify the student that a new evaluation is available ──
+    from app.services.notifications import notify
+    eval_label = "eindevaluatie" if data.eval_type == "final" else "tussentijdse evaluatie"
+    evaluator_name = f"{current_user.first_name} {current_user.last_name}" if current_user else "Je docent"
+    notify(
+        db,
+        user_id=result.internship.student_id,
+        message=f"{evaluator_name} heeft een {eval_label} aangemaakt.",
+        internship_id=internship_id,
+        link_view="evaluatie",
+    )
+    db.commit()
+
     return result
 
 

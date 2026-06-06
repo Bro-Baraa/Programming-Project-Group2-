@@ -94,6 +94,15 @@ def update_logbook(
                 )
         if update.mentor_feedback is not None:
             logbook.mentor_feedback = update.mentor_feedback
+            # ── Notify the student when the mentor gives feedback on their logbook ──
+            if internship.student_id:
+                notify(
+                    db,
+                    user_id=internship.student_id,
+                    message=f"Je mentor heeft feedback gegeven op logboek week {logbook.week_number}.",
+                    internship_id=internship.id,
+                    link_view="logboek",
+                )
 
     if current_user.role == "teacher":
         ensure_internship_access(current_user, internship)
