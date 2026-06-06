@@ -126,6 +126,19 @@ def finalize_evaluation_endpoint(
             actor=current_user,
         )
 
+    # ── Notify the student that their evaluation has been finalized ──
+    from app.services.notifications import notify
+    evaluator_name = f"{current_user.first_name} {current_user.last_name}" if current_user else "Je docent"
+    eval_label = "eindevaluatie" if finalized_eval.eval_type == "final" else "tussentijdse evaluatie"
+    notify(
+        db,
+        user_id=finalized_eval.internship.student_id,
+        message=f"{evaluator_name} heeft je {eval_label} afgerond.",
+        internship_id=finalized_eval.internship_id,
+        link_view="evaluatie",
+    )
+    db.commit()
+
     log_event(db, "evaluation.finalize", user=current_user, entity_type="internship", entity_id=finalized_eval.internship_id, detail=f"Evaluatie gefinaliseerd: {finalized_eval.eval_type}")
 
     return EvaluationWithScoreResponse(

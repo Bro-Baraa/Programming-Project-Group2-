@@ -145,10 +145,10 @@ def submit_logbook(
     db.commit()
     db.refresh(logbook)
 
-    # ── Notify the mentor that a logbook has been submitted ──
+    # ── Notify the mentor and teacher that a logbook has been submitted ──
     internship = logbook.internship
+    student_name = f"{internship.student.first_name} {internship.student.last_name}" if internship.student else "Een student"
     if internship.mentor_id:
-        student_name = f"{internship.student.first_name} {internship.student.last_name}" if internship.student else "Een student"
         notify(
             db,
             user_id=internship.mentor_id,
@@ -156,7 +156,15 @@ def submit_logbook(
             internship_id=internship.id,
             link_view="validatie",
         )
-        db.commit()
+    if internship.teacher_id:
+        notify(
+            db,
+            user_id=internship.teacher_id,
+            message=f"{student_name} heeft logboek week {logbook.week_number} ingediend.",
+            internship_id=internship.id,
+            link_view="logboek",
+        )
+    db.commit()
 
     log_event(db, "logbook.submit", user=current_user, entity_type="internship", entity_id=logbook.internship_id, detail=f"Logboek week {logbook.week_number} definitief ingediend")
     return logbook
