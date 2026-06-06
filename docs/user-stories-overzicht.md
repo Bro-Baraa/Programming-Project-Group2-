@@ -71,7 +71,7 @@ Datum: 2026-06-06
 |----|-----------|--------|---------|----------|-------------|
 | US-25 | Administratie beheert competenties en gewichten | OK | Volledige CRUD: CompetencyProfile + Competency endpoints. Gewichten-validatie (som = 100%). Actief/inactief toggelen. `Internship.competency_profile_id` kopieert actief profiel bij aanmaak. | Admin competentiebeheer: toevoegen, verwijderen, gewichten zien, score simulator. | Profiel wordt gekopieerd naar stage bij aanmaak; historische stages ongewijzigd bij profielwijziging. Evaluaties gebruiken stage-profiel. |
 | US-27 | Administratie beheert gebruikers | OK | Volledige CRUD: `GET /users`, `GET /users/{id}`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}`. Alleen admin toegang. | Admin UI bestaat (`admin-gebruikers-template`); `renderUserManager()` in `admin.js` implementeert volledige CRUD met zoeken, paginatie, en formulier. | - |
-| US-28 | Administratie exporteert rapportages | NOK | Rapportage endpoints retourneren JSON. | Geen export UI (download CSV/XLSX/PDF knoppen). | Geen CSV/XLSX/PDF export. Zie `feature-todo.md` item 5. |
+| US-28 | Administratie exporteert rapportages | NOK | Rapportage endpoints retourneren JSON. Geen export dependencies (`openpyxl`, `reportlab`). Geen export endpoints (`/reports/export/excel`, `/{id}/export/pdf`). | Geen export UI (download CSV/XLSX/PDF knoppen). | **Ontbrekend:** (1) backend dependencies `openpyxl` + `reportlab`, (2) export service `services/export.py`, (3) endpoints voor Excel (admin dashboard) en PDF (eindrapport), (4) frontend API client methoden, (5) download knoppen in admin/student views. |
 
 ## Overkoepelend
 
