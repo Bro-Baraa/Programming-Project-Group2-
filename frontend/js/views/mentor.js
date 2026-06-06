@@ -7,47 +7,29 @@ async function renderMentorLogbooks() {
     return;
   }
 
-  try {
-    const weeks = await InternshipsAPI.getLogbookWeeks(currentInternship.id);
-    const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
-    tbody.innerHTML = weeks.map(w => {
-      if (w.status === 'missing') {
-        return `
-          <tr class="missing-row">
-            <td>${w.week_number}</td>
-            <td colspan="3"><span class="status-pill status-warn">Ontbrekend</span></td>
-            <td>-</td>
-            <td>-</td>
-          </tr>
-        `;
-      }
-      const lb = logbookMap.get(w.week_number);
-      let actionCell;
-      if (w.mentor_validated) {
-        actionCell = `<span class="status-pill status-good">${iconHtml('check-circle', 14)} Gevalideerd</span>`;
-      } else if (w.status === 'submitted') {
-        actionCell = `<button class="btn small validate-logbook-btn" data-id="${lb?.id}">${iconHtml('check-circle', 14)} Valideren</button>`;
-      } else {
-        actionCell = '<span class="status-pill">Concept</span>';
-      }
+  // Berekend weekoverzicht lokaal vanuit currentInternship + currentLogbooks
+  const start = currentInternship.start_date ? new Date(currentInternship.start_date) : null;
+  const end = currentInternship.end_date ? new Date(currentInternship.end_date) : null;
+  let totalWeeks = 0;
+  if (start && end && end > start) {
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    totalWeeks = Math.max(1, Math.floor(days / 7) + 1);
+  }
 
-      return `
-        <tr data-logbook-id="${lb?.id ?? ''}">
-          <td>${w.week_number}</td>
-          <td>${lb?.tasks || '-'}</td>
-          <td>${lb?.reflection || '-'}</td>
-          <td><span class="status-pill ${getStatusClass(w.status)}">${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
-          <td>
-            <textarea class="mentor-feedback-input" data-id="${lb?.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb?.mentor_feedback || ''}</textarea>
-            <button class="btn small save-feedback-btn" data-id="${lb?.id}" style="margin-top:0.25rem;">${iconHtml('check-circle', 14)} Opslaan</button>
-          </td>
-          <td>${actionCell}</td>
+  const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+  const rows = [];
+  for (let w = 1; w <= totalWeeks; w++) {
+    const lb = logbookMap.get(w);
+    if (!lb) {
+      rows.push(`
+        <tr class="missing-row">
+          <td>${w}</td>
+          <td colspan="3"><span class="status-pill status-warn">Ontbrekend</span></td>
+          <td>-</td>
+          <td>-</td>
         </tr>
-      `;
-    }).join('');
-  } catch (error) {
-    console.error('Failed to load week overview:', error);
-    tbody.innerHTML = currentLogbooks.map(lb => {
+      `);
+    } else {
       let actionCell;
       if (lb.mentor_validated) {
         actionCell = `<span class="status-pill status-good">${iconHtml('check-circle', 14)} Gevalideerd</span>`;
@@ -57,21 +39,22 @@ async function renderMentorLogbooks() {
         actionCell = '<span class="status-pill">Concept</span>';
       }
 
-      return `
+      rows.push(`
         <tr data-logbook-id="${lb.id}">
-          <td>${lb.week_number}</td>
-          <td>${lb.tasks || '-'}</td>
-          <td>${lb.reflection || '-'}</td>
+          <td>${w}</td>
+          <td>${escapeHtml(lb.tasks || '-')}</td>
+          <td>${escapeHtml(lb.reflection || '-')}</td>
           <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
           <td>
-            <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${lb.mentor_feedback || ''}</textarea>
+            <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${escapeHtml(lb.mentor_feedback || '')}</textarea>
             <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">${iconHtml('check-circle', 14)} Opslaan</button>
           </td>
           <td>${actionCell}</td>
         </tr>
-      `;
-    }).join('') || '<tr><td colspan="6">Geen logboeken gevonden voor deze stage.</td></tr>';
+      `);
+    }
   }
+  tbody.innerHTML = rows.join('') || '<tr><td colspan="6">Geen logboeken gevonden voor deze stage.</td></tr>';
 
   // Validatieknoppen verbinden
   tbody.querySelectorAll('.validate-logbook-btn').forEach(btn => {

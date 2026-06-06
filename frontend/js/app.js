@@ -66,6 +66,12 @@ let currentEvaluations = [];
 let currentFeedback = [];
 let _renderGeneration = 0;
 
+// Data cache: avoid reloading on every tab switch
+let _allInternshipsLoaded = false;
+let _lastInternshipDataId = null;
+let _lastCompetencyLoad = 0;
+const _CACHE_TTL_MS = 30_000; // 30 seconds
+
 // Geeft de geselecteerde stage terug
 function getSelectedInternship() {
   return allInternships.find(i => i.id == selectedInternshipId) || allInternships[0] || null;
@@ -368,8 +374,11 @@ async function renderView() {
     const internshipParam = urlParams.get('internship');
     if (internshipParam) selectedInternshipId = parseInt(internshipParam);
 
-    // Laad alle stages zichtbaar voor gebruiker
-    allInternships = await InternshipsAPI.list();
+    // Laad alle stages zichtbaar voor gebruiker (alleen bij eerste render of als leeg)
+    if (!_allInternshipsLoaded || allInternships.length === 0) {
+      allInternships = await InternshipsAPI.list();
+      _allInternshipsLoaded = true;
+    }
 
     // Stale render check
     if (gen !== _renderGeneration) return;
@@ -380,14 +389,19 @@ async function renderView() {
     // Stel huidige stage in (back-compat)
     currentInternship = getSelectedInternship();
 
-    // Laad stage-specifieke data ALLEEN als deze view het nodig heeft
+    // Laad stage-specifieke data ALLEEN als deze view het nodig heeft EN als de stage gewijzigd is
     const needsInternshipData = _internshipViews.has(view);
+    const internshipChanged = currentInternship?.id !== _lastInternshipDataId;
     if (needsInternshipData && currentInternship) {
-      [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
-        InternshipsAPI.getLogbooks(currentInternship.id),
-        InternshipsAPI.getEvaluations(currentInternship.id),
-        InternshipsAPI.getFeedback(currentInternship.id)
-      ]);
+      if (internshipChanged || currentLogbooks.length === 0) {
+        [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
+          InternshipsAPI.getLogbooks(currentInternship.id),
+          InternshipsAPI.getEvaluations(currentInternship.id),
+          InternshipsAPI.getFeedback(currentInternship.id)
+        ]);
+        _lastInternshipDataId = currentInternship.id;
+      }
+      // else: hergebruik cached data
     } else {
       currentLogbooks = [];
       currentEvaluations = [];
@@ -397,11 +411,13 @@ async function renderView() {
     // Stale render check
     if (gen !== _renderGeneration) return;
 
-    // Laad competenties ALLEEN als deze view het nodig heeft
+    // Laad competenties ALLEEN als deze view het nodig heeft (met TTL cache)
     const needsCompetencies = _competencyViews.has(view);
-    if (needsCompetencies) {
+    const now = Date.now();
+    if (needsCompetencies && (currentCompetencies.length === 0 || (now - _lastCompetencyLoad) > _CACHE_TTL_MS)) {
       currentCompetencies = await CompetenciesAPI.list();
-    } else {
+      _lastCompetencyLoad = now;
+    } else if (!needsCompetencies) {
       currentCompetencies = [];
     }
 
@@ -449,6 +465,9 @@ async function renderView() {
       `;
       content.replaceChildren(emptyDiv);
     }
+
+    // Vervang overgebleven <img> icon tags door inline SVGs (templates, static HTML)
+    inlineIconsInContainer(content);
   } catch (error) {
     if (gen !== _renderGeneration) return;
     const errorDiv = document.createElement('div');
@@ -516,7 +535,12 @@ function handleInternshipChange() {
 // Vernieuw stagegegevens vanaf API
 async function refreshInternshipData() {
   try {
+    // Reset cache flags zodat volgende renderView() altijd fresh data laadt
+    _allInternshipsLoaded = false;
+    _lastInternshipDataId = null;
+
     allInternships = await InternshipsAPI.list();
+    _allInternshipsLoaded = true;
     currentInternship = getSelectedInternship();
 
     // Update selector if visible
@@ -530,6 +554,7 @@ async function refreshInternshipData() {
         InternshipsAPI.getEvaluations(currentInternship.id),
         InternshipsAPI.getFeedback(currentInternship.id)
       ]);
+      _lastInternshipDataId = currentInternship.id;
     } else {
       currentLogbooks = [];
       currentEvaluations = [];
@@ -620,6 +645,9 @@ function init() {
   document.getElementById('internship-select')?.addEventListener('change', handleInternshipChange);
   
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
+
+  // Inline icons in static page elements (top bar, nav, etc.)
+  inlineIconsInContainer(document.body);
 }
 
 // Table-card helper functies zijn verplaatst naar `js/table-cards.js`.

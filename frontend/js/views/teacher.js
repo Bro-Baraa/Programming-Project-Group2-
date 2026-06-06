@@ -11,12 +11,9 @@ function wireEvaluationForm() {
     return;
   }
 
-  // Haal bestaande evaluaties voor deze stage op
-  InternshipsAPI.getEvaluations(currentInternship.id).then(evaluations => {
-    currentEvaluations = evaluations;
-
-    // Gebruik bestaande concept-evaluatie indien aanwezig, anders aanmaken bij opslaan
-    const existingEval = evaluations.find(e => !e.finalized);
+  // Gebruik bestaande concept-evaluatie indien aanwezig, anders aanmaken bij opslaan
+  // currentEvaluations is al geladen door renderView()
+  const existingEval = currentEvaluations.find(e => !e.finalized);
 
     // Populate general comments if editing existing evaluation
     const commentsArea = document.getElementById('eval-comments');
@@ -49,9 +46,6 @@ function wireEvaluationForm() {
         `;
       }).join('');
     }
-  }).catch(err => {
-    console.error('Failed to load evaluations:', err);
-  });
 
   const evalForm = document.getElementById('eval-form');
   const finalizeBtn = document.getElementById('finalize-eval');
@@ -164,40 +158,37 @@ async function renderTeacherFinalReport() {
     return;
   }
 
-  container.innerHTML = '<p>Laden...</p>';
-
-  try {
-    const report = await InternshipsAPI.getFinalReport(currentInternship.id);
-    const evalData = report?.final_evaluation;
-    if (!evalData || !evalData.rules || evalData.rules.length === 0) {
-      container.innerHTML = '<p>Geen eindoverzicht beschikbaar. Finaliseer eerst een evaluatie.</p>';
-      return;
-    }
-
-    const rows = formatReportRows(evalData.rules);
-    const weightedScore = report.weighted_final_score !== null && report.weighted_final_score !== undefined
-      ? (report.weighted_final_score / 20).toFixed(2)
-      : '-';
-
-    container.innerHTML = `
-      <div class="panel card" style="margin-top: 1rem;">
-        <p><strong>Student:</strong> ${currentInternship.student_name || 'Onbekend'}</p>
-        <p><strong>Bedrijf:</strong> ${currentInternship.company_name || 'Onbekend'}</p>
-        <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} – ${formatDate(currentInternship.end_date)}</p>
-        <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
-      </div>
-      <table style="margin-top: 1rem;">
-        <thead>
-          <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Student beschrijving</th><th>Feedback</th></tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <button class="btn" style="margin-top: 1rem;" onclick="window.print()">${iconHtml('file-text', 16)} Afdrukken</button>
-    `;
-  } catch (error) {
-    console.error('Failed to load final report:', error);
-    container.innerHTML = '<p class="error">Kon eindoverzicht niet laden.</p>';
+  // Bereken eindoverzicht lokaal vanuit currentEvaluations (geen extra API call)
+  const finalEval = currentEvaluations.find(e => e.eval_type === 'final' && e.finalized);
+  if (!finalEval || !finalEval.rules || finalEval.rules.length === 0) {
+    container.innerHTML = '<p>Geen eindoverzicht beschikbaar. Finaliseer eerst een evaluatie.</p>';
+    return;
   }
+
+  const rows = formatReportRows(finalEval.rules);
+  let weightedScore = null;
+  const scoredRules = finalEval.rules.filter(r => r.score != null && r.competency?.weight != null);
+  if (scoredRules.length > 0) {
+    const totalWeight = scoredRules.reduce((sum, r) => sum + r.competency.weight, 0);
+    const weightedSum = scoredRules.reduce((sum, r) => sum + (r.score * r.competency.weight), 0);
+    weightedScore = totalWeight > 0 ? (weightedSum / totalWeight / 20).toFixed(2) : '-';
+  }
+
+  container.innerHTML = `
+    <div class="panel card" style="margin-top: 1rem;">
+      <p><strong>Student:</strong> ${escapeHtml(currentInternship.student?.first_name || '')} ${escapeHtml(currentInternship.student?.last_name || 'Onbekend')}</p>
+      <p><strong>Bedrijf:</strong> ${escapeHtml(currentInternship.company?.name || 'Onbekend')}</p>
+      <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} – ${formatDate(currentInternship.end_date)}</p>
+      <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore !== null ? weightedScore : '-'} / 5</span></p>
+    </div>
+    <table style="margin-top: 1rem;">
+      <thead>
+        <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Student beschrijving</th><th>Feedback</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <button class="btn" style="margin-top: 1rem;" onclick="window.print()">${iconHtml('file-text', 16)} Afdrukken</button>
+  `;
 }
 
 // ============================================
@@ -212,44 +203,40 @@ async function renderTeacherLogbooks() {
     return;
   }
 
-  try {
-    const weeks = await InternshipsAPI.getLogbookWeeks(currentInternship.id);
-    const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
-    const rows = weeks.map(w => {
-      if (w.status === 'missing') {
-        return `
-          <tr class="missing-row">
-            <td>${w.week_number}</td>
-            <td colspan="3"><span class="status-pill status-warn">Ontbrekend</span></td>
-            <td>-</td>
-          </tr>
-        `;
-      }
-      const lb = logbookMap.get(w.week_number);
-      return `
-        <tr>
-          <td>${w.week_number}</td>
-          <td>${lb?.tasks || '-'}</td>
-          <td>${lb?.reflection || '-'}</td>
-          <td><span class="status-pill ${getStatusClass(w.status)}">${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
-          <td>${w.mentor_validated ? `${iconHtml('check-circle', 14)} Gevalideerd` : 'In afwachting'}</td>
-        </tr>
-      `;
-    });
-    tbody.innerHTML = rows.join('') || '<tr><td colspan="5">Geen logboekweken gevonden</td></tr>';
-  } catch (error) {
-    console.error('Failed to load week overview:', error);
-    // Fallback to raw logbook list
-    tbody.innerHTML = currentLogbooks.map(lb => `
-      <tr>
-        <td>${lb.week_number}</td>
-        <td>${lb.tasks || '-'}</td>
-        <td>${lb.reflection || '-'}</td>
-        <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
-        <td>${lb.mentor_validated ? `${iconHtml('check-circle', 14)} Gevalideerd` : 'In afwachting'}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="5">Geen logboeken gevonden voor deze stage.</td></tr>';
+  // Berekend weekoverzicht lokaal vanuit currentInternship + currentLogbooks
+  const start = currentInternship.start_date ? new Date(currentInternship.start_date) : null;
+  const end = currentInternship.end_date ? new Date(currentInternship.end_date) : null;
+  let totalWeeks = 0;
+  if (start && end && end > start) {
+    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    totalWeeks = Math.max(1, Math.floor(days / 7) + 1);
   }
+
+  const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+  const rows = [];
+  for (let w = 1; w <= totalWeeks; w++) {
+    const lb = logbookMap.get(w);
+    if (!lb) {
+      rows.push(`
+        <tr class="missing-row">
+          <td>${w}</td>
+          <td colspan="3"><span class="status-pill status-warn">Ontbrekend</span></td>
+          <td>-</td>
+        </tr>
+      `);
+    } else {
+      rows.push(`
+        <tr>
+          <td>${w}</td>
+          <td>${escapeHtml(lb.tasks || '-')}</td>
+          <td>${escapeHtml(lb.reflection || '-')}</td>
+          <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
+          <td>${lb.mentor_validated ? `${iconHtml('check-circle', 14)} Gevalideerd` : 'In afwachting'}</td>
+        </tr>
+      `);
+    }
+  }
+  tbody.innerHTML = rows.join('') || '<tr><td colspan="5">Geen logboekweken gevonden</td></tr>';
 
   // Feedbackknop verbinden
   const sendBtn = document.getElementById('teacher-send-feedback');

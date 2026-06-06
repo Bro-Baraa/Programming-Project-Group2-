@@ -89,43 +89,42 @@ async function renderStudentDashboard() {
     }
 
     // Logboeken tabel bijwerken - toon alle weken inclusief ontbrekende (US-08)
+    // Berekend lokaal vanuit currentInternship + currentLogbooks — geen extra API call
     const tbody = document.querySelector('table tbody');
     if (tbody && currentInternship) {
-      try {
-        const weeks = await InternshipsAPI.getLogbookWeeks(currentInternship.id);
-        const rows = weeks.map(w => {
-          if (w.status === 'missing') {
-            return `
-              <tr class="missing-row">
-                <td>${escapeHtml(w.week_number)}</td>
-                <td><span class="status-pill status-warn">Ontbrekend</span></td>
-                <td>-</td>
-                <td>-</td>
-              </tr>
-            `;
-          }
-          return `
-            <tr>
-              <td>${escapeHtml(w.week_number)}</td>
-              <td>${w.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
-              <td>${w.mentor_validated ? 'Goedgekeurd' : (w.status === 'submitted' ? 'In afwachting' : '-')}</td>
-              <td>${w.mentor_feedback ? escapeHtml(w.mentor_feedback) : '<span class="hint">-</span>'}</td>
-            </tr>
-          `;
-        });
-        tbody.innerHTML = rows.join('') || '<tr><td colspan="4">Geen logboekweken gevonden</td></tr>';
-      } catch (error) {
-        console.error('Failed to load week overview:', error);
-        // Fallback to raw logbook list
-        tbody.innerHTML = currentLogbooks.map(lb => `
-          <tr>
-            <td>${escapeHtml(lb.week_number)}</td>
-            <td>${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
-            <td>${lb.mentor_validated ? 'Goedgekeurd' : (lb.status === 'submitted' ? 'In afwachting' : '-')}</td>
-            <td>${lb.mentor_feedback ? escapeHtml(lb.mentor_feedback) : '<span class="hint">-</span>'}</td>
-          </tr>
-        `).join('') || '<tr><td colspan="4">Geen logboeken gevonden</td></tr>';
+      const start = currentInternship.start_date ? new Date(currentInternship.start_date) : null;
+      const end = currentInternship.end_date ? new Date(currentInternship.end_date) : null;
+      let totalWeeks = 0;
+      if (start && end && end > start) {
+        const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        totalWeeks = Math.max(1, Math.floor(days / 7) + 1);
       }
+
+      const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+      const rows = [];
+      for (let w = 1; w <= totalWeeks; w++) {
+        const lb = logbookMap.get(w);
+        if (!lb) {
+          rows.push(`
+            <tr class="missing-row">
+              <td>${escapeHtml(w)}</td>
+              <td><span class="status-pill status-warn">Ontbrekend</span></td>
+              <td>-</td>
+              <td>-</td>
+            </tr>
+          `);
+        } else {
+          rows.push(`
+            <tr>
+              <td>${escapeHtml(w)}</td>
+              <td>${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
+              <td>${lb.mentor_validated ? 'Goedgekeurd' : (lb.status === 'submitted' ? 'In afwachting' : '-')}</td>
+              <td>${lb.mentor_feedback ? escapeHtml(lb.mentor_feedback) : '<span class="hint">-</span>'}</td>
+            </tr>
+          `);
+        }
+      }
+      tbody.innerHTML = rows.join('') || '<tr><td colspan="4">Geen logboekweken gevonden</td></tr>';
     }
 
     // Competentie Progressie bijwerken
@@ -1029,36 +1028,35 @@ async function renderStudentDashboard() {
       tbody.innerHTML = '<tr><td colspan="4">Geen evaluaties gevonden</td></tr>';
     }
 
-    // US-09: Eindoverzicht ophalen
+    // US-09: Eindoverzicht — berekend lokaal vanuit currentEvaluations (geen extra API call)
     const finalSummary = document.getElementById('final-summary');
     if (finalSummary && currentInternship) {
-      try {
-        const report = await InternshipsAPI.getFinalReport(currentInternship.id);
-        const evalData = report?.final_evaluation;
-        if (!evalData || !evalData.rules || evalData.rules.length === 0) {
-          finalSummary.innerHTML = `
-            <p><strong>Status:</strong> Afwachten</p>
-            <p>De finale evaluatie is nog niet ingediend.</p>
-          `;
-        } else {
-          const rows = formatReportRows(evalData.rules);
-          const weightedScore = report.weighted_final_score !== null && report.weighted_final_score !== undefined
-            ? (report.weighted_final_score / 20).toFixed(2)
-            : '-';
-
-          finalSummary.innerHTML = `
-            <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
-            <table style="margin-top: 0.5rem;">
-              <thead>
-                <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Mijn beschrijving</th><th>Feedback</th></tr>
-              </thead>
-              <tbody>${rows}</tbody>
-            </table>
-          `;
+      const finalEval = currentEvaluations.find(e => e.eval_type === 'final' && e.finalized);
+      if (!finalEval || !finalEval.rules || finalEval.rules.length === 0) {
+        finalSummary.innerHTML = `
+          <p><strong>Status:</strong> Afwachten</p>
+          <p>De finale evaluatie is nog niet ingediend.</p>
+        `;
+      } else {
+        const rows = formatReportRows(finalEval.rules);
+        // Gewogen score berekenen: Σ(score × gewicht)/100, dan /20 voor schaal 0-5
+        let weightedScore = null;
+        const scoredRules = finalEval.rules.filter(r => r.score != null && r.competency?.weight != null);
+        if (scoredRules.length > 0) {
+          const totalWeight = scoredRules.reduce((sum, r) => sum + r.competency.weight, 0);
+          const weightedSum = scoredRules.reduce((sum, r) => sum + (r.score * r.competency.weight), 0);
+          weightedScore = totalWeight > 0 ? (weightedSum / totalWeight / 20).toFixed(2) : '-';
         }
-      } catch (error) {
-        console.error('Failed to load final report:', error);
-        finalSummary.innerHTML = '<p class="error">Kon eindoverzicht niet laden.</p>';
+
+        finalSummary.innerHTML = `
+          <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore !== null ? weightedScore : '-'} / 5</span></p>
+          <table style="margin-top: 0.5rem;">
+            <thead>
+              <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Mijn beschrijving</th><th>Feedback</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
       }
     }
 
