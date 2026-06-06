@@ -6,10 +6,11 @@
 const API_BASE_URL = (() => {
   const host = window.location.hostname || 'localhost';
   const port = window.location.port;
+  const protocol = window.location.protocol;
 
-  // Production (80/443): backend + frontend served from same origin
-  if (port === '80' || port === '443') {
-    return `${window.location.protocol}//${window.location.host}`;
+  // Production (default ports 80/443 or empty): backend + frontend served from same origin
+  if (port === '' || port === '80' || port === '443') {
+    return `${protocol}//${window.location.host}`;
   }
   // Dev: frontend on 8080 (or file://), backend on 8001
   return `http://${host}:8001`;
