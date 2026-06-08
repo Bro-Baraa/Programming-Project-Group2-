@@ -311,6 +311,14 @@ const InternshipsAPI = {
     return apiRequest(`/internships/${internshipId}/final-report`);
   },
 
+  // Download het volledige stagerapport als PDF
+  // Gebruikt de downloadFile helper — opent een save-dialoog in de browser
+  async exportPdf(internshipId, studentName) {
+    const url = `${API_BASE_URL}/internships/${internshipId}/export/pdf`;
+    const filename = `stage_rapport_${(studentName || 'student').replace(/\s+/g, '_').toLowerCase()}_${internshipId}.pdf`;
+    return downloadFile(url, filename);
+  },
+
   submitLogbook(logbookId) {
     return apiRequest(`/internships/logbooks/${logbookId}/submit`, {
       method: 'POST'

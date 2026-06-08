@@ -159,4 +159,24 @@ async function renderMentorEvaluation() {
       showToast('Feedback opgeslagen!', 'success');
     });
   }
+
+  // PDF-exportknop toevoegen voor mentors (altijd zichtbaar in evaluatieweergave)
+  const exportWrap = document.createElement('div');
+  exportWrap.style.marginTop = '1rem';
+  exportWrap.innerHTML = `<button class="btn" id="mentor-export-pdf-btn">${iconHtml('download', 16)} Exporteer Stage als PDF</button>`;
+  container.appendChild(exportWrap);
+
+  document.getElementById('mentor-export-pdf-btn')?.addEventListener('click', async () => {
+    if (!currentInternship) return;
+    const btn = document.getElementById('mentor-export-pdf-btn');
+    const studentName = `${currentInternship.student?.first_name || ''} ${currentInternship.student?.last_name || ''}`.trim();
+    showLoading(btn, 'Bezig...');
+    try {
+      await InternshipsAPI.exportPdf(currentInternship.id, studentName);
+      hideLoading(btn);
+    } catch (error) {
+      hideLoading(btn);
+      showToast(`PDF exporteren mislukt: ${error.message}`, 'error');
+    }
+  });
 }

@@ -22,6 +22,7 @@ from app.routers import (
     me,
     notifications,
     audit,
+    export,
 )
 
 # Configure logging so app-level warnings/info are visible in uvicorn console
@@ -115,6 +116,7 @@ app.include_router(users, prefix="/api")
 app.include_router(notifications, prefix="/api")
 app.include_router(me, prefix="/api")
 app.include_router(audit, prefix="/api")
+app.include_router(export, prefix="/api")
 
 @app.get("/api/health")
 def health_check():

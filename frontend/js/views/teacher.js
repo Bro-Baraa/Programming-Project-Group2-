@@ -188,7 +188,26 @@ async function renderTeacherFinalReport() {
       <tbody>${rows}</tbody>
     </table>
     <button class="btn" style="margin-top: 1rem;" onclick="window.print()">${iconHtml('file-text', 16)} Afdrukken</button>
+    <button class="btn" style="margin-top: 1rem; margin-left: 0.5rem;" id="export-pdf-btn">${iconHtml('download', 16)} Exporteer als PDF</button>
   `;
+
+  // Koppel de PDF-exportknop: roept de backend aan en triggert download
+  const exportBtn = document.getElementById('export-pdf-btn');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      if (!currentInternship) return;
+      const studentName = `${currentInternship.student?.first_name || ''} ${currentInternship.student?.last_name || ''}`.trim();
+      showLoading(exportBtn, 'Bezig...');
+      try {
+        await InternshipsAPI.exportPdf(currentInternship.id, studentName);
+        hideLoading(exportBtn);
+        // Geen toast nodig — de browser opent de download automatisch
+      } catch (error) {
+        hideLoading(exportBtn);
+        showToast(`PDF exporteren mislukt: ${error.message}`, 'error');
+      }
+    });
+  }
 }
 
 // ============================================
