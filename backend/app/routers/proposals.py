@@ -77,6 +77,7 @@ def update_proposal_endpoint(
         decision=update_data.status,
         feedback=update_data.feedback,
         teacher_id=update_data.teacher_id,
+        mentor_id=update_data.mentor_id,
     )
     log_event(db, "proposal.review", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Voorstel beoordeeld: {update_data.status}")
     return result.internship.proposal

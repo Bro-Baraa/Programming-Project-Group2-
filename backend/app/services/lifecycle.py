@@ -237,6 +237,7 @@ class InternshipLifecycle:
         decision: str,
         feedback: Optional[str] = None,
         teacher_id: Optional[int] = None,
+        mentor_id: Optional[int] = None,
     ) -> ReviewDecision:
         """Commissie beoordeelt een voorstel."""
         self._assert_role(actor, {"committee", "admin"})
@@ -267,6 +268,11 @@ class InternshipLifecycle:
             self._validate_supervisor(teacher_id, "teacher")
             internship.teacher_id = teacher_id
 
+            # Mentor aanduiden bij goedkeuring (optioneel — kan later via PATCH)
+            if mentor_id:
+                self._validate_supervisor(mentor_id, "mentor")
+                internship.mentor_id = mentor_id
+
         internship.status = decision
         internship.proposal.status = decision
         if feedback is not None:
@@ -294,6 +300,16 @@ class InternshipLifecycle:
                 self.db,
                 user_id=teacher_id,
                 message=f"Je bent aangeduid als docent-begeleider voor de stage van {student_name}.",
+                internship_id=internship.id,
+                link_view="logboek",
+            )
+
+        # ── Notify the mentor when assigned at approval ──
+        if decision == "Goedgekeurd" and mentor_id:
+            notify(
+                self.db,
+                user_id=mentor_id,
+                message=f"Je bent aangeduid als mentor voor de stage van {student_name}.",
                 internship_id=internship.id,
                 link_view="logboek",
             )
