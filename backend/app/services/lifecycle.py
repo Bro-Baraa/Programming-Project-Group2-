@@ -750,7 +750,15 @@ class InternshipLifecycle:
 
         internship = self._get_internship_or_404(internship_id)
 
-        # TODO: audit log reason (see docs/feature-todo.md #1)
+        from app.services.audit import log_event
+        log_event(
+            self.db,
+            "internship.force_status",
+            user=actor,
+            entity_type="internship",
+            entity_id=internship_id,
+            detail=f"Status handmatig gewijzigd naar '{new_status}' door admin. Reden: {reason}",
+        )
         internship.status = new_status
 
         self.db.commit()

@@ -92,6 +92,6 @@ def export_internships_csv(
     filename = f"stage_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
     return StreamingResponse(
         io.BytesIO(output.getvalue().encode("utf-8-sig")),
-        media_type="text/csv; charset=utf-8",
+        media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"},
     )

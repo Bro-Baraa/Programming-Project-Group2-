@@ -570,7 +570,7 @@ internships:
       validated_at: -48
     logbooks:
       count: 6
-      all_submitted: true
+      all_submitted: false
       all_validated: false
     evaluations:
       - type: tussentijds
