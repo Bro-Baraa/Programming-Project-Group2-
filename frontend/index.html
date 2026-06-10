@@ -624,7 +624,10 @@
 
   <template id="admin-overeenkomsten-template">
     <div class="panel card">
-      <h2>Overeenkomsten Overzicht</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <h2 style="margin: 0;">Overeenkomsten Overzicht</h2>
+        <button id="btn-export-csv" class="btn small"><img src="icons/download.svg" alt="" width="14" height="14" class="icon-img" /> Exporteer CSV</button>
+      </div>
       <p class="hint">Overzicht van alle studenten en hun overeenkomststatus. Alleen studenten met een goedgekeurd voorstel worden getoond.</p>
       <table id="admin-agreements-table">
         <thead>

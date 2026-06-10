@@ -438,6 +438,17 @@ const AgreementsAPI = {
 const ReportsAPI = {
   listAgreements() {
     return apiRequest('/internships/reports/agreements');
+  },
+
+  exportCsv() {
+    const token = getToken();
+    const url = `${API_BASE_URL}/internships/reports/export/csv`;
+    return fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    }).then(response => {
+      if (!response.ok) throw new Error('Export mislukt');
+      return response.blob();
+    });
   }
 };
 
