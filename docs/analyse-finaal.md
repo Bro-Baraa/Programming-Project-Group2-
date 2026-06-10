@@ -6,9 +6,17 @@ Academiejaar 2025-2026
 
 ---
 
-## 1. Probleembeschrijving
+## 1. Inleiding
 
-### 1.1 Aanleiding
+Dit document is de finale analyse van het project "Stage Monitoring Tool". Het beschrijft wat er uiteindelijk gebouwd is, hoe de technische implementatie eruitziet, en waar de realisatie afwijkt van de oorspronkelijke planning uit de initiele analyse (`initiele-analyse.md`).
+
+De initiele analyse vormde het startpunt van dit project. Daarin werden het probleem, de doelstellingen, de user stories, het datamodel, de architectuurkeuzes en de sprintplanning vastgelegd. Dit document sluit de cirkel door te beschrijven wat er in de praktijk gerealiseerd is.
+
+---
+
+## 2. Probleembeschrijving
+
+### 2.1 Aanleiding (uit initiele analyse)
 
 Het stageproces binnen de opleiding Toegepaste Informatica verliep tot nu toe versnipperd en grotendeels handmatig. Gegevens en documenten zaten verspreid over e-mail, Excel en losse formulieren. Dit leidde tot een aantal concrete problemen:
 
@@ -17,27 +25,29 @@ Het stageproces binnen de opleiding Toegepaste Informatica verliep tot nu toe ve
 - Communicatie tussen student, commissie, docent en mentor kostte veel manuele opvolging.
 - Aanpassingen aan evaluatiecriteria vereisten telkens codewijzigingen.
 
-### 1.2 Doelstelling
+### 2.2 Doelstelling
 
 Het doel van dit project was een webapplicatie bouwen die het volledige stageproces centraliseert: van het indienen van een voorstel tot de finale evaluatie. Alle betrokken partijen (student, stagecommissie, docent, stagementor en administratie) moesten op een centrale plek hun taken kunnen uitvoeren en de status van elke stage kunnen raadplegen.
 
-De vijf kerndoelstellingen waren:
+De vijf kerndoelstellingen uit de initiele analyse waren:
 
-| # | Doelstelling | Concreet effect |
-|---|---|---|
-| 1 | Centralisatie | Alle stagegegevens op een platform met dossierhistoriek |
-| 2 | Transparantie | Voor elke rol een helder statusoverzicht per stage |
-| 3 | Efficientie | Automatische notificaties en validatieflows in plaats van ad-hoc mails |
-| 4 | Wendbaarheid | Competenties en gewichten configureerbaar zonder deploy |
-| 5 | Traceerbaarheid | Audit trail van beslissingen, uploads en evaluaties |
+| # | Doelstelling | Concreet effect | Gerealiseerd? |
+|---|---|---|---|
+| 1 | Centralisatie | Alle stagegegevens op een platform met dossierhistoriek | Ja |
+| 2 | Transparantie | Voor elke rol een helder statusoverzicht per stage | Ja |
+| 3 | Efficientie | Automatische notificaties en validatieflows in plaats van ad-hoc mails | Ja (in-app notificaties i.p.v. e-mail) |
+| 4 | Wendbaarheid | Competenties en gewichten configureerbaar zonder deploy | Ja |
+| 5 | Traceerbaarheid | Audit trail van beslissingen, uploads en evaluaties | Ja |
+
+Alle vijf doelstellingen zijn gerealiseerd. De enige aanpassing is dat notificaties in-app gebeuren via polling in plaats van via e-mail, wat beter paste binnen de scope van een eerstejaarsproject.
 
 ---
 
-## 2. Functionele Analyse
+## 3. Functionele Analyse
 
-### 2.1 Gebruikersrollen
+### 3.1 Gebruikersrollen
 
-De applicatie ondersteunt vijf rollen, elk met eigen verantwoordelijkheden:
+De initiele analyse definieerde zes rollen (Student, Stagecommissie, EhB-docent, Stagementor, Administratie en Admin). In de uiteindelijke implementatie zijn Administratie en Admin samengevoegd tot een rol (admin), wat het systeem eenvoudiger maakt zonder functionaliteit te verliezen. De vijf rollen:
 
 | Rol | Kernverantwoordelijkheden |
 |---|---|
@@ -47,7 +57,9 @@ De applicatie ondersteunt vijf rollen, elk met eigen verantwoordelijkheden:
 | **Stagementor** | Wekelijkse logboeken aftekenen, feedback per competentie geven |
 | **Admin/Administratie** | Gebruikersbeheer, competentieprofielen en gewichten beheren, rapportages exporteren |
 
-### 2.2 Rollenmatrix (CRUD per procesdeel)
+### 3.2 Rollenmatrix (CRUD per procesdeel)
+
+Deze matrix komt overeen met wat in de initiele analyse gepland was:
 
 | Rol | Aanvraag | Beoordeling | Overeenkomst | Logboeken | Evaluatie | Configuratie |
 |---|---|---|---|---|---|---|
@@ -57,7 +69,7 @@ De applicatie ondersteunt vijf rollen, elk met eigen verantwoordelijkheden:
 | Stagementor | Read | Read | Read | Read/Verify | Create/Update | - |
 | Admin | Read | Read | Read | Read | Read | Full CRUD |
 
-### 2.3 Procesfasen
+### 3.3 Procesfasen
 
 Het stageproces doorloopt vijf opeenvolgende fasen:
 
@@ -69,9 +81,9 @@ Het stageproces doorloopt vijf opeenvolgende fasen:
 | 4. Opvolging | Student + Docent + Mentor | Wekelijkse logboeken en feedback |
 | 5. Evaluatie | Docent + Mentor | Tussentijdse/finale evaluatie en eindrapport |
 
-### 2.4 Statusmodel (state machine)
+### 3.4 Statusmodel (state machine)
 
-Een stage doorloopt de volgende statussen:
+Het statusmodel is geimplementeerd zoals gepland in de initiele analyse. Een stage doorloopt de volgende statussen:
 
 ```
 Ingediend -> In Beoordeling -> Goedgekeurd -> Overeenkomst Ingediend -> Lopend -> Afgerond
@@ -87,9 +99,9 @@ Kritische business rules:
 - Een finale evaluatie is na afronding niet meer wijzigbaar.
 - Alle statuswijzigingen worden gelogd in de audit trail (tijdstip + actor).
 
-### 2.5 User Stories
+### 3.5 User Stories
 
-Alle 29 user stories zijn geimplementeerd. Hieronder het volledige overzicht:
+De initiele analyse definieerde 29 user stories (US-01 t/m US-29). Alle 29 zijn volledig geimplementeerd, zowel in de backend als in de frontend. Hieronder het volledige overzicht:
 
 | ID | User story | Fase | Status |
 |---|---|---|---|
@@ -123,7 +135,9 @@ Alle 29 user stories zijn geimplementeerd. Hieronder het volledige overzicht:
 | US-28 | Als administratie wil ik rapportages exporteren zodat data bruikbaar is voor rapportering. | Evaluatie | OK |
 | US-29 | Als gebruiker wil ik een melding krijgen als er iets verandert dat mij aangaat zodat ik altijd op de hoogte ben. | Alle | OK |
 
-### 2.6 Acceptatiecriteria (selectie van de belangrijkste)
+### 3.6 Acceptatiecriteria (selectie van de belangrijkste)
+
+De acceptatiecriteria uit de initiele analyse zijn allemaal gehaald. Hieronder de belangrijkste:
 
 **US-01 - Stagevoorstel indienen**
 - Formulier valideert verplichte velden (student, bedrijf, docent, opdracht, periode).
@@ -153,11 +167,21 @@ Alle 29 user stories zijn geimplementeerd. Hieronder het volledige overzicht:
 
 ---
 
-## 3. Technische Architectuur
+## 4. Technische Architectuur
 
-### 3.1 Overzicht
+### 4.1 Overzicht
 
-De applicatie is opgebouwd als een client-server architectuur met een gescheiden frontend en backend die via een REST API communiceren.
+De initiele analyse plande de volgende technologiestack:
+
+| Laag | Gepland (initiele analyse) | Gerealiseerd | Reden voor afwijking |
+|---|---|---|---|
+| Frontend | React + Tailwind | Vanilla HTML/CSS/JS + Vite | Eenvoudiger, geen framework overhead |
+| Backend API | FastAPI (REST) | FastAPI (REST) | Zoals gepland |
+| Database | SQLite | SQLite + SQLAlchemy ORM | Zoals gepland, ORM toegevoegd |
+| Auth | JWT (access/refresh) | JWT (access token, 24u) | Vereenvoudiging: geen refresh token nodig |
+| Notificatie | E-mail service | In-app notificaties (polling) | E-mail was te complex voor scope |
+
+De uiteindelijke technische keuzes:
 
 | Laag | Technologie | Motivatie |
 |---|---|---|
@@ -167,7 +191,7 @@ De applicatie is opgebouwd als een client-server architectuur met een gescheiden
 | **Authenticatie** | JWT (JSON Web Tokens) | Stateless sessiebeveiliging, rolgebaseerde toegang |
 | **Deployment** | Docker + Fly.io | Eenvoudige containerisatie, gratis hosting voor demo |
 
-### 3.2 Backend-architectuur (gelaagd)
+### 4.2 Backend-architectuur (gelaagd)
 
 De backend is opgebouwd uit vijf lagen, elk met een specifieke verantwoordelijkheid:
 
@@ -212,9 +236,11 @@ Complexe business logica die door meerdere routers gebruikt wordt:
 | `report_pdf.py` | PDF-export van eindrapporten |
 | `logbooks.py` | Logboekvalidatie en weekberekening |
 
-### 3.3 Frontend-architectuur
+### 4.3 Frontend-architectuur
 
-De frontend is een single-page applicatie gebouwd met vanilla HTML, CSS en JavaScript, zonder framework. De structuur:
+De initiele analyse plande React + Tailwind als frontend-technologie. Uiteindelijk is gekozen voor vanilla HTML, CSS en JavaScript, omdat dit eenvoudiger is en het team geen extra tijd hoefde te besteden aan het leren van een framework. De Vite dev server biedt hot reload tijdens ontwikkeling.
+
+De structuur:
 
 | Bestand | Verantwoordelijkheid |
 |---|---|
@@ -232,9 +258,9 @@ De frontend is een single-page applicatie gebouwd met vanilla HTML, CSS en JavaS
 
 De frontend communiceert met de backend via de Vite dev server proxy (in development) of wordt direct geserveerd door de backend (in productie).
 
-### 3.4 Beveiliging
+### 4.4 Beveiliging
 
-We passen "Defense in Depth" toe met meerdere beveiligingslagen:
+De initiele analyse vermeldde rolgebaseerde toegang als een van de belangrijke ontwerpkeuzes. In de implementatie is dit uitgebreid naar een volledige "Defense in Depth" aanpak met meerdere beveiligingslagen:
 
 | Laag | Werking |
 |---|---|
@@ -250,9 +276,17 @@ We passen "Defense in Depth" toe met meerdere beveiligingslagen:
 
 ---
 
-## 4. Datamodel
+## 5. Datamodel
 
-### 4.1 Entiteiten
+Het datamodel uit de initiele analyse is grotendeels overgenomen. De belangrijkste toevoegingen ten opzichte van het oorspronkelijke ontwerp zijn:
+
+- **`proposal_versions`**: tabel voor versiegeschiedenis van voorstellen (niet in origineel ontwerp)
+- **`notifications`**: tabel voor in-app notificaties (in origineel was e-mail gepland)
+- **`feedbacks`**: aparte tabel voor feedback (in origineel ontwerp was feedback alleen een veld in stagevoorstellen)
+- **`audit_logs`**: tabel voor audit trail (in origineel als vereiste benoemd, nu ook als aparte tabel geimplementeerd)
+- **`competency_profile_id` op `internships`**: koppeling tussen stage en competentieprofiel om historische integriteit te waarborgen
+
+### 5.1 Entiteiten
 
 Het systeem bevat de volgende kerntabellen:
 
@@ -274,7 +308,7 @@ Het systeem bevat de volgende kerntabellen:
 | `feedbacks` | Feedback tussen gebruikers | id, internship_id, from_user_id, to_user_id, message |
 | `audit_logs` | Audit trail van alle acties | id, timestamp, user_id, user_email, action, entity_type, entity_id, detail |
 
-### 4.2 Relaties
+### 5.2 Relaties
 
 - Een **stage** is het centrale object. Alles hangt eraan vast.
 - Een user (student) kan meerdere stages hebben.
@@ -285,7 +319,9 @@ Het systeem bevat de volgende kerntabellen:
 - Een competentieprofiel bevat meerdere competenties.
 - Bij aanmaak van een stage wordt het actieve competentieprofiel gekopieerd (via `competency_profile_id`), zodat historische stages ongewijzigd blijven bij profielwijzigingen.
 
-### 4.3 Constraints
+### 5.3 Constraints
+
+De constraints uit de initiele analyse zijn allemaal geimplementeerd:
 
 - `users.email` is uniek.
 - `logbooks.week_number` in bereik 1-52.
@@ -293,7 +329,9 @@ Het systeem bevat de volgende kerntabellen:
 - `competencies.weight` in bereik 0-100.
 - Per actief profiel: som van alle competentiegewichten = 100%.
 
-### 4.4 ER-diagram (vereenvoudigd)
+### 5.4 ER-diagram (vereenvoudigd)
+
+Het onderstaande diagram toont de uiteindelijke structuur. Vergeleken met het ER-diagram uit de initiele analyse zijn er extra tabellen bijgekomen (proposal_versions, notifications, feedbacks, audit_logs):
 
 ```
 USERS ||--o{ INTERNSHIPS : "student"
@@ -315,9 +353,11 @@ USERS ||--o{ AUDIT_LOGS : "acties"
 
 ---
 
-## 5. Gerealiseerde Functionaliteiten
+## 6. Gerealiseerde Functionaliteiten
 
-### 5.1 Stagevoorstel en beoordelingsflow
+De initiele analyse definieerde de functionaliteiten via 29 user stories, verdeeld over vijf fasen (Aanvraag, Beoordeling, Overeenkomst, Opvolging, Evaluatie). Alle geplande functionaliteiten zijn gerealiseerd. Daarnaast zijn er extra features gebouwd die niet expliciet in de initiele analyse stonden, zoals versiegeschiedenis voor voorstellen, PDF-export van eindrapporten en een volledige audit trail.
+
+### 6.1 Stagevoorstel en beoordelingsflow
 
 - Student vult een formulier in met bedrijfsgegevens, opdracht, periode en selecteert een docent en mentor.
 - Het voorstel wordt opgeslagen met status "Ingediend". Commissieleden ontvangen een notificatie.
@@ -325,14 +365,14 @@ USERS ||--o{ AUDIT_LOGS : "acties"
 - Bij "Aanpassingen Vereist" kan de student het voorstel bewerken en opnieuw indienen.
 - Volledige versiegeschiedenis wordt bijgehouden in de `proposal_versions` tabel.
 
-### 5.2 Overeenkomstbeheer
+### 6.2 Overeenkomstbeheer
 
 - Na goedkeuring kan de student een PDF-overeenkomst uploaden.
 - Content-type validatie zorgt ervoor dat alleen PDF-bestanden geaccepteerd worden.
 - Commissieleden kunnen de overeenkomst downloaden, de verzekeringsstatus controleren en valideren of markeren als "Onvolledig".
 - Administratie heeft een overzichtstabel met alle overeenkomsten en hun status.
 
-### 5.3 Logboeken
+### 6.3 Logboeken
 
 - Studenten vullen wekelijks een logboek in met taken, reflecties en problemen.
 - Logboeken kunnen opgeslagen worden als concept of definitief ingediend.
@@ -340,7 +380,7 @@ USERS ||--o{ AUDIT_LOGS : "acties"
 - Mentoren kunnen logboeken valideren (aftekenen).
 - Ontbrekende weken worden automatisch berekend en visueel gemarkeerd als "Ontbrekend" (rode markering in de UI).
 
-### 5.4 Evaluatiesysteem
+### 6.4 Evaluatiesysteem
 
 - Docenten en mentoren kunnen tussentijdse en finale evaluaties aanmaken.
 - Per evaluatie wordt voor elke competentie (uit het gekoppelde profiel) een score ingevuld.
@@ -348,7 +388,7 @@ USERS ||--o{ AUDIT_LOGS : "acties"
 - De gewogen eindscore wordt automatisch berekend op basis van de competentiegewichten.
 - Na afronding ("finalize") kan een evaluatie niet meer gewijzigd worden.
 
-### 5.5 Competentiebeheer
+### 6.5 Competentiebeheer
 
 - Admin kan competentieprofielen aanmaken per academiejaar.
 - Competenties kunnen toegevoegd, gewijzigd en verwijderd worden.
@@ -356,28 +396,32 @@ USERS ||--o{ AUDIT_LOGS : "acties"
 - Competenties kunnen geactiveerd/gedeactiveerd worden.
 - Bij aanmaak van een stage wordt het actieve profiel vastgelegd, zodat latere wijzigingen historische evaluaties niet beinvloeden.
 
-### 5.6 Notificatiesysteem
+### 6.6 Notificatiesysteem
+
+De initiele analyse plande een e-mail service voor notificaties. In de praktijk is gekozen voor een in-app notificatiesysteem, dat beter past bij de scope van het project:
 
 - In-app notificaties via een bell-icoontje met badge voor ongelezen berichten.
 - Auto-polling elke 30 seconden.
 - Notificaties worden aangemaakt bij: voorstelindienen, beoordeling, overeenkomstvalidatie, logboekindiening, evaluatieafronding.
 - Gebruikers kunnen notificaties als gelezen markeren (individueel of alles).
 
-### 5.7 Audit Logging
+### 6.7 Audit Logging
+
+De initiele analyse stelde als vereiste: "Alle statuswijzigingen, evaluaties en documentacties worden geaudit (tijdstip + actor)". Dit is volledig gerealiseerd:
 
 - Alle belangrijke acties worden gelogd: statuswijzigingen, evaluatie-afrondingen, uploads, logins.
 - Elke log bevat: tijdstip, actor (gebruiker + email + rol), actie, entiteit, en optioneel detail.
 - Admin kan audit logs raadplegen en filteren per stage en per gebruiker.
 - Audit logs zijn alleen-lezen en kunnen niet verwijderd worden.
 
-### 5.8 Rapportages en Export
+### 6.8 Rapportages en Export
 
 - Eindrapport per student: stage-informatie, logboekstatistieken, evaluatieoverzicht, gewogen eindscore.
 - PDF-export van eindrapporten (gegenereerd met `fpdf2`).
 - CSV-export van stage-overzichten voor administratie (UTF-8 met BOM voor Excel-compatibiliteit).
 - Dashboard met statistieken: totaal aantal stages per status, logboekvoortgang, openstaande acties.
 
-### 5.9 Gebruikersbeheer
+### 6.9 Gebruikersbeheer
 
 - Volledige CRUD voor gebruikers (alleen admin).
 - Zoeken en filteren op naam, email, rol.
@@ -385,9 +429,9 @@ USERS ||--o{ AUDIT_LOGS : "acties"
 
 ---
 
-## 6. Technische Details
+## 7. Technische Details
 
-### 6.1 Dependencies
+### 7.1 Dependencies
 
 **Backend (Python):**
 
@@ -413,7 +457,7 @@ USERS ||--o{ AUDIT_LOGS : "acties"
 
 De frontend gebruikt geen JavaScript frameworks. Alle logica is geschreven in vanilla JavaScript met ES modules.
 
-### 6.2 API-structuur
+### 7.2 API-structuur
 
 Alle API endpoints zijn beschikbaar onder het `/api` prefix. De belangrijkste domeinen:
 
@@ -433,7 +477,7 @@ Alle API endpoints zijn beschikbaar onder het `/api` prefix. De belangrijkste do
 | Gebruikers | `GET /users`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}` |
 | Dashboard | `GET /me/dashboard`, `GET /internships/stats/dashboard` |
 
-### 6.3 Environment Variabelen
+### 7.3 Environment Variabelen
 
 | Variabele | Standaardwaarde | Beschrijving |
 |---|---|---|
@@ -443,9 +487,9 @@ Alle API endpoints zijn beschikbaar onder het `/api` prefix. De belangrijkste do
 
 ---
 
-## 7. Deployment
+## 8. Deployment
 
-### 7.1 Lokale ontwikkeling
+### 8.1 Lokale ontwikkeling
 
 Het project biedt startscripts voor alle platformen:
 
@@ -462,7 +506,7 @@ start.bat               # Zelfde opties als start.sh
 
 Het startscript detecteert automatisch of `uv` (snellere Python package manager) beschikbaar is en valt terug op `pip` als dat niet het geval is.
 
-### 7.2 Docker
+### 8.2 Docker
 
 De applicatie draait in een enkele container die zowel backend als frontend serveert:
 
@@ -476,7 +520,7 @@ docker compose up --build    # Bouwen en starten
 docker compose up -d         # Op de achtergrond
 ```
 
-### 7.3 Fly.io (productie-demo)
+### 8.3 Fly.io (productie-demo)
 
 De applicatie is gedeployed op Fly.io met de volgende configuratie:
 
@@ -489,9 +533,9 @@ De applicatie is gedeployed op Fly.io met de volgende configuratie:
 
 ---
 
-## 8. Testen
+## 9. Testen
 
-### 8.1 Backend tests
+### 9.1 Backend tests
 
 De backend bevat een uitgebreide pytest testsuite met de volgende testbestanden:
 
@@ -510,11 +554,11 @@ De backend bevat een uitgebreide pytest testsuite met de volgende testbestanden:
 
 Tests draaien met een in-memory SQLite database (`conftest.py` configureert een aparte test-database) zodat productiedata niet beinvloed wordt.
 
-### 8.2 End-to-end test
+### 9.2 End-to-end test
 
 Er is een uitgebreid end-to-end testscript (`e2e_full_flow.py`) dat het volledige stageproces doorloopt: van registratie tot eindrapport. Dit script valideert dat alle flows correct samenwerken.
 
-### 8.3 Testdata
+### 9.3 Testdata
 
 Testdata wordt geladen vanuit een YAML-bestand (`seed_data.yaml`) via `seed_loader.py`. Dit biedt realistische testdata voor alle rollen en fasen van het stageproces.
 
@@ -530,7 +574,7 @@ Standaard testaccounts:
 
 ---
 
-## 9. Projectstructuur
+## 10. Projectstructuur
 
 ```
 Programming-Project-Group2-/
@@ -581,23 +625,27 @@ Programming-Project-Group2-/
 
 ---
 
-## 10. Afwijkingen ten opzichte van de initiele analyse
+## 11. Afwijkingen ten opzichte van de initiele analyse
 
-Tijdens de ontwikkeling zijn er een aantal wijzigingen doorgevoerd ten opzichte van de oorspronkelijke analyse:
+Tijdens de ontwikkeling zijn er een aantal wijzigingen doorgevoerd ten opzichte van de oorspronkelijke planning uit `initiele-analyse.md`:
 
 | Onderdeel | Initiele analyse | Uiteindelijke keuze | Reden |
 |---|---|---|---|
-| Frontend framework | React + Tailwind | Vanilla HTML/CSS/JS + Vite | Eenvoudiger opzet, minder leercurve, geen framework overhead |
-| Backend framework | Node.js/Express of FastAPI | FastAPI (Python) | Team had meer ervaring met Python; FastAPI biedt automatische validatie |
-| Database | PostgreSQL of MySQL | SQLite | Geen server-setup nodig, eenvoudigere deployment, voldoende voor dit project |
-| Notificaties | E-mail service | In-app notificaties (polling) | E-mail was out of scope voor een eerstejaarsproject; in-app notificaties voldoen |
-| Auth | JWT access/refresh tokens | JWT access token (24u) | Vereenvoudiging; refresh tokens niet nodig voor dit project |
+| Frontend framework | React + Tailwind | Vanilla HTML/CSS/JS + Vite | Eenvoudiger, geen framework overhead, snellere ontwikkeling |
+| Backend framework | FastAPI (REST) | FastAPI (REST) | Zoals gepland; geen afwijking |
+| Database | SQLite | SQLite + SQLAlchemy ORM | Zoals gepland; ORM toegevoegd voor structuur |
+| Notificaties | E-mail service | In-app notificaties (polling) | E-mail was te complex voor scope; in-app voldoet |
+| Auth | JWT (access/refresh) | JWT access token (24u) | Vereenvoudiging; refresh tokens niet nodig |
+| Rollen | 6 rollen (incl. aparte Admin en Administratie) | 5 rollen (Admin en Administratie samengevoegd) | Vereenvoudiging zonder functieverlies |
+| Datamodel | 11 tabellen | 16 tabellen | Extra tabellen voor audit, notificaties, feedback, versiegeschiedenis |
+
+De belangrijkste afwijking is de keuze voor vanilla JavaScript in plaats van React. Dit bleek in de praktijk voldoende voor de vereiste functionaliteit en bespaarde het team de leercurve van een framework. De overige afwijkingen zijn vereenvoudigingen (auth, rollen) of uitbreidingen (datamodel) die het systeem beter maakten.
 
 ---
 
-## 11. Reflectie en Mogelijke Verbeteringen
+## 12. Reflectie en Mogelijke Verbeteringen
 
-### 11.1 Wat goed ging
+### 12.1 Wat goed ging
 
 - Alle 29 user stories zijn volledig geimplementeerd (zowel backend als frontend).
 - De gelaagde architectuur maakte het project overzichtelijk en onderhoudbaar.
@@ -605,7 +653,7 @@ Tijdens de ontwikkeling zijn er een aantal wijzigingen doorgevoerd ten opzichte 
 - Docker en Fly.io maakten het eenvoudig om een werkende demo te tonen.
 - Het competentieprofiel-systeem is flexibel opgezet met versiebeheer.
 
-### 11.2 Mogelijke verbeteringen voor de toekomst
+### 12.2 Mogelijke verbeteringen voor de toekomst
 
 - **E-mailnotificaties**: naast in-app notificaties ook e-mails versturen bij belangrijke wijzigingen.
 - **WebSocket-notificaties**: real-time notificaties in plaats van polling.
@@ -617,9 +665,24 @@ Tijdens de ontwikkeling zijn er een aantal wijzigingen doorgevoerd ten opzichte 
 
 ---
 
-## 12. Bronnen en Tools
+## 13. Sprintplanning: gepland vs. gerealiseerd
 
-### 12.1 Gebruikte tools
+De initiele analyse definieerde vier sprints:
+
+| Sprint | Focus (initiele analyse) | Gerealiseerd? |
+|---|---|---|
+| Sprint 1 | Basisinfrastructuur: gebruikersbeheer (rollen/rechten) en stagevoorstellen (indienen, beoordelen, feedback) | Ja, volledig |
+| Sprint 2 | Overeenkomst uploaden en wekelijks logboekbeheer (invullen, inzien, aftekenen) | Ja, volledig |
+| Sprint 3 | Evaluaties en competenties: admin beheert competenties/gewichten, feedback, tussentijdse/finale evaluaties | Ja, volledig |
+| Sprint 4 | Meldingen, rapportage en afwerking: feedback inzien, overzichten, notificaties, export | Ja, volledig |
+
+Alle vier sprints zijn succesvol afgerond. De sprintplanning uit de initiele analyse bleek een goede leidraad voor de ontwikkeling.
+
+---
+
+## 14. Bronnen en Tools
+
+### 14.1 Gebruikte tools
 
 | Tool | Gebruik |
 |---|---|
@@ -631,14 +694,18 @@ Tijdens de ontwikkeling zijn er een aantal wijzigingen doorgevoerd ten opzichte 
 | Vite | Frontend dev server |
 | pytest | Backend testing |
 
-### 12.2 GitHub werkafspraken
+### 14.2 GitHub werkafspraken
+
+De werkafspraken uit de initiele analyse zijn gevolgd:
 
 - Geen directe pushes naar de `main` branch; deze bevat alleen werkende code.
 - Ontwikkeling op feature branches (bijv. `feature/logboek`).
 - Verplichte review door minstens een teamlid per pull request.
 - Duidelijke en betekenisvolle commit messages.
 
-### 12.3 Definition of Done
+### 14.3 Definition of Done
+
+De Definition of Done uit de initiele analyse:
 
 Een user story werd pas als "Done" beschouwd wanneer:
 
