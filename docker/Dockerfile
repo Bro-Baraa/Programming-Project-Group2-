@@ -45,7 +45,7 @@ RUN useradd -u 1001 -U -m appuser
 RUN chown -R appuser:appuser /app
 
 # ── Entrypoint ──
-COPY --chown=appuser:appuser docker-entrypoint.sh /docker-entrypoint.sh
+COPY --chown=appuser:appuser docker/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 # Switch to non-root user

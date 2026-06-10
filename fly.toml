@@ -7,6 +7,7 @@ app = 'stage-monitoring-demo'
 primary_region = 'lhr'
 
 [build]
+  dockerfile = "docker/Dockerfile"
 
 [http_service]
   internal_port = 8080
