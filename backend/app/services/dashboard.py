@@ -104,72 +104,88 @@ def _build_alerts(
         # Student-specific alerts
         if user.role == "student":
             if i.status == "Aanpassingen Vereist":
-                alerts.append(DashboardAlert(
-                    severity="warning",
-                    message="Je stagevoorstel heeft aanpassingen nodig. Bekijk de feedback en dien opnieuw in.",
-                    action_url="?view=voorstel",
-                    entity_type="internship",
-                    entity_id=intern_id,
-                ))
+                alerts.append(
+                    DashboardAlert(
+                        severity="warning",
+                        message="Je stagevoorstel heeft aanpassingen nodig. Bekijk de feedback en dien opnieuw in.",
+                        action_url="?view=voorstel",
+                        entity_type="internship",
+                        entity_id=intern_id,
+                    )
+                )
             if i.status == "Goedgekeurd" and not item.agreement_uploaded:
-                alerts.append(DashboardAlert(
-                    severity="warning",
-                    message="Je stage is goedgekeurd. Upload je ondertekende overeenkomst.",
-                    action_url="?view=overeenkomst",
-                    entity_type="internship",
-                    entity_id=intern_id,
-                ))
+                alerts.append(
+                    DashboardAlert(
+                        severity="warning",
+                        message="Je stage is goedgekeurd. Upload je ondertekende overeenkomst.",
+                        action_url="?view=overeenkomst",
+                        entity_type="internship",
+                        entity_id=intern_id,
+                    )
+                )
             if item.next_due_week and i.status == "Lopend":
-                alerts.append(DashboardAlert(
-                    severity="info",
-                    message=f"Week {item.next_due_week} logboek nog niet ingevuld.",
-                    action_url="?view=logboek",
-                    entity_type="logbook",
-                    entity_id=intern_id,
-                ))
+                alerts.append(
+                    DashboardAlert(
+                        severity="info",
+                        message=f"Week {item.next_due_week} logboek nog niet ingevuld.",
+                        action_url="?view=logboek",
+                        entity_type="logbook",
+                        entity_id=intern_id,
+                    )
+                )
 
         # Teacher-specific alerts
         if user.role == "teacher":
             if item.logbooks_submitted > 0:
                 pending_validation = item.logbooks_submitted - item.evaluations_count
                 if pending_validation > 0:
-                    alerts.append(DashboardAlert(
-                        severity="info",
-                        message=f"{pending_validation} logboek(en) in afwachting van evaluatie bij {i.student.first_name} {i.student.last_name}.",
-                        entity_type="internship",
-                        entity_id=intern_id,
-                    ))
+                    alerts.append(
+                        DashboardAlert(
+                            severity="info",
+                            message=f"{pending_validation} logboek(en) in afwachting van evaluatie bij {i.student.first_name} {i.student.last_name}.",
+                            entity_type="internship",
+                            entity_id=intern_id,
+                        )
+                    )
 
         # Committee-specific alerts
         if user.role in ("committee", "admin"):
             if i.status == "In Beoordeling":
-                alerts.append(DashboardAlert(
-                    severity="warning",
-                    message=f"Voorstel van {i.student.first_name} {i.student.last_name} wacht op beoordeling.",
-                    action_url="?view=voorstellen",
-                    entity_type="internship",
-                    entity_id=intern_id,
-                ))
+                alerts.append(
+                    DashboardAlert(
+                        severity="warning",
+                        message=f"Voorstel van {i.student.first_name} {i.student.last_name} wacht op beoordeling.",
+                        action_url="?view=voorstellen",
+                        entity_type="internship",
+                        entity_id=intern_id,
+                    )
+                )
             if item.agreement_status == "Ingediend":
-                alerts.append(DashboardAlert(
-                    severity="info",
-                    message=f"Overeenkomst van {i.student.first_name} {i.student.last_name} wacht op validatie.",
-                    action_url="?view=overzicht",
-                    entity_type="internship",
-                    entity_id=intern_id,
-                ))
+                alerts.append(
+                    DashboardAlert(
+                        severity="info",
+                        message=f"Overeenkomst van {i.student.first_name} {i.student.last_name} wacht op validatie.",
+                        action_url="?view=overzicht",
+                        entity_type="internship",
+                        entity_id=intern_id,
+                    )
+                )
 
         # Mentor-specific alerts
         if user.role == "mentor" and item.logbooks_submitted > 0:
-            alerts.append(DashboardAlert(
-                severity="info",
-                message=f"Nieuwe logboeken ingediend door {i.student.first_name} {i.student.last_name}.",
-                action_url="?view=validatie",
-                entity_type="internship",
-                entity_id=intern_id,
-            ))
+            alerts.append(
+                DashboardAlert(
+                    severity="info",
+                    message=f"Nieuwe logboeken ingediend door {i.student.first_name} {i.student.last_name}.",
+                    action_url="?view=validatie",
+                    entity_type="internship",
+                    entity_id=intern_id,
+                )
+            )
 
-    return sorted(alerts, key=lambda a: {"error": 0, "warning": 1, "info": 2}[a.severity])
+    return sorted(
+        alerts, key=lambda a: {"error": 0, "warning": 1, "info": 2}[a.severity]
+    )
 
 
 def _build_stats(
@@ -183,14 +199,23 @@ def _build_stats(
         return stats
 
     stats.total_internships = len(items)
-    stats.pending_approval = sum(1 for i in items if i.internship.status == "In Beoordeling")
+    stats.pending_approval = sum(
+        1 for i in items if i.internship.status == "In Beoordeling"
+    )
     stats.approved = sum(1 for i in items if i.internship.status == "Goedgekeurd")
     stats.rejected = sum(1 for i in items if i.internship.status == "Afgekeurd")
     stats.ongoing = sum(1 for i in items if i.internship.status == "Lopend")
     stats.completed = sum(1 for i in items if i.internship.status == "Afgerond")
     stats.agreements_received = sum(1 for i in items if i.agreement_uploaded)
-    stats.agreements_pending = sum(1 for i in items if i.internship.status in ("Goedgekeurd", "Overeenkomst Ingediend") and not i.agreement_uploaded)
-    stats.agreements_validated = sum(1 for i in items if i.agreement_status == "Gevalideerd")
+    stats.agreements_pending = sum(
+        1
+        for i in items
+        if i.internship.status in ("Goedgekeurd", "Overeenkomst Ingediend")
+        and not i.agreement_uploaded
+    )
+    stats.agreements_validated = sum(
+        1 for i in items if i.agreement_status == "Gevalideerd"
+    )
 
     return stats
 
@@ -222,23 +247,31 @@ def get_me_dashboard(db: Session, current_user: User) -> MeDashboardResponse:
     internship_ids = [i.id for i in internships]
 
     all_logbooks = (
-        db.query(Logbook)
-        .filter(Logbook.internship_id.in_(internship_ids))
-        .all()
-    ) if internship_ids else []
+        (db.query(Logbook).filter(Logbook.internship_id.in_(internship_ids)).all())
+        if internship_ids
+        else []
+    )
 
     all_evaluations = (
-        db.query(Evaluation)
-        .filter(Evaluation.internship_id.in_(internship_ids))
-        .all()
-    ) if internship_ids else []
+        (
+            db.query(Evaluation)
+            .filter(Evaluation.internship_id.in_(internship_ids))
+            .all()
+        )
+        if internship_ids
+        else []
+    )
 
     all_feedback = (
-        db.query(Feedback)
-        .filter(Feedback.internship_id.in_(internship_ids))
-        .options(joinedload(Feedback.from_user))
-        .all()
-    ) if internship_ids else []
+        (
+            db.query(Feedback)
+            .filter(Feedback.internship_id.in_(internship_ids))
+            .options(joinedload(Feedback.from_user))
+            .all()
+        )
+        if internship_ids
+        else []
+    )
 
     # 3. Group by internship
     logbook_map = {iid: [] for iid in internship_ids}

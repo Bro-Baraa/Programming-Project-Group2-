@@ -1,4 +1,5 @@
 """Evaluation scoring helpers."""
+
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import Evaluation, EvaluationRule

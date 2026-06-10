@@ -1,4 +1,5 @@
 """Kern stage endpoints."""
+
 from datetime import date
 from pathlib import Path
 from typing import Annotated, List, Optional
@@ -31,8 +32,14 @@ _CONFIG = LifecycleConfig(agreements_dir=Path("uploads/agreements"))
 
 
 VALID_STATUSES = {
-    "Ingediend", "In Beoordeling", "Goedgekeurd", "Afgekeurd",
-    "Aanpassingen Vereist", "Overeenkomst Ingediend", "Lopend", "Afgerond",
+    "Ingediend",
+    "In Beoordeling",
+    "Goedgekeurd",
+    "Afgekeurd",
+    "Aanpassingen Vereist",
+    "Overeenkomst Ingediend",
+    "Lopend",
+    "Afgerond",
 }
 
 _EAGER_LOADS = [
@@ -49,10 +56,27 @@ _EAGER_LOADS = [
 def list_internships(
     response: Response,
     status: Optional[str] = None,
-    search: Annotated[Optional[str], Query(min_length=1, max_length=100, description="Search student name or company name")] = None,
-    start_date_from: Annotated[Optional[date], Query(description="Filter from start date")] = None,
-    start_date_to: Annotated[Optional[date], Query(description="Filter to start date")] = None,
-    sort: Annotated[Optional[str], Query(pattern=r"^-?[a-zA-Z_]+$", description="Sort field. Prefix with - for descending. E.g. created_at, -status")] = "-created_at",
+    search: Annotated[
+        Optional[str],
+        Query(
+            min_length=1,
+            max_length=100,
+            description="Search student name or company name",
+        ),
+    ] = None,
+    start_date_from: Annotated[
+        Optional[date], Query(description="Filter from start date")
+    ] = None,
+    start_date_to: Annotated[
+        Optional[date], Query(description="Filter to start date")
+    ] = None,
+    sort: Annotated[
+        Optional[str],
+        Query(
+            pattern=r"^-?[a-zA-Z_]+$",
+            description="Sort field. Prefix with - for descending. E.g. created_at, -status",
+        ),
+    ] = "-created_at",
     pag: Annotated[dict, Depends(pagination)] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -65,7 +89,7 @@ def list_internships(
         if invalid:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid status(es): {', '.join(invalid)}. Must be one of: {', '.join(VALID_STATUSES)}"
+                detail=f"Invalid status(es): {', '.join(invalid)}. Must be one of: {', '.join(VALID_STATUSES)}",
             )
         status_filter = statuses
 
@@ -88,11 +112,15 @@ def list_internships(
 
     if search:
         search_term = f"%{search}%"
-        query = query.join(Internship.student).join(Internship.company).filter(
-            or_(
-                User.first_name.ilike(search_term),
-                User.last_name.ilike(search_term),
-                Company.name.ilike(search_term),
+        query = (
+            query.join(Internship.student)
+            .join(Internship.company)
+            .filter(
+                or_(
+                    User.first_name.ilike(search_term),
+                    User.last_name.ilike(search_term),
+                    Company.name.ilike(search_term),
+                )
             )
         )
 
@@ -139,7 +167,14 @@ def create_internship(
         teacher_id=data.teacher_id,
         mentor_id=data.mentor_id,
     )
-    log_event(db, "internship.create", user=current_user, entity_type="internship", entity_id=result.internship.id, detail="Stage ingediend")
+    log_event(
+        db,
+        "internship.create",
+        user=current_user,
+        entity_type="internship",
+        entity_id=result.internship.id,
+        detail="Stage ingediend",
+    )
     return result.internship
 
 
@@ -150,7 +185,12 @@ def get_internship(
     current_user: User = Depends(get_current_active_user),
 ):
     """Haalt gedetailleerde stage-informatie op"""
-    internship = db.query(Internship).options(*_EAGER_LOADS).filter(Internship.id == internship_id).first()
+    internship = (
+        db.query(Internship)
+        .options(*_EAGER_LOADS)
+        .filter(Internship.id == internship_id)
+        .first()
+    )
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
 

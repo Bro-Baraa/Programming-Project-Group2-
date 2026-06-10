@@ -61,8 +61,7 @@ def decode_token(token: str) -> Optional[dict]:
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,14 +90,20 @@ async def get_current_user(
         raise credentials_exception
 
     if not user.is_active:
-        logger.warning("[TOKEN FAILED] Inactive user attempted access: %s (id=%s)", user.email, user.id)
+        logger.warning(
+            "[TOKEN FAILED] Inactive user attempted access: %s (id=%s)",
+            user.email,
+            user.id,
+        )
         raise credentials_exception
 
     logger.debug("[AUTH OK] %s (id=%s, role=%s)", user.email, user.id, user.role)
     return user
 
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+async def get_current_active_user(
+    current_user: User = Depends(get_current_user),
+) -> User:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -108,10 +113,10 @@ def require_role(required_roles: list):
     def role_checker(current_user: User = Depends(get_current_active_user)):
         if current_user.role not in required_roles:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not enough permissions"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not enough permissions"
             )
         return current_user
+
     return role_checker
 
 

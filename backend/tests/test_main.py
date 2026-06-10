@@ -34,8 +34,7 @@ class TestCORSMiddleware:
     def test_cors_headers_present(self, client):
         """Test CORS headers are present on API responses."""
         response = client.get(
-            "/api/health",
-            headers={"Origin": "http://localhost:8080"}
+            "/api/health", headers={"Origin": "http://localhost:8080"}
         )
         assert response.status_code == 200
         # FastAPI CORS middleware adds these headers
@@ -50,8 +49,8 @@ class TestCORSMiddleware:
             headers={
                 "Origin": "http://localhost:8080",
                 "Access-Control-Request-Method": "POST",
-                "Access-Control-Request-Headers": "Content-Type,Authorization"
-            }
+                "Access-Control-Request-Headers": "Content-Type,Authorization",
+            },
         )
         # Preflight should succeed
         assert response.status_code == 200
@@ -67,9 +66,6 @@ class Test404Handling:
 
     def test_nonexistent_resource(self, client, auth_headers_admin):
         """Test 404 on non-existent resource."""
-        response = client.get(
-            "/api/internships/99999",
-            headers=auth_headers_admin
-        )
+        response = client.get("/api/internships/99999", headers=auth_headers_admin)
         assert response.status_code == 404
         assert "Internship not found" in response.json()["detail"]

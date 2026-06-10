@@ -1,4 +1,5 @@
 """Evaluation lifecycle and transition helpers."""
+
 from datetime import datetime, UTC
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -31,7 +32,9 @@ def ensure_final_not_exists(db: Session, internship_id: int, eval_type: str) -> 
         raise HTTPException(status_code=400, detail="Final evaluation already exists")
 
 
-def seed_rules_from_active_profile(db: Session, evaluation_id: int, profile_id: int) -> None:
+def seed_rules_from_active_profile(
+    db: Session, evaluation_id: int, profile_id: int
+) -> None:
     """Create rule rows for all active competencies in the selected profile."""
     competencies = (
         db.query(Competency)
@@ -53,17 +56,23 @@ def seed_rules_from_active_profile(db: Session, evaluation_id: int, profile_id: 
 
 def ensure_can_finalize(evaluation: Evaluation, current_user) -> None:
     """Guard finalize permissions and state.
-    Evaluator can always finalize. Teachers can finalize evaluations for their assigned internships."""
+    Evaluator can always finalize. Teachers can finalize evaluations for their assigned internships.
+    """
     if evaluation.finalized:
         raise HTTPException(status_code=400, detail="Evaluation already finalized")
 
     if evaluation.evaluator_id == current_user.id:
         return
 
-    if current_user.role == "teacher" and evaluation.internship.teacher_id == current_user.id:
+    if (
+        current_user.role == "teacher"
+        and evaluation.internship.teacher_id == current_user.id
+    ):
         return
 
-    raise HTTPException(status_code=403, detail="Only the evaluator or assigned teacher can finalize")
+    raise HTTPException(
+        status_code=403, detail="Only the evaluator or assigned teacher can finalize"
+    )
 
 
 def ensure_all_rules_scored(db: Session, evaluation_id: int) -> None:

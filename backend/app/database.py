@@ -10,10 +10,11 @@ engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     connect_args={
         "check_same_thread": False,
-        "timeout": 30,           # wacht tot 30s op een vergrendelde DB
+        "timeout": 30,  # wacht tot 30s op een vergrendelde DB
     },
-    poolclass=NullPool,          # geen connection pool — SQLite beheert dit zelf
+    poolclass=NullPool,  # geen connection pool — SQLite beheert dit zelf
 )
+
 
 # WAL mode: veel betere gelijktijdige lees/schrijf prestaties
 @event.listens_for(engine, "connect")
@@ -23,6 +24,8 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA synchronous=NORMAL")
     cursor.execute("PRAGMA busy_timeout=30000")
     cursor.close()
+
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

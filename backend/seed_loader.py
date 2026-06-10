@@ -21,9 +21,19 @@ sys.path.insert(0, str(Path(__file__).parent))
 from sqlalchemy.orm import Session
 from app.database import SessionLocal, engine
 from app.models import (
-    Base, User, Company, Internship, Proposal, Agreement,
-    Logbook, Evaluation, EvaluationRule, Feedback,
-    CompetencyProfile, Competency, Document
+    Base,
+    User,
+    Company,
+    Internship,
+    Proposal,
+    Agreement,
+    Logbook,
+    Evaluation,
+    EvaluationRule,
+    Feedback,
+    CompetencyProfile,
+    Competency,
+    Document,
 )
 import bcrypt
 
@@ -41,8 +51,9 @@ except ImportError:
 # Utilities
 # ---------------------------------------------------------------------------
 
+
 def get_password_hash(password: str) -> str:
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def _resolve_user_id(user_lookup: dict, email: str | None) -> int | None:
@@ -74,7 +85,9 @@ def parse_date(value):
         try:
             return datetime.strptime(value, "%Y-%m-%d").date()
         except ValueError:
-            raise ValueError(f"Invalid date format: {value!r}. Use integer or YYYY-MM-DD.")
+            raise ValueError(
+                f"Invalid date format: {value!r}. Use integer or YYYY-MM-DD."
+            )
     raise ValueError(f"Cannot parse date value: {value!r}")
 
 
@@ -98,12 +111,16 @@ def parse_datetime(value):
         raise ValueError(f"Invalid datetime format: {value!r}")
     raise ValueError(f"Cannot parse datetime value: {value!r}")
 
+
 # ---------------------------------------------------------------------------
 # Entity creators
 # ---------------------------------------------------------------------------
 
+
 def create_user(db: Session, data: dict) -> User:
-    return _get_or_create(db, User,
+    return _get_or_create(
+        db,
+        User,
         filters={"email": data["email"]},
         defaults={
             "email": data["email"],
@@ -111,13 +128,16 @@ def create_user(db: Session, data: dict) -> User:
             "first_name": data["first_name"],
             "last_name": data["last_name"],
             "role": data["role"],
-            "is_active": data.get("is_active", True)
-        })
+            "is_active": data.get("is_active", True),
+        },
+    )
 
 
 def create_company(db: Session, data: dict, user_lookup: dict) -> Company:
     mentor_id = _resolve_user_id(user_lookup, data.get("mentor"))
-    return _get_or_create(db, Company,
+    return _get_or_create(
+        db,
+        Company,
         filters={"name": data["name"]},
         defaults={
             "name": data["name"],
@@ -125,22 +145,27 @@ def create_company(db: Session, data: dict, user_lookup: dict) -> Company:
             "sector": data.get("sector"),
             "contact_person": data.get("contact_person"),
             "contact_email": data.get("contact_email"),
-            "mentor_id": mentor_id
-        })
+            "mentor_id": mentor_id,
+        },
+    )
 
 
 def create_competency_profile(db: Session, data: dict) -> CompetencyProfile:
-    existing = db.query(CompetencyProfile).filter(
-        CompetencyProfile.name == data["name"],
-        CompetencyProfile.academic_year == data["academic_year"]
-    ).first()
+    existing = (
+        db.query(CompetencyProfile)
+        .filter(
+            CompetencyProfile.name == data["name"],
+            CompetencyProfile.academic_year == data["academic_year"],
+        )
+        .first()
+    )
     if existing:
         return existing
     profile = CompetencyProfile(
         name=data["name"],
         version=data.get("version", "1.0"),
         academic_year=data["academic_year"],
-        active=data.get("active", True)
+        active=data.get("active", True),
     )
     db.add(profile)
     db.flush()
@@ -150,20 +175,24 @@ def create_competency_profile(db: Session, data: dict) -> CompetencyProfile:
             name=comp_data["name"],
             description=comp_data.get("description"),
             weight=float(comp_data["weight"]),
-            active=True
+            active=True,
         )
         db.add(comp)
     db.flush()
     return profile
 
 
-def create_internship(db: Session, data: dict, user_lookup: dict, company_lookup: dict) -> Internship:
+def create_internship(
+    db: Session, data: dict, user_lookup: dict, company_lookup: dict
+) -> Internship:
     student = user_lookup[data["student"]]
     company = company_lookup[data["company"]]
     teacher_id = _resolve_user_id(user_lookup, data.get("teacher"))
     mentor_id = _resolve_user_id(user_lookup, data.get("mentor"))
 
-    return _get_or_create(db, Internship,
+    return _get_or_create(
+        db,
+        Internship,
         filters={"student_id": student.id, "company_id": company.id},
         defaults={
             "student_id": student.id,
@@ -172,12 +201,15 @@ def create_internship(db: Session, data: dict, user_lookup: dict, company_lookup
             "company_id": company.id,
             "start_date": parse_date(data.get("start_date")),
             "end_date": parse_date(data.get("end_date")),
-            "status": data["status"]
-        })
+            "status": data["status"],
+        },
+    )
 
 
 def create_proposal(db: Session, internship_id: int, data: dict) -> Proposal:
-    return _get_or_create(db, Proposal,
+    return _get_or_create(
+        db,
+        Proposal,
         filters={"internship_id": internship_id},
         defaults={
             "internship_id": internship_id,
@@ -185,8 +217,9 @@ def create_proposal(db: Session, internship_id: int, data: dict) -> Proposal:
             "status": data["status"],
             "feedback": data.get("feedback"),
             "revision_count": data.get("revision_count", 0),
-            "resubmitted_at": parse_datetime(data.get("resubmitted_at"))
-        })
+            "resubmitted_at": parse_datetime(data.get("resubmitted_at")),
+        },
+    )
 
 
 def _ensure_fake_file(path: str | None) -> None:
@@ -203,7 +236,9 @@ def _ensure_fake_file(path: str | None) -> None:
 def create_agreement(db: Session, internship_id: int, data: dict) -> Agreement:
     file_path = data.get("file_path")
     _ensure_fake_file(file_path)
-    return _get_or_create(db, Agreement,
+    return _get_or_create(
+        db,
+        Agreement,
         filters={"internship_id": internship_id},
         defaults={
             "internship_id": internship_id,
@@ -211,8 +246,9 @@ def create_agreement(db: Session, internship_id: int, data: dict) -> Agreement:
             "insurance_verified": data.get("insurance", False),
             "status": data["status"],
             "uploaded_at": parse_datetime(data.get("uploaded_at")),
-            "validated_at": parse_datetime(data.get("validated_at"))
-        })
+            "validated_at": parse_datetime(data.get("validated_at")),
+        },
+    )
 
 
 def create_logbook(db: Session, internship_id: int, week: int, data: dict) -> Logbook:
@@ -225,14 +261,16 @@ def create_logbook(db: Session, internship_id: int, week: int, data: dict) -> Lo
         status=data.get("status"),
         mentor_validated=data.get("mentor_validated", False),
         mentor_feedback=data.get("mentor_feedback"),
-        submitted_at=parse_datetime(data.get("submitted_at"))
+        submitted_at=parse_datetime(data.get("submitted_at")),
     )
     db.add(logbook)
     db.flush()
     return logbook
 
 
-def create_logbooks_for_internship(db: Session, internship: Internship, logbook_config: dict, company: Company) -> int:
+def create_logbooks_for_internship(
+    db: Session, internship: Internship, logbook_config: dict, company: Company
+) -> int:
     total_days = (internship.end_date - internship.start_date).days
     count = min(logbook_config["count"], max(1, (total_days // 7) + 1))
     all_sub = logbook_config.get("all_submitted", False)
@@ -243,17 +281,21 @@ def create_logbooks_for_internship(db: Session, internship: Internship, logbook_
         lb_data = {
             "tasks": f"Week {week}: Werk aan {company.sector} project.",
             "reflection": f"Week {week}: {'Sterke' if week % 2 == 0 else 'Stabiele'} prestaties.",
-            "issues": "Geen problemen" if week % 3 != 0 else "Technische uitdaging, opgelost.",
+            "issues": (
+                "Geen problemen" if week % 3 != 0 else "Technische uitdaging, opgelost."
+            ),
             "status": "submitted" if is_sub else "draft",
             "mentor_validated": is_val,
             "mentor_feedback": "Goed werk" if is_val else None,
-            "submitted_at": -count + week if is_sub else None
+            "submitted_at": -count + week if is_sub else None,
         }
         create_logbook(db, internship.id, week, lb_data)
     return count
 
 
-def create_evaluation(db: Session, internship_id: int, evaluator_id: int, data: dict, competencies: list) -> Evaluation:
+def create_evaluation(
+    db: Session, internship_id: int, evaluator_id: int, data: dict, competencies: list
+) -> Evaluation:
     evaluation = Evaluation(
         internship_id=internship_id,
         evaluator_id=evaluator_id,
@@ -261,7 +303,7 @@ def create_evaluation(db: Session, internship_id: int, evaluator_id: int, data: 
         status=data.get("status", "concept"),
         comments=data.get("comments"),
         finalized=data.get("finalized", False),
-        finalized_at=parse_datetime(data.get("finalized_at"))
+        finalized_at=parse_datetime(data.get("finalized_at")),
     )
     db.add(evaluation)
     db.flush()
@@ -272,19 +314,21 @@ def create_evaluation(db: Session, internship_id: int, evaluator_id: int, data: 
             competency_id=comp.id,
             score=data.get("score"),
             student_description=data.get("student_description"),
-            evaluator_feedback=data.get("evaluator_feedback")
+            evaluator_feedback=data.get("evaluator_feedback"),
         )
         db.add(rule)
     db.flush()
     return evaluation
 
 
-def create_feedback(db: Session, internship_id: int, from_user_id: int, to_user_id: int, message: str) -> Feedback:
+def create_feedback(
+    db: Session, internship_id: int, from_user_id: int, to_user_id: int, message: str
+) -> Feedback:
     feedback = Feedback(
         internship_id=internship_id,
         from_user_id=from_user_id,
         to_user_id=to_user_id,
-        message=message
+        message=message,
     )
     db.add(feedback)
     db.flush()
@@ -297,15 +341,17 @@ def create_document(db: Session, internship_id: int, data: dict) -> Document:
     doc = Document(
         internship_id=internship_id,
         doc_type=data.get("doc_type", "other"),
-        file_path=file_path
+        file_path=file_path,
     )
     db.add(doc)
     db.flush()
     return doc
 
+
 # ---------------------------------------------------------------------------
 # Main seeding
 # ---------------------------------------------------------------------------
+
 
 def load_yaml(path: str) -> dict:
     with open(path, "r", encoding="utf-8") as f:
@@ -355,9 +401,12 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
     print()
 
     # Get active competencies for evaluations
-    active_competencies = db.query(Competency).join(CompetencyProfile).filter(
-        CompetencyProfile.active
-    ).all()
+    active_competencies = (
+        db.query(Competency)
+        .join(CompetencyProfile)
+        .filter(CompetencyProfile.active)
+        .all()
+    )
 
     # --- Internships ---
     print("4. Creating internships...")
@@ -369,7 +418,9 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
         company = company_lookup[scenario["company"]]
         internship = create_internship(db, scenario, user_lookup, company_lookup)
 
-        print(f"   [{idx:02d}] {student.first_name:<12} @ {company.name:<20} | {scenario['status']}")
+        print(
+            f"   [{idx:02d}] {student.first_name:<12} @ {company.name:<20} | {scenario['status']}"
+        )
 
         # Proposal
         if "proposal" in scenario:
@@ -391,21 +442,29 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
         # Logbooks
         logbook_config = scenario.get("logbooks")
         if logbook_config and internship.start_date and internship.end_date:
-            weeks = create_logbooks_for_internship(db, internship, logbook_config, company)
+            weeks = create_logbooks_for_internship(
+                db, internship, logbook_config, company
+            )
             print(f"        Logbooks: {weeks} weeks")
 
         # Evaluations
         for eval_data in scenario.get("evaluations", []):
             evaluator = user_lookup[eval_data["evaluator"]]
-            create_evaluation(db, internship.id, evaluator.id, eval_data, active_competencies)
-            print(f"        Evaluation: {eval_data['type']} ({eval_data['status']}) score={eval_data.get('score')}")
+            create_evaluation(
+                db, internship.id, evaluator.id, eval_data, active_competencies
+            )
+            print(
+                f"        Evaluation: {eval_data['type']} ({eval_data['status']}) score={eval_data.get('score')}"
+            )
 
         # Feedback
         feedback_items = scenario.get("feedback", [])
         for fb_data in feedback_items:
             from_user = user_lookup[fb_data["from"]]
             to_user = user_lookup[fb_data["to"]]
-            create_feedback(db, internship.id, from_user.id, to_user.id, fb_data["message"])
+            create_feedback(
+                db, internship.id, from_user.id, to_user.id, fb_data["message"]
+            )
         if feedback_items:
             print(f"        Feedback: {len(feedback_items)} berichten")
 
@@ -441,7 +500,9 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
     print(f"  {'Role':<12} | {'Email':<30} | {'Password'}")
     print("  " + "-" * 60)
     for user_data in data.get("users", []):
-        print(f"  {user_data['role']:<12} | {user_data['email']:<30} | {user_data['password']}")
+        print(
+            f"  {user_data['role']:<12} | {user_data['email']:<30} | {user_data['password']}"
+        )
     print("  " + "-" * 60)
 
     print("\n" + "=" * 70)

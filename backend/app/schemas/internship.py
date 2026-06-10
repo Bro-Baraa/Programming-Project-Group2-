@@ -1,5 +1,4 @@
-"""Internship schemas."""
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import datetime, date
 from .user import UserResponse
@@ -9,22 +8,39 @@ from .agreement import AgreementResponse
 
 
 class InternshipBase(BaseModel):
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
+    start_date: Optional[date] = Field(
+        None, description="Startdatum van de stageperiode"
+    )
+    end_date: Optional[date] = Field(None, description="Einddatum van de stageperiode")
 
 
 class InternshipCreate(BaseModel):
     """Creating an internship starts with a proposal"""
-    company_name: str
-    company_address: Optional[str] = None
-    company_sector: Optional[str] = None
-    contact_person: str
-    contact_email: str
-    start_date: date
-    end_date: date
-    description: str
-    teacher_id: Optional[int] = None
-    mentor_id: Optional[int] = None
+
+    company_name: str = Field(..., description="Naam van het stagebedrijf")
+    company_address: Optional[str] = Field(
+        None, description="Adres van het stagebedrijf"
+    )
+    company_sector: Optional[str] = Field(
+        None, description="Sector waarin het bedrijf actief is"
+    )
+    contact_person: str = Field(
+        ..., description="Naam van de contactpersoon/begeleider bij het bedrijf"
+    )
+    contact_email: str = Field(
+        ..., description="E-mailadres van de contactpersoon/begeleider"
+    )
+    start_date: date = Field(..., description="Startdatum van de stage")
+    end_date: date = Field(..., description="Einddatum van de stage")
+    description: str = Field(
+        ..., description="Gedetailleerde taakomschrijving van de stageopdracht"
+    )
+    teacher_id: Optional[int] = Field(
+        None, description="ID van de toegewezen EhB-docent"
+    )
+    mentor_id: Optional[int] = Field(
+        None, description="ID van de stagementor van het bedrijf"
+    )
 
 
 class InternshipUpdate(BaseModel):
@@ -64,6 +80,7 @@ class InternshipListResponse(BaseModel):
     Includes computed fields (proposal_status, agreement_status, agreement_uploaded)
     so the frontend can render meaningful list rows without N+1 detail calls.
     """
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int

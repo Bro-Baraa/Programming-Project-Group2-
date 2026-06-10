@@ -1,4 +1,5 @@
 """Audit log service — schrijft events naar de audit_logs tabel."""
+
 from datetime import datetime, UTC
 from typing import Optional
 

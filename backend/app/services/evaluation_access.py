@@ -1,4 +1,5 @@
 """Evaluation access and lookup helpers."""
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
@@ -18,9 +19,7 @@ def get_evaluation_or_404(db: Session, evaluation_id: int) -> Evaluation:
     """Return evaluation or raise 404."""
     evaluation = (
         db.query(Evaluation)
-        .options(
-            joinedload(Evaluation.rules).joinedload(EvaluationRule.competency)
-        )
+        .options(joinedload(Evaluation.rules).joinedload(EvaluationRule.competency))
         .filter(Evaluation.id == evaluation_id)
         .first()
     )
@@ -44,7 +43,9 @@ def get_rule_or_404(db: Session, evaluation_id: int, rule_id: int) -> Evaluation
     return rule
 
 
-def ensure_can_access_internship(current_user, internship: Internship, detail: str = "Not authorized") -> None:
+def ensure_can_access_internship(
+    current_user, internship: Internship, detail: str = "Not authorized"
+) -> None:
     """Apply internship-level access rules."""
     ensure_internship_access(current_user, internship, detail)
 
@@ -55,4 +56,6 @@ def ensure_rule_update_access(current_user, internship: Internship) -> None:
         ensure_internship_access(current_user, internship)
 
     if current_user.role in ["teacher", "mentor"]:
-        ensure_internship_access(current_user, internship, "Not authorized for this internship")
+        ensure_internship_access(
+            current_user, internship, "Not authorized for this internship"
+        )

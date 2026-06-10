@@ -1,4 +1,5 @@
 """Competency profile endpoints."""
+
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -29,7 +30,11 @@ def list_profiles(
     return query.order_by(CompetencyProfile.academic_year.desc()).all()
 
 
-@router.post("/profiles", response_model=CompetencyProfileResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/profiles",
+    response_model=CompetencyProfileResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_profile(
     data: CompetencyProfileCreate,
     db: Session = Depends(get_db),
@@ -44,7 +49,9 @@ def create_profile(
     )
 
     if profile.active:
-        db.query(CompetencyProfile).filter(CompetencyProfile.active == True).update({"active": False})
+        db.query(CompetencyProfile).filter(CompetencyProfile.active == True).update(
+            {"active": False}
+        )
 
     db.add(profile)
     db.commit()
@@ -59,7 +66,9 @@ def get_profile(
     current_user: User = Depends(get_current_active_user),
 ):
     """Get a specific competency profile."""
-    profile = db.query(CompetencyProfile).filter(CompetencyProfile.id == profile_id).first()
+    profile = (
+        db.query(CompetencyProfile).filter(CompetencyProfile.id == profile_id).first()
+    )
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
     return profile
@@ -73,7 +82,9 @@ def update_profile(
     current_user: User = Depends(require_admin),
 ):
     """Update a competency profile."""
-    profile = db.query(CompetencyProfile).filter(CompetencyProfile.id == profile_id).first()
+    profile = (
+        db.query(CompetencyProfile).filter(CompetencyProfile.id == profile_id).first()
+    )
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
@@ -103,15 +114,23 @@ def delete_profile(
     current_user: User = Depends(require_admin),
 ):
     """Delete a competency profile if its competencies are not used."""
-    profile = db.query(CompetencyProfile).filter(CompetencyProfile.id == profile_id).first()
+    profile = (
+        db.query(CompetencyProfile).filter(CompetencyProfile.id == profile_id).first()
+    )
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    competencies = db.query(Competency).filter(Competency.profile_id == profile_id).all()
+    competencies = (
+        db.query(Competency).filter(Competency.profile_id == profile_id).all()
+    )
     competency_ids = [competency.id for competency in competencies]
 
     if competency_ids:
-        in_use = db.query(EvaluationRule).filter(EvaluationRule.competency_id.in_(competency_ids)).first()
+        in_use = (
+            db.query(EvaluationRule)
+            .filter(EvaluationRule.competency_id.in_(competency_ids))
+            .first()
+        )
         if in_use:
             raise HTTPException(
                 status_code=400,

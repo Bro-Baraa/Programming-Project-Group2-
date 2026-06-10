@@ -8,7 +8,14 @@ from pathlib import Path
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserResponse, Token
-from app.auth import verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_password_hash, get_current_active_user, require_admin
+from app.auth import (
+    verify_password,
+    create_access_token,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_password_hash,
+    get_current_active_user,
+    require_admin,
+)
 from app.services.audit import log_event
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -20,6 +27,7 @@ def _load_seed_emails() -> set:
     seed_path = Path(__file__).resolve().parents[2] / "seed_data.yaml"
     try:
         import yaml
+
         with open(seed_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         users = data.get("users", [])
@@ -30,8 +38,7 @@ def _load_seed_emails() -> set:
 
 @router.post("/login", response_model=Token)
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user:
@@ -43,7 +50,11 @@ def login(
         )
 
     if not user.is_active:
-        logger.warning("[LOGIN FAILED] Inactive user attempted login: %s (id=%s)", user.email, user.id)
+        logger.warning(
+            "[LOGIN FAILED] Inactive user attempted login: %s (id=%s)",
+            user.email,
+            user.id,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -51,7 +62,9 @@ def login(
         )
 
     if not verify_password(form_data.password, user.password_hash):
-        logger.warning("[LOGIN FAILED] Wrong password for user: %s (id=%s)", user.email, user.id)
+        logger.warning(
+            "[LOGIN FAILED] Wrong password for user: %s (id=%s)", user.email, user.id
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -59,47 +72,49 @@ def login(
         )
 
     logger.info("[LOGIN SUCCESS] %s (id=%s, role=%s)", user.email, user.id, user.role)
-    log_event(db, "login", user=user, entity_type="user", entity_id=user.id, detail="Succesvol ingelogd")
+    log_event(
+        db,
+        "login",
+        user=user,
+        entity_type="user",
+        entity_id=user.id,
+        detail="Succesvol ingelogd",
+    )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": user
-    }
+    return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 
 @router.post("/register", response_model=UserResponse)
 def register(
     user_data: UserCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_admin),
 ):
-    
+
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
-    
+
     # Create new user
     db_user = User(
         email=user_data.email,
         password_hash=get_password_hash(user_data.password),
         first_name=user_data.first_name,
         last_name=user_data.last_name,
-        role=user_data.role
+        role=user_data.role,
     )
-    
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    
+
     return db_user
 
 
@@ -108,10 +123,7 @@ class DemoLoginRequest(BaseModel):
 
 
 @router.post("/demo-login", response_model=Token)
-def demo_login(
-    request: DemoLoginRequest,
-    db: Session = Depends(get_db)
-):
+def demo_login(request: DemoLoginRequest, db: Session = Depends(get_db)):
     """
     One-click login for demo accounts. No password required.
     Restricted to pre-seeded demo users.
@@ -125,7 +137,9 @@ def demo_login(
         )
 
     if not user.is_active:
-        logger.warning("[DEMO LOGIN FAILED] Inactive user: %s (id=%s)", user.email, user.id)
+        logger.warning(
+            "[DEMO LOGIN FAILED] Inactive user: %s (id=%s)", user.email, user.id
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User is inactive",
@@ -141,18 +155,23 @@ def demo_login(
             detail="Demo login only available for test accounts",
         )
 
-    logger.info("[DEMO LOGIN SUCCESS] %s (id=%s, role=%s)", user.email, user.id, user.role)
-    log_event(db, "login", user=user, entity_type="user", entity_id=user.id, detail="Demo login")
+    logger.info(
+        "[DEMO LOGIN SUCCESS] %s (id=%s, role=%s)", user.email, user.id, user.role
+    )
+    log_event(
+        db,
+        "login",
+        user=user,
+        entity_type="user",
+        entity_id=user.id,
+        detail="Demo login",
+    )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": user
-    }
+    return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 
 @router.get("/me", response_model=UserResponse)

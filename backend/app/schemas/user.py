@@ -1,14 +1,18 @@
-"""User schemas."""
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 from datetime import datetime
 
 
 class UserBase(BaseModel):
-    email: EmailStr
-    first_name: str
-    last_name: str
-    role: str
+    email: EmailStr = Field(
+        ..., description="Uniek e-mailadres van de gebruiker (gebruikt om in te loggen)"
+    )
+    first_name: str = Field(..., description="Voornaam van de gebruiker")
+    last_name: str = Field(..., description="Achternaam van de gebruiker")
+    role: str = Field(
+        ...,
+        description="Rol van de gebruiker (bijv. student, teacher, mentor, committee, of admin)",
+    )
 
 
 class UserCreate(UserBase):
@@ -39,6 +43,7 @@ class Token(BaseModel):
 
 class SeedUser(BaseModel):
     """Test account from seed_data.yaml (used by login page dropdown)."""
+
     email: str
     first_name: str
     last_name: str

@@ -37,9 +37,7 @@ def get_final_report(db: Session, current_user, internship_id: int) -> FinalRepo
     )
     final_eval = (
         db.query(Evaluation)
-        .options(
-            joinedload(Evaluation.rules).joinedload(EvaluationRule.competency)
-        )
+        .options(joinedload(Evaluation.rules).joinedload(EvaluationRule.competency))
         .filter(
             Evaluation.internship_id == internship_id,
             Evaluation.eval_type == "final",
@@ -61,7 +59,9 @@ def get_final_report(db: Session, current_user, internship_id: int) -> FinalRepo
 
     student = internship.student
     if student is None:
-        raise HTTPException(status_code=500, detail="Internship has no associated student")
+        raise HTTPException(
+            status_code=500, detail="Internship has no associated student"
+        )
 
     return FinalReportItem(
         internship_id=internship.id,
@@ -69,10 +69,18 @@ def get_final_report(db: Session, current_user, internship_id: int) -> FinalRepo
         company_name=internship.company.name if internship.company else None,
         start_date=internship.start_date,
         end_date=internship.end_date,
-        proposal_status=internship.proposal.status if internship.proposal else "Onbekend",
-        proposal_submitted_at=internship.proposal.submitted_at if internship.proposal else None,
-        agreement_status=internship.agreement.status if internship.agreement else "Niet Ingediend",
-        agreement_uploaded_at=internship.agreement.uploaded_at if internship.agreement else None,
+        proposal_status=(
+            internship.proposal.status if internship.proposal else "Onbekend"
+        ),
+        proposal_submitted_at=(
+            internship.proposal.submitted_at if internship.proposal else None
+        ),
+        agreement_status=(
+            internship.agreement.status if internship.agreement else "Niet Ingediend"
+        ),
+        agreement_uploaded_at=(
+            internship.agreement.uploaded_at if internship.agreement else None
+        ),
         total_weeks=total_weeks,
         submitted_logbooks=submitted_logbooks,
         missing_logbooks=max(0, total_weeks - submitted_logbooks),

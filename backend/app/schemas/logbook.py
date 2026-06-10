@@ -1,11 +1,14 @@
 """Logbook schemas."""
+
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 from datetime import datetime
 
 
 class LogbookBase(BaseModel):
-    week_number: int = Field(ge=1, description="Internship-relative week number (week 1, 2, 3, ...)")
+    week_number: int = Field(
+        ge=1, description="Internship-relative week number (week 1, 2, 3, ...)"
+    )
     tasks: Optional[str] = None
     reflection: Optional[str] = None
     issues: Optional[str] = None
@@ -38,6 +41,7 @@ class LogbookResponse(LogbookBase):
 
 class LogbookWeekStatus(BaseModel):
     """Status for a specific week (for displaying all weeks)"""
+
     week_number: int
     logbook_id: Optional[int] = None
     status: str  # missing, draft, submitted

@@ -1,4 +1,5 @@
 """Stage Monitoring Tool API - FastAPI application."""
+
 import os
 import logging
 import time
@@ -33,6 +34,7 @@ logging.basicConfig(
 
 # Create database tables only if they don't exist (skip on startup for speed)
 from sqlalchemy import inspect
+
 inspector = inspect(engine)
 if not inspector.get_table_names():
     Base.metadata.create_all(bind=engine)
@@ -72,6 +74,7 @@ _MAX_RATE_LIMIT_IPS = 10_000
 _rate_limit: dict[str, list] = defaultdict(list)
 _last_cleanup = time.time()
 
+
 @app.middleware("http")
 async def rate_limit(request: Request, call_next):
     global _last_cleanup
@@ -82,14 +85,19 @@ async def rate_limit(request: Request, call_next):
 
         # Hard cap: evict oldest entries if dict exceeds max size
         if len(_rate_limit) > _MAX_RATE_LIMIT_IPS:
-            oldest_keys = sorted(_rate_limit.keys(), key=lambda k: max(_rate_limit[k]) if _rate_limit[k] else 0)[:_MAX_RATE_LIMIT_IPS // 10]
+            oldest_keys = sorted(
+                _rate_limit.keys(),
+                key=lambda k: max(_rate_limit[k]) if _rate_limit[k] else 0,
+            )[: _MAX_RATE_LIMIT_IPS // 10]
             for k in oldest_keys:
                 del _rate_limit[k]
 
         # Cleanup verlopen entries elke 5 minuten
         if now - _last_cleanup > 300:
             cutoff = now - 60
-            stale = [k for k, v in _rate_limit.items() if not [t for t in v if t > cutoff]]
+            stale = [
+                k for k, v in _rate_limit.items() if not [t for t in v if t > cutoff]
+            ]
             for k in stale:
                 del _rate_limit[k]
             _last_cleanup = now
@@ -116,6 +124,7 @@ app.include_router(notifications, prefix="/api")
 app.include_router(me, prefix="/api")
 app.include_router(audit, prefix="/api")
 
+
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}
@@ -129,11 +138,15 @@ def robots():
 # ── Static files (frontend) — serveer alleen als frontend dir bestaat ──
 _frontend_dir = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
 if os.path.isdir(_frontend_dir):
+
     class _CachedStaticFiles(StaticFiles):
         async def get_response(self, path, scope):
             response = await super().get_response(path, scope)
             if response.status_code == 200:
                 response.headers["Cache-Control"] = "public, max-age=3600"
             return response
+
     # Fallback: serveer frontend voor alle niet-API routes
-    app.mount("/", _CachedStaticFiles(directory=_frontend_dir, html=True), name="frontend")
+    app.mount(
+        "/", _CachedStaticFiles(directory=_frontend_dir, html=True), name="frontend"
+    )

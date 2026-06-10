@@ -27,6 +27,7 @@ def _load_seed_users() -> list[dict]:
     seed_path = Path(__file__).resolve().parents[2] / "seed_data.yaml"
     try:
         import yaml
+
         with open(seed_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         users = data.get("users", [])
@@ -55,7 +56,14 @@ def list_users(
     response: Response,
     role: Optional[str] = None,
     active_only: bool = True,
-    search: Annotated[Optional[str], Query(min_length=1, max_length=100, description="Search first name, last name, or email")] = None,
+    search: Annotated[
+        Optional[str],
+        Query(
+            min_length=1,
+            max_length=100,
+            description="Search first name, last name, or email",
+        ),
+    ] = None,
     pag: Annotated[dict, Depends(pagination)] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -90,7 +98,9 @@ def list_users(
     # Pagination
     skip = pag.get("skip", 0) if pag else 0
     limit = pag.get("limit", 50) if pag else 50
-    users = query.order_by(User.last_name, User.first_name).offset(skip).limit(limit).all()
+    users = (
+        query.order_by(User.last_name, User.first_name).offset(skip).limit(limit).all()
+    )
     return users
 
 
@@ -102,13 +112,17 @@ def get_user(
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     return user
 
 
 def require_admin(current_user: User = Depends(get_current_active_user)) -> User:
     if current_user.role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required"
+        )
     return current_user
 
 
@@ -124,7 +138,7 @@ def create_user(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"User with email {data.email} already exists"
+            detail=f"User with email {data.email} already exists",
         )
 
     user = User(
@@ -138,7 +152,14 @@ def create_user(
     db.add(user)
     db.commit()
     db.refresh(user)
-    log_event(db, "user.create", user=current_user, entity_type="user", entity_id=user.id, detail=f"Gebruiker aangemaakt: {user.email} ({user.role})")
+    log_event(
+        db,
+        "user.create",
+        user=current_user,
+        entity_type="user",
+        entity_id=user.id,
+        detail=f"Gebruiker aangemaakt: {user.email} ({user.role})",
+    )
     return user
 
 
@@ -152,7 +173,9 @@ def update_user(
     """US-27: Admin wijzigt een gebruiker."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     if data.email is not None:
         user.email = data.email
@@ -167,7 +190,14 @@ def update_user(
 
     db.commit()
     db.refresh(user)
-    log_event(db, "user.update", user=current_user, entity_type="user", entity_id=user.id, detail=f"Gebruiker gewijzigd: {user.email}")
+    log_event(
+        db,
+        "user.update",
+        user=current_user,
+        entity_type="user",
+        entity_id=user.id,
+        detail=f"Gebruiker gewijzigd: {user.email}",
+    )
     return user
 
 
@@ -180,9 +210,18 @@ def delete_user(
     """US-27: Admin verwijdert een gebruiker."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     db.delete(user)
     db.commit()
-    log_event(db, "user.delete", user=current_user, entity_type="user", entity_id=user_id, detail=f"Gebruiker verwijderd: {user.email}")
+    log_event(
+        db,
+        "user.delete",
+        user=current_user,
+        entity_type="user",
+        entity_id=user_id,
+        detail=f"Gebruiker verwijderd: {user.email}",
+    )
     return None

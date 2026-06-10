@@ -34,7 +34,7 @@ else:
         first_name="Admin",
         last_name="User",
         role="admin",
-        is_active=True
+        is_active=True,
     )
     db.add(admin)
     db.commit()
@@ -42,11 +42,41 @@ else:
 
 # Create some test users
 test_users = [
-    {"email": "student1@school.be", "password": "student123", "first_name": "Jan", "last_name": "Peeters", "role": "student"},
-    {"email": "student2@school.be", "password": "student123", "first_name": "Marie", "last_name": "Verhoeven", "role": "student"},
-    {"email": "commissie1@school.be", "password": "commissie123", "first_name": "Peter", "last_name": "Smit", "role": "committee"},
-    {"email": "docent1@school.be", "password": "docent123", "first_name": "Ann", "last_name": "Claessens", "role": "teacher"},
-    {"email": "mentor1@school.be", "password": "mentor123", "first_name": "Bram", "last_name": "Janssens", "role": "mentor"},
+    {
+        "email": "student1@school.be",
+        "password": "student123",
+        "first_name": "Jan",
+        "last_name": "Peeters",
+        "role": "student",
+    },
+    {
+        "email": "student2@school.be",
+        "password": "student123",
+        "first_name": "Marie",
+        "last_name": "Verhoeven",
+        "role": "student",
+    },
+    {
+        "email": "commissie1@school.be",
+        "password": "commissie123",
+        "first_name": "Peter",
+        "last_name": "Smit",
+        "role": "committee",
+    },
+    {
+        "email": "docent1@school.be",
+        "password": "docent123",
+        "first_name": "Ann",
+        "last_name": "Claessens",
+        "role": "teacher",
+    },
+    {
+        "email": "mentor1@school.be",
+        "password": "mentor123",
+        "first_name": "Bram",
+        "last_name": "Janssens",
+        "role": "mentor",
+    },
 ]
 
 print("\n👥 Creating test users...")
@@ -55,14 +85,14 @@ for user_data in test_users:
     if existing:
         print(f"ℹ️  User exists: {user_data['email']}")
         continue
-    
+
     user = User(
         email=user_data["email"],
         password_hash=get_password_hash(user_data["password"]),
         first_name=user_data["first_name"],
         last_name=user_data["last_name"],
         role=user_data["role"],
-        is_active=True
+        is_active=True,
     )
     db.add(user)
     print(f"✅ Created: {user_data['email']} ({user_data['role']})")
@@ -70,9 +100,9 @@ for user_data in test_users:
 db.commit()
 db.close()
 
-print("\n" + "="*50)
+print("\n" + "=" * 50)
 print("🎉 Setup complete!")
-print("="*50)
+print("=" * 50)
 print("\nTest credentials:")
 print("  admin@school.be      / admin123      (admin)")
 print("  student1@school.be   / student123    (student)")

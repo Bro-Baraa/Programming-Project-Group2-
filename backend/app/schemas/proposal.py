@@ -1,4 +1,5 @@
 """Proposal schemas."""
+
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 from datetime import datetime, date
@@ -51,6 +52,7 @@ class ProposalVersionResponse(BaseModel):
 class EditProposalRequest(BaseModel):
     """Student edits proposal while status is still 'Ingediend'.
     All fields are optional; omitted fields keep current values."""
+
     description: Optional[str] = None
     company_name: Optional[str] = None
     company_address: Optional[str] = None
@@ -63,7 +65,9 @@ class EditProposalRequest(BaseModel):
 
 class ResubmitRequest(BaseModel):
     """Student resubmits proposal after changes requested.
-    All fields are optional except new_description; omitted fields keep current values."""
+    All fields are optional except new_description; omitted fields keep current values.
+    """
+
     new_description: str
     company_name: Optional[str] = None
     company_address: Optional[str] = None

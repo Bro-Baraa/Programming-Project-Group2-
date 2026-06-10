@@ -13,10 +13,17 @@ from typing import BinaryIO, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models import Agreement, Company, CompetencyProfile, Internship, Proposal, ProposalVersion, User
+from app.models import (
+    Agreement,
+    Company,
+    CompetencyProfile,
+    Internship,
+    Proposal,
+    ProposalVersion,
+    User,
+)
 from app.services.notifications import notify
 from app.services.common import get_active_competency_profile
-
 
 # ── Internal: legal status transitions ──
 _TRANSITIONS: dict[str, set[str]] = {
@@ -32,13 +39,16 @@ _TRANSITIONS: dict[str, set[str]] = {
 
 # ── Configuration ──
 
+
 @dataclass(frozen=True)
 class LifecycleConfig:
     """Immutable runtime configuration injected once at module creation."""
+
     agreements_dir: Path
 
 
 # ── Return types ──
+
 
 @dataclass(frozen=True)
 class NewInternship:
@@ -57,6 +67,7 @@ class AgreementUpload:
 
 # ── Deep Module ──
 
+
 class InternshipLifecycle:
     """Encapsulates every legal status transition for the Internship aggregate."""
 
@@ -70,9 +81,7 @@ class InternshipLifecycle:
 
     def _get_internship_or_404(self, internship_id: int) -> Internship:
         internship = (
-            self.db.query(Internship)
-            .filter(Internship.id == internship_id)
-            .first()
+            self.db.query(Internship).filter(Internship.id == internship_id).first()
         )
         if not internship:
             raise HTTPException(
@@ -201,10 +210,15 @@ class InternshipLifecycle:
 
         # ── Notify all committee members that a new proposal was submitted ──
         from app.models import User as UserModel
-        committee_members = self.db.query(UserModel).filter(
-            UserModel.role == "committee",
-            UserModel.is_active == True,
-        ).all()
+
+        committee_members = (
+            self.db.query(UserModel)
+            .filter(
+                UserModel.role == "committee",
+                UserModel.is_active == True,
+            )
+            .all()
+        )
         student_name = f"{actor.first_name} {actor.last_name}"
         for member in committee_members:
             notify(
@@ -296,7 +310,9 @@ class InternshipLifecycle:
 
         # ── Notify the teacher when assigned to an internship ──
         if decision == "Goedgekeurd" and teacher_id:
-            student_name = f"{internship.student.first_name} {internship.student.last_name}"
+            student_name = (
+                f"{internship.student.first_name} {internship.student.last_name}"
+            )
             notify(
                 self.db,
                 user_id=teacher_id,
@@ -342,7 +358,9 @@ class InternshipLifecycle:
                 detail="Only PDF files are allowed",
             )
 
-        safe_name = f"agreement_{internship.id}_{self._now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        safe_name = (
+            f"agreement_{internship.id}_{self._now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        )
         filepath = self.config.agreements_dir / safe_name
         self.config.agreements_dir.mkdir(parents=True, exist_ok=True)
 
@@ -373,11 +391,20 @@ class InternshipLifecycle:
         # We notify via a simple approach: store one notification per committee member.
         # For now we import User here to avoid circular imports at module level.
         from app.models import User as UserModel
-        committee_members = self.db.query(UserModel).filter(
-            UserModel.role == "committee",
-            UserModel.is_active == True,
-        ).all()
-        student_name = f"{internship.student.first_name} {internship.student.last_name}" if internship.student else "Een student"
+
+        committee_members = (
+            self.db.query(UserModel)
+            .filter(
+                UserModel.role == "committee",
+                UserModel.is_active == True,
+            )
+            .all()
+        )
+        student_name = (
+            f"{internship.student.first_name} {internship.student.last_name}"
+            if internship.student
+            else "Een student"
+        )
         for member in committee_members:
             notify(
                 self.db,
@@ -549,7 +576,9 @@ class InternshipLifecycle:
         internship.proposal.status = "In Beoordeling"
         internship.proposal.submitted_at = self._now()
         internship.proposal.feedback = None
-        internship.proposal.revision_count = (internship.proposal.revision_count or 0) + 1
+        internship.proposal.revision_count = (
+            internship.proposal.revision_count or 0
+        ) + 1
         internship.proposal.resubmitted_at = self._now()
         internship.proposal.version = (internship.proposal.version or 1) + 1
         internship.proposal.revised_at = self._now()
@@ -577,10 +606,15 @@ class InternshipLifecycle:
 
         # ── Notify committee that the student resubmitted after requested changes ──
         from app.models import User as UserModel
-        committee_members = self.db.query(UserModel).filter(
-            UserModel.role == "committee",
-            UserModel.is_active == True,
-        ).all()
+
+        committee_members = (
+            self.db.query(UserModel)
+            .filter(
+                UserModel.role == "committee",
+                UserModel.is_active == True,
+            )
+            .all()
+        )
         student_name = f"{actor.first_name} {actor.last_name}"
         for member in committee_members:
             notify(
@@ -751,6 +785,7 @@ class InternshipLifecycle:
         internship = self._get_internship_or_404(internship_id)
 
         from app.services.audit import log_event
+
         log_event(
             self.db,
             "internship.force_status",

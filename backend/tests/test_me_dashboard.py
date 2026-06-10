@@ -63,7 +63,9 @@ class TestMeDashboardStudent:
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal
 
-        company = Company(name="Test Co", contact_person="John", contact_email="john@test.com")
+        company = Company(
+            name="Test Co", contact_person="John", contact_email="john@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -78,7 +80,9 @@ class TestMeDashboardStudent:
         db.add(internship)
         db.flush()
 
-        proposal = Proposal(internship_id=internship.id, description="Test", status="Goedgekeurd")
+        proposal = Proposal(
+            internship_id=internship.id, description="Test", status="Goedgekeurd"
+        )
         db.add(proposal)
         db.commit()
 
@@ -87,7 +91,9 @@ class TestMeDashboardStudent:
         data = response.json()
 
         # Should have an alert about uploading agreement
-        alert = next((a for a in data["alerts"] if "overeenkomst" in a["message"].lower()), None)
+        alert = next(
+            (a for a in data["alerts"] if "overeenkomst" in a["message"].lower()), None
+        )
         assert alert is not None
         assert alert["severity"] == "warning"
 
@@ -109,7 +115,9 @@ class TestMeDashboardStudent:
         db.add(other)
         db.flush()
 
-        company = Company(name="Other Co", contact_person="Jane", contact_email="jane@test.com")
+        company = Company(
+            name="Other Co", contact_person="Jane", contact_email="jane@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -124,7 +132,9 @@ class TestMeDashboardStudent:
         db.add(internship)
         db.flush()
 
-        proposal = Proposal(internship_id=internship.id, description="Other", status="Goedgekeurd")
+        proposal = Proposal(
+            internship_id=internship.id, description="Other", status="Goedgekeurd"
+        )
         db.add(proposal)
         db.commit()
 
@@ -160,7 +170,9 @@ class TestMeDashboardTeacher:
 class TestMeDashboardCommittee:
     """Committee view: sees all internships."""
 
-    def test_committee_sees_all(self, client, auth_headers_committee, sample_internship):
+    def test_committee_sees_all(
+        self, client, auth_headers_committee, sample_internship
+    ):
         """Committee sees all internships in the system."""
         response = client.get("/api/me/dashboard", headers=auth_headers_committee)
         assert response.status_code == 200
@@ -178,7 +190,9 @@ class TestMeDashboardCommittee:
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal
 
-        company = Company(name="New Co", contact_person="John", contact_email="john@test.com")
+        company = Company(
+            name="New Co", contact_person="John", contact_email="john@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -192,7 +206,9 @@ class TestMeDashboardCommittee:
         db.add(internship)
         db.flush()
 
-        proposal = Proposal(internship_id=internship.id, description="Test", status="In Beoordeling")
+        proposal = Proposal(
+            internship_id=internship.id, description="Test", status="In Beoordeling"
+        )
         db.add(proposal)
         db.commit()
 
@@ -200,7 +216,9 @@ class TestMeDashboardCommittee:
         assert response.status_code == 200
         data = response.json()
 
-        alert = next((a for a in data["alerts"] if "beoordeling" in a["message"].lower()), None)
+        alert = next(
+            (a for a in data["alerts"] if "beoordeling" in a["message"].lower()), None
+        )
         assert alert is not None
         assert alert["severity"] == "warning"
 
@@ -208,7 +226,9 @@ class TestMeDashboardCommittee:
 class TestMeDashboardAdmin:
     """Admin view: sees everything."""
 
-    def test_admin_dashboard(self, client, auth_headers_admin, test_admin, sample_internship):
+    def test_admin_dashboard(
+        self, client, auth_headers_admin, test_admin, sample_internship
+    ):
         """Admin sees all internships."""
         response = client.get("/api/me/dashboard", headers=auth_headers_admin)
         assert response.status_code == 200
@@ -221,12 +241,16 @@ class TestMeDashboardAdmin:
 class TestMeDashboardMentor:
     """Mentor view: sees mentored internships."""
 
-    def test_mentor_dashboard(self, client, db, auth_headers_mentor, test_student, test_mentor):
+    def test_mentor_dashboard(
+        self, client, db, auth_headers_mentor, test_student, test_mentor
+    ):
         """Mentor sees internships where they are assigned as mentor."""
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal
 
-        company = Company(name="Mentor Co", contact_person="John", contact_email="john@test.com")
+        company = Company(
+            name="Mentor Co", contact_person="John", contact_email="john@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -241,7 +265,9 @@ class TestMeDashboardMentor:
         db.add(internship)
         db.flush()
 
-        proposal = Proposal(internship_id=internship.id, description="Test", status="Goedgekeurd")
+        proposal = Proposal(
+            internship_id=internship.id, description="Test", status="Goedgekeurd"
+        )
         db.add(proposal)
         db.commit()
 
@@ -264,7 +290,9 @@ class TestMeDashboardMentor:
 class TestMeDashboardResponseShape:
     """Verify the response structure is consistent."""
 
-    def test_response_has_all_required_fields(self, client, auth_headers_student, sample_internship):
+    def test_response_has_all_required_fields(
+        self, client, auth_headers_student, sample_internship
+    ):
         response = client.get("/api/me/dashboard", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()

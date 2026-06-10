@@ -13,7 +13,9 @@ class TestInternshipPagination:
 
         # Create 3 internships
         for i in range(3):
-            company = Company(name=f"Co{i}", contact_person="J", contact_email="j@test.com")
+            company = Company(
+                name=f"Co{i}", contact_person="J", contact_email="j@test.com"
+            )
             db.add(company)
             db.flush()
             intern = Internship(
@@ -25,7 +27,9 @@ class TestInternshipPagination:
             )
             db.add(intern)
             db.flush()
-            db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
+            db.add(
+                Proposal(internship_id=intern.id, description="D", status="Ingediend")
+            )
         db.commit()
 
         response = client.get("/api/internships", headers=auth_headers_admin)
@@ -40,7 +44,9 @@ class TestInternshipPagination:
         from app.models import Internship, Company, Proposal
 
         for i in range(5):
-            company = Company(name=f"Co{i}", contact_person="J", contact_email="j@test.com")
+            company = Company(
+                name=f"Co{i}", contact_person="J", contact_email="j@test.com"
+            )
             db.add(company)
             db.flush()
             intern = Internship(
@@ -52,24 +58,32 @@ class TestInternshipPagination:
             )
             db.add(intern)
             db.flush()
-            db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
+            db.add(
+                Proposal(internship_id=intern.id, description="D", status="Ingediend")
+            )
         db.commit()
 
         # Page 1: first 2
-        response = client.get("/api/internships?skip=0&limit=2", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?skip=0&limit=2", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
         assert response.headers.get("X-Total-Count") == "5"
 
         # Page 2: next 2
-        response = client.get("/api/internships?skip=2&limit=2", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?skip=2&limit=2", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
 
         # Page 3: last 1
-        response = client.get("/api/internships?skip=4&limit=2", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?skip=4&limit=2", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -88,12 +102,16 @@ class TestInternshipPagination:
 class TestInternshipSearch:
     """Test GET /internships?search= keyword search."""
 
-    def test_search_by_student_name(self, client, auth_headers_admin, db, test_student, test_teacher):
+    def test_search_by_student_name(
+        self, client, auth_headers_admin, db, test_student, test_teacher
+    ):
         """Search matches student first or last name."""
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal
 
-        company = Company(name="Test Co", contact_person="J", contact_email="j@test.com")
+        company = Company(
+            name="Test Co", contact_person="J", contact_email="j@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -111,14 +129,18 @@ class TestInternshipSearch:
         db.commit()
 
         # Search by student first name
-        response = client.get(f"/api/internships?search=Student", headers=auth_headers_admin)
+        response = client.get(
+            f"/api/internships?search=Student", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["student"]["first_name"] == "Student"
 
         # Search by student last name
-        response = client.get(f"/api/internships?search=User", headers=auth_headers_admin)
+        response = client.get(
+            f"/api/internships?search=User", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -128,7 +150,9 @@ class TestInternshipSearch:
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal
 
-        company = Company(name="Acme Corp", contact_person="J", contact_email="j@test.com")
+        company = Company(
+            name="Acme Corp", contact_person="J", contact_email="j@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -144,7 +168,9 @@ class TestInternshipSearch:
         db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/api/internships?search=Acme", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?search=Acme", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -152,18 +178,24 @@ class TestInternshipSearch:
 
     def test_search_no_results(self, client, auth_headers_admin):
         """Search with no matches returns empty list with count 0."""
-        response = client.get("/api/internships?search=NONEXISTENT", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?search=NONEXISTENT", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert data == []
         assert response.headers.get("X-Total-Count") == "0"
 
-    def test_search_case_insensitive(self, client, auth_headers_admin, db, test_student):
+    def test_search_case_insensitive(
+        self, client, auth_headers_admin, db, test_student
+    ):
         """Search is case-insensitive."""
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal
 
-        company = Company(name="BigCorp", contact_person="J", contact_email="j@test.com")
+        company = Company(
+            name="BigCorp", contact_person="J", contact_email="j@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -179,7 +211,9 @@ class TestInternshipSearch:
         db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/api/internships?search=bigcorp", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?search=bigcorp", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -209,7 +243,9 @@ class TestInternshipMultiStatus:
         db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/api/internships?status=Ingediend", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?status=Ingediend", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -243,10 +279,14 @@ class TestInternshipMultiStatus:
         db.add(intern2)
         db.flush()
         db.add(Proposal(internship_id=intern1.id, description="D", status="Ingediend"))
-        db.add(Proposal(internship_id=intern2.id, description="D", status="Goedgekeurd"))
+        db.add(
+            Proposal(internship_id=intern2.id, description="D", status="Goedgekeurd")
+        )
         db.commit()
 
-        response = client.get("/api/internships?status=Ingediend,Goedgekeurd", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?status=Ingediend,Goedgekeurd", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -255,13 +295,17 @@ class TestInternshipMultiStatus:
 
     def test_invalid_status(self, client, auth_headers_admin):
         """Invalid status returns 400 with clear error."""
-        response = client.get("/api/internships?status=InvalidStatus", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?status=InvalidStatus", headers=auth_headers_admin
+        )
         assert response.status_code == 400
         assert "Invalid status" in response.json()["detail"]
 
     def test_invalid_multi_status(self, client, auth_headers_admin):
         """If any status in comma-list is invalid, return 400."""
-        response = client.get("/api/internships?status=Ingediend,Invalid", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?status=Ingediend,Invalid", headers=auth_headers_admin
+        )
         assert response.status_code == 400
         assert "Invalid" in response.json()["detail"]
 
@@ -301,19 +345,26 @@ class TestInternshipDateFilter:
         db.add(Proposal(internship_id=intern2.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/api/internships?start_date_from=2025-08-01", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?start_date_from=2025-08-01", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["company"]["name"] == "Late"
 
-        response = client.get("/api/internships?start_date_to=2025-06-01", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?start_date_to=2025-06-01", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["company"]["name"] == "Early"
 
-        response = client.get("/api/internships?start_date_from=2025-01-01&start_date_to=2025-12-31", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?start_date_from=2025-01-01&start_date_to=2025-12-31",
+            headers=auth_headers_admin,
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -322,13 +373,17 @@ class TestInternshipDateFilter:
 class TestInternshipSorting:
     """Test GET /internships?sort= ordering."""
 
-    def test_sort_by_created_at_desc(self, client, auth_headers_admin, db, test_student):
+    def test_sort_by_created_at_desc(
+        self, client, auth_headers_admin, db, test_student
+    ):
         """Default sort is created_at descending."""
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal
 
         for i in range(3):
-            company = Company(name=f"Co{i}", contact_person="J", contact_email="j@test.com")
+            company = Company(
+                name=f"Co{i}", contact_person="J", contact_email="j@test.com"
+            )
             db.add(company)
             db.flush()
             intern = Internship(
@@ -340,10 +395,14 @@ class TestInternshipSorting:
             )
             db.add(intern)
             db.flush()
-            db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
+            db.add(
+                Proposal(internship_id=intern.id, description="D", status="Ingediend")
+            )
         db.commit()
 
-        response = client.get("/api/internships?sort=-created_at", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?sort=-created_at", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         # Should be newest first
@@ -377,11 +436,15 @@ class TestInternshipSorting:
         db.add(intern1)
         db.add(intern2)
         db.flush()
-        db.add(Proposal(internship_id=intern1.id, description="D", status="Goedgekeurd"))
+        db.add(
+            Proposal(internship_id=intern1.id, description="D", status="Goedgekeurd")
+        )
         db.add(Proposal(internship_id=intern2.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/api/internships?sort=status", headers=auth_headers_admin)
+        response = client.get(
+            "/api/internships?sort=status", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert data[0]["status"] == "Goedgekeurd"
@@ -391,7 +454,9 @@ class TestInternshipSorting:
 class TestUserPagination:
     """Test GET /users pagination."""
 
-    def test_users_pagination(self, client, auth_headers_admin, test_admin, test_student, test_teacher):
+    def test_users_pagination(
+        self, client, auth_headers_admin, test_admin, test_student, test_teacher
+    ):
         """Users list supports skip/limit and X-Total-Count."""
         response = client.get("/api/users?skip=0&limit=2", headers=auth_headers_admin)
         assert response.status_code == 200
@@ -407,7 +472,9 @@ class TestUserPagination:
         assert len(data) == 1
         assert data[0]["email"] == "student@test.com"
 
-        response = client.get("/api/users?search=student@test", headers=auth_headers_admin)
+        response = client.get(
+            "/api/users?search=student@test", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -416,9 +483,13 @@ class TestUserPagination:
 class TestCompetencyPagination:
     """Test GET /competencies pagination."""
 
-    def test_competencies_pagination(self, client, auth_headers_admin, sample_competencies):
+    def test_competencies_pagination(
+        self, client, auth_headers_admin, sample_competencies
+    ):
         """Competencies list supports pagination."""
-        response = client.get("/api/competencies?skip=0&limit=2", headers=auth_headers_admin)
+        response = client.get(
+            "/api/competencies?skip=0&limit=2", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -426,7 +497,9 @@ class TestCompetencyPagination:
 
     def test_competencies_search(self, client, auth_headers_admin, sample_competencies):
         """Search competencies by name."""
-        response = client.get("/api/competencies?search=Technical", headers=auth_headers_admin)
+        response = client.get(
+            "/api/competencies?search=Technical", headers=auth_headers_admin
+        )
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1

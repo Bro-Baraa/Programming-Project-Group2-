@@ -1,4 +1,5 @@
 """Dashboard and reporting schemas."""
+
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, date
@@ -19,6 +20,7 @@ class DashboardStats(BaseModel):
 
 class AgreementStatusItem(BaseModel):
     """For US-26: admin overview of agreement status"""
+
     internship_id: int
     student: UserResponse
     status: str
@@ -28,6 +30,7 @@ class AgreementStatusItem(BaseModel):
 
 class FinalReportItem(BaseModel):
     """For US-19: final report per student"""
+
     internship_id: int
     student: UserResponse
     company_name: Optional[str] = None

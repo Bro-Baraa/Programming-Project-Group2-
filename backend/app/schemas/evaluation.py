@@ -1,4 +1,5 @@
 """Evaluation schemas."""
+
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
@@ -61,12 +62,14 @@ class EvaluationResponse(EvaluationBase):
 
 class EvaluationFinalizeRequest(BaseModel):
     """Request to finalize an evaluation with scores for all competencies"""
+
     rules: List[EvaluationRuleBase]
     comments: Optional[str] = None
 
 
 class EvaluationWithScoreResponse(EvaluationResponse):
     """Evaluation with calculated weighted score"""
+
     total_weight: float
     achieved_weight: float
     weighted_score: Optional[float] = None  # 0-100 or None if not all scored

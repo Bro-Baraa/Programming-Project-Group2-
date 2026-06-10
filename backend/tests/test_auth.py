@@ -7,7 +7,7 @@ class TestAuthEndpoints:
     def test_login_success(self, client, test_admin):
         response = client.post(
             "/api/auth/login",
-            data={"username": "admin@test.com", "password": "admin123"}
+            data={"username": "admin@test.com", "password": "admin123"},
         )
         assert response.status_code == 200
         data = response.json()
@@ -19,7 +19,7 @@ class TestAuthEndpoints:
     def test_login_invalid_password(self, client, test_admin):
         response = client.post(
             "/api/auth/login",
-            data={"username": "admin@test.com", "password": "wrongpassword"}
+            data={"username": "admin@test.com", "password": "wrongpassword"},
         )
         assert response.status_code == 401
         assert "Incorrect email or password" in response.json()["detail"]
@@ -27,7 +27,7 @@ class TestAuthEndpoints:
     def test_login_invalid_email(self, client):
         response = client.post(
             "/api/auth/login",
-            data={"username": "nonexistent@test.com", "password": "password123"}
+            data={"username": "nonexistent@test.com", "password": "password123"},
         )
         assert response.status_code == 401
         assert "Incorrect email or password" in response.json()["detail"]
@@ -47,8 +47,7 @@ class TestAuthEndpoints:
 
     def test_get_me_invalid_token(self, client):
         response = client.get(
-            "/api/auth/me",
-            headers={"Authorization": "Bearer invalid_token"}
+            "/api/auth/me", headers={"Authorization": "Bearer invalid_token"}
         )
         assert response.status_code == 401
 
@@ -62,12 +61,10 @@ class TestUserRegistration:
             "password": "newpass123",
             "first_name": "New",
             "last_name": "User",
-            "role": "student"
+            "role": "student",
         }
         response = client.post(
-            "/api/auth/register",
-            json=user_data,
-            headers=auth_headers_admin
+            "/api/auth/register", json=user_data, headers=auth_headers_admin
         )
         assert response.status_code == 200
         data = response.json()
@@ -81,12 +78,10 @@ class TestUserRegistration:
             "password": "newpass123",
             "first_name": "New",
             "last_name": "User",
-            "role": "student"
+            "role": "student",
         }
         response = client.post(
-            "/api/auth/register",
-            json=user_data,
-            headers=auth_headers_student
+            "/api/auth/register", json=user_data, headers=auth_headers_student
         )
         assert response.status_code == 403
         assert "Not enough permissions" in response.json()["detail"]
@@ -97,12 +92,10 @@ class TestUserRegistration:
             "password": "newpass123",
             "first_name": "New",
             "last_name": "User",
-            "role": "student"
+            "role": "student",
         }
         response = client.post(
-            "/api/auth/register",
-            json=user_data,
-            headers=auth_headers_admin
+            "/api/auth/register", json=user_data, headers=auth_headers_admin
         )
         assert response.status_code == 400
         assert "Email already registered" in response.json()["detail"]
@@ -110,13 +103,11 @@ class TestUserRegistration:
     def test_register_missing_fields(self, client, auth_headers_admin):
         user_data = {
             "email": "new@test.com",
-            "password": "pass123"
+            "password": "pass123",
             # Missing first_name, last_name, role
         }
         response = client.post(
-            "/api/auth/register",
-            json=user_data,
-            headers=auth_headers_admin
+            "/api/auth/register", json=user_data, headers=auth_headers_admin
         )
         assert response.status_code == 422  # Validation error
 
@@ -124,12 +115,14 @@ class TestUserRegistration:
 class TestRoleBasedAccess:
     """Test role-based access control."""
 
-    def test_student_cannot_access_teacher_endpoint(self, client, auth_headers_student, sample_internship):
+    def test_student_cannot_access_teacher_endpoint(
+        self, client, auth_headers_student, sample_internship
+    ):
         # Try to create a final evaluation as student (should be forbidden)
         response = client.post(
             f"/api/internships/{sample_internship.id}/evaluations",
             json={"eval_type": "final"},
-            headers=auth_headers_student
+            headers=auth_headers_student,
         )
         assert response.status_code == 403
 
@@ -138,7 +131,7 @@ class TestRoleBasedAccess:
         response = client.post(
             "/api/internships/999/evaluations",
             json={"eval_type": "final"},
-            headers=auth_headers_teacher
+            headers=auth_headers_teacher,
         )
         # Should get 404 for non-existent internship (after passing auth and validation)
         assert response.status_code in [404, 422]  # Depends on validation order

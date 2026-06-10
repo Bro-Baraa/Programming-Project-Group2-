@@ -1,4 +1,5 @@
 """Dashboard and reporting endpoints."""
+
 import csv
 import io
 from datetime import datetime
@@ -68,25 +69,37 @@ def export_internships_csv(
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow([
-        "Student", "Email", "Bedrijf", "Sector", "Status",
-        "Startdatum", "Einddatum", "Docent", "Mentor",
-        "Voorstel Status", "Overeenkomst Status"
-    ])
+    writer.writerow(
+        [
+            "Student",
+            "Email",
+            "Bedrijf",
+            "Sector",
+            "Status",
+            "Startdatum",
+            "Einddatum",
+            "Docent",
+            "Mentor",
+            "Voorstel Status",
+            "Overeenkomst Status",
+        ]
+    )
     for i in internships:
-        writer.writerow([
-            f"{i.student.first_name} {i.student.last_name}" if i.student else "",
-            i.student.email if i.student else "",
-            i.company.name if i.company else "",
-            i.company.sector if i.company else "",
-            i.status,
-            str(i.start_date) if i.start_date else "",
-            str(i.end_date) if i.end_date else "",
-            f"{i.teacher.first_name} {i.teacher.last_name}" if i.teacher else "",
-            f"{i.mentor.first_name} {i.mentor.last_name}" if i.mentor else "",
-            i.proposal.status if i.proposal else "",
-            i.agreement.status if i.agreement else "",
-        ])
+        writer.writerow(
+            [
+                f"{i.student.first_name} {i.student.last_name}" if i.student else "",
+                i.student.email if i.student else "",
+                i.company.name if i.company else "",
+                i.company.sector if i.company else "",
+                i.status,
+                str(i.start_date) if i.start_date else "",
+                str(i.end_date) if i.end_date else "",
+                f"{i.teacher.first_name} {i.teacher.last_name}" if i.teacher else "",
+                f"{i.mentor.first_name} {i.mentor.last_name}" if i.mentor else "",
+                i.proposal.status if i.proposal else "",
+                i.agreement.status if i.agreement else "",
+            ]
+        )
 
     output.seek(0)
     filename = f"stage_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"

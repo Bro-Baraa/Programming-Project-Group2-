@@ -1,4 +1,5 @@
 """Evaluation service layer orchestration."""
+
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from typing import List
@@ -29,16 +30,12 @@ from .evaluation_lifecycle import (
 from .evaluation_scoring import calculate_evaluation_score
 
 
-def list_evaluations(
-    db: Session, current_user, internship_id: int
-) -> List[Evaluation]:
+def list_evaluations(db: Session, current_user, internship_id: int) -> List[Evaluation]:
     internship = get_internship_or_404(db, internship_id)
     ensure_can_access_internship(current_user, internship)
     return (
         db.query(Evaluation)
-        .options(
-            joinedload(Evaluation.rules).joinedload(EvaluationRule.competency)
-        )
+        .options(joinedload(Evaluation.rules).joinedload(EvaluationRule.competency))
         .filter(Evaluation.internship_id == internship_id)
         .all()
     )
@@ -55,9 +52,14 @@ def create_evaluation(
     # Students can only create self-evaluations for their own internship
     if current_user.role == "student":
         if data.eval_type not in ("tussentijds", "self"):
-            raise HTTPException(status_code=403, detail="Students can only create tussentijds evaluations")
+            raise HTTPException(
+                status_code=403,
+                detail="Students can only create tussentijds evaluations",
+            )
         if internship.student_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Not authorized for this internship")
+            raise HTTPException(
+                status_code=403, detail="Not authorized for this internship"
+            )
 
     evaluation = Evaluation(
         internship_id=internship_id,
@@ -77,7 +79,9 @@ def create_evaluation(
         # Fallback: if no profile was captured (legacy internships), use the active one
         profile = get_active_competency_profile(db)
         if not profile:
-            raise HTTPException(status_code=400, detail="No active competency profile found")
+            raise HTTPException(
+                status_code=400, detail="No active competency profile found"
+            )
         profile_id = profile.id
 
     seed_rules_from_active_profile(db, evaluation.id, profile_id)
@@ -110,7 +114,9 @@ def update_evaluation_rule(
     evaluation = get_evaluation_or_404(db, evaluation_id)
 
     if evaluation.finalized:
-        raise HTTPException(status_code=400, detail="Cannot update finalized evaluation")
+        raise HTTPException(
+            status_code=400, detail="Cannot update finalized evaluation"
+        )
 
     rule = get_rule_or_404(db, evaluation_id, rule_id)
 

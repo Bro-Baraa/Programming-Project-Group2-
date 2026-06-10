@@ -11,8 +11,7 @@ router = APIRouter(prefix="/companies", tags=["companies"])
 
 @router.get("", response_model=List[CompanyResponse])
 def list_companies(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)
 ):
     """List all companies - accessible to all authenticated users"""
     return db.query(Company).all()
@@ -22,7 +21,7 @@ def list_companies(
 def create_company(
     data: CompanyCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_staff)
+    current_user: User = Depends(require_any_staff),
 ):
     """Create a new company - staff only"""
     # If mentor_id provided, validate it exists and has mentor role
@@ -32,20 +31,20 @@ def create_company(
             raise HTTPException(status_code=404, detail="Mentor not found")
         if mentor.role != "mentor":
             raise HTTPException(status_code=400, detail="User is not a mentor")
-    
+
     company = Company(
         name=data.name,
         address=data.address,
         sector=data.sector,
         contact_person=data.contact_person,
         contact_email=data.contact_email,
-        mentor_id=data.mentor_id
+        mentor_id=data.mentor_id,
     )
-    
+
     db.add(company)
     db.commit()
     db.refresh(company)
-    
+
     return company
 
 
@@ -53,13 +52,13 @@ def create_company(
 def get_company(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_active_user),
 ):
     """Get a specific company by ID"""
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
-    
+
     return company
 
 
@@ -68,13 +67,13 @@ def update_company(
     company_id: int,
     update: CompanyUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_staff)
+    current_user: User = Depends(require_any_staff),
 ):
     """Update a company - staff only"""
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
-    
+
     # If changing mentor_id, validate it
     if update.mentor_id is not None:
         mentor = db.query(User).filter(User.id == update.mentor_id).first()
@@ -82,7 +81,7 @@ def update_company(
             raise HTTPException(status_code=404, detail="Mentor not found")
         if mentor.role != "mentor":
             raise HTTPException(status_code=400, detail="User is not a mentor")
-    
+
     if update.name is not None:
         company.name = update.name
     if update.address is not None:
@@ -95,10 +94,10 @@ def update_company(
         company.contact_email = update.contact_email
     if update.mentor_id is not None:
         company.mentor_id = update.mentor_id
-    
+
     db.commit()
     db.refresh(company)
-    
+
     return company
 
 
@@ -106,21 +105,20 @@ def update_company(
 def delete_company(
     company_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin)
+    current_user: User = Depends(require_admin),
 ):
     """Delete a company - admin only"""
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="Company not found")
-    
+
     # Check if company has internships
     if company.internships:
         raise HTTPException(
-            status_code=400,
-            detail="Cannot delete company with associated internships"
+            status_code=400, detail="Cannot delete company with associated internships"
         )
-    
+
     db.delete(company)
     db.commit()
-    
+
     return None

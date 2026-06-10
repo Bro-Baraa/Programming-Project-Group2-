@@ -82,7 +82,12 @@ def generate_final_report_pdf(
         if report.weighted_final_score is not None:
             pdf.set_font("Helvetica", "B", 11)
             pdf.set_text_color(0, 121, 140)
-            pdf.cell(0, 8, f"Gewogen eindscore: {report.weighted_final_score:.2f} / 5", ln=True)
+            pdf.cell(
+                0,
+                8,
+                f"Gewogen eindscore: {report.weighted_final_score:.2f} / 5",
+                ln=True,
+            )
             pdf.ln(2)
 
         pdf.set_fill_color(240, 248, 252)

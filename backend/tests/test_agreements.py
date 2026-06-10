@@ -7,13 +7,17 @@ from pathlib import Path
 class TestDownloadAgreement:
     """Test GET /internships/{id}/agreement/download"""
 
-    def test_download_agreement_success(self, client, db, auth_headers_student, test_student, test_teacher):
+    def test_download_agreement_success(
+        self, client, db, auth_headers_student, test_student, test_teacher
+    ):
         """Student can download their own agreement PDF."""
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal, Agreement
 
         # Create company, internship, proposal
-        company = Company(name="Test Co", contact_person="John", contact_email="john@test.com")
+        company = Company(
+            name="Test Co", contact_person="John", contact_email="john@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -28,7 +32,9 @@ class TestDownloadAgreement:
         db.add(internship)
         db.flush()
 
-        proposal = Proposal(internship_id=internship.id, description="Test", status="Goedgekeurd")
+        proposal = Proposal(
+            internship_id=internship.id, description="Test", status="Goedgekeurd"
+        )
         db.add(proposal)
         db.flush()
 
@@ -61,10 +67,14 @@ class TestDownloadAgreement:
 
     def test_download_agreement_no_auth(self, client, sample_internship):
         """Unauthenticated requests are rejected."""
-        response = client.get(f"/api/internships/{sample_internship.id}/agreement/download")
+        response = client.get(
+            f"/api/internships/{sample_internship.id}/agreement/download"
+        )
         assert response.status_code == 401
 
-    def test_download_agreement_not_found(self, client, auth_headers_student, sample_internship):
+    def test_download_agreement_not_found(
+        self, client, auth_headers_student, sample_internship
+    ):
         """404 when internship has no agreement."""
         response = client.get(
             f"/api/internships/{sample_internship.id}/agreement/download",
@@ -73,12 +83,16 @@ class TestDownloadAgreement:
         assert response.status_code == 404
         assert "Agreement not found" in response.json()["detail"]
 
-    def test_download_agreement_file_missing(self, client, db, auth_headers_student, test_student, test_teacher):
+    def test_download_agreement_file_missing(
+        self, client, db, auth_headers_student, test_student, test_teacher
+    ):
         """404 when agreement record exists but file is missing on disk."""
         from datetime import date, timedelta
         from app.models import Internship, Company, Proposal, Agreement
 
-        company = Company(name="Test Co", contact_person="John", contact_email="john@test.com")
+        company = Company(
+            name="Test Co", contact_person="John", contact_email="john@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -93,7 +107,9 @@ class TestDownloadAgreement:
         db.add(internship)
         db.flush()
 
-        proposal = Proposal(internship_id=internship.id, description="Test", status="Goedgekeurd")
+        proposal = Proposal(
+            internship_id=internship.id, description="Test", status="Goedgekeurd"
+        )
         db.add(proposal)
         db.flush()
 
@@ -113,7 +129,9 @@ class TestDownloadAgreement:
         assert response.status_code == 404
         assert "file not found on disk" in response.json()["detail"]
 
-    def test_download_agreement_unauthorized_role(self, client, db, auth_headers_student, test_student, test_teacher):
+    def test_download_agreement_unauthorized_role(
+        self, client, db, auth_headers_student, test_student, test_teacher
+    ):
         """Student cannot download another student's agreement."""
         from datetime import date, timedelta
         from app.models import User, Internship, Company, Proposal, Agreement
@@ -130,7 +148,9 @@ class TestDownloadAgreement:
         db.add(other_student)
         db.flush()
 
-        company = Company(name="Test Co", contact_person="John", contact_email="john@test.com")
+        company = Company(
+            name="Test Co", contact_person="John", contact_email="john@test.com"
+        )
         db.add(company)
         db.flush()
 
@@ -145,7 +165,9 @@ class TestDownloadAgreement:
         db.add(internship)
         db.flush()
 
-        proposal = Proposal(internship_id=internship.id, description="Test", status="Goedgekeurd")
+        proposal = Proposal(
+            internship_id=internship.id, description="Test", status="Goedgekeurd"
+        )
         db.add(proposal)
         db.flush()
 

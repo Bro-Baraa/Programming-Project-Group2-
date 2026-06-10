@@ -1,4 +1,5 @@
 """Competency schemas."""
+
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional, List
 from datetime import datetime
@@ -81,6 +82,7 @@ class CompetencyWithProfileResponse(CompetencyResponse):
 
 class CompetencyWeightCheck(BaseModel):
     """Result of checking competency weights"""
+
     total_weight: float
     valid: bool
     competency_count: int
@@ -89,13 +91,14 @@ class CompetencyWeightCheck(BaseModel):
 
 class BulkCompetencyCreate(BaseModel):
     """Create multiple competencies at once for a profile"""
+
     profile_id: int
     competencies: List[CompetencyBase]
 
-    @field_validator('competencies')
+    @field_validator("competencies")
     @classmethod
     def validate_total_weight(cls, competencies):
         total = sum(c.weight for c in competencies)
         if total != 100:
-            raise ValueError(f'Total weight must be exactly 100%, got {total}%')
+            raise ValueError(f"Total weight must be exactly 100%, got {total}%")
         return competencies

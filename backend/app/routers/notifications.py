@@ -20,8 +20,10 @@ router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 # ── Schema ────────────────────────────────────────────────────────────────────
 
+
 class NotificationResponse(BaseModel):
     """What the frontend receives for each notification."""
+
     id: int
     message: str
     internship_id: int | None
@@ -34,6 +36,7 @@ class NotificationResponse(BaseModel):
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
+
 
 @router.get("", response_model=List[NotificationResponse])
 def get_my_notifications(
@@ -65,7 +68,9 @@ def mark_as_read(
     Mark a single notification as read.
     Only the owner of the notification can mark it as read.
     """
-    notification = db.query(Notification).filter(Notification.id == notification_id).first()
+    notification = (
+        db.query(Notification).filter(Notification.id == notification_id).first()
+    )
 
     if not notification:
         raise HTTPException(status_code=404, detail="Notificatie niet gevonden")

@@ -1,4 +1,5 @@
 """Feedback service layer."""
+
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -8,27 +9,19 @@ from app.schemas import FeedbackCreate
 from .common import ensure_internship_access
 
 
-def list_feedback(
-    db: Session, current_user, internship_id: int
-) -> List[Feedback]:
-    internship = (
-        db.query(Internship).filter(Internship.id == internship_id).first()
-    )
+def list_feedback(db: Session, current_user, internship_id: int) -> List[Feedback]:
+    internship = db.query(Internship).filter(Internship.id == internship_id).first()
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
 
     ensure_internship_access(current_user, internship)
-    return (
-        db.query(Feedback).filter(Feedback.internship_id == internship_id).all()
-    )
+    return db.query(Feedback).filter(Feedback.internship_id == internship_id).all()
 
 
 def create_feedback(
     db: Session, current_user, internship_id: int, data: FeedbackCreate
 ) -> Feedback:
-    internship = (
-        db.query(Internship).filter(Internship.id == internship_id).first()
-    )
+    internship = db.query(Internship).filter(Internship.id == internship_id).first()
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
 

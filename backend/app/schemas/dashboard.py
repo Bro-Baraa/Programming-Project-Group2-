@@ -17,6 +17,7 @@ from .feedback import FeedbackResponse
 
 class InternshipDashboardItem(BaseModel):
     """Rich internship summary for dashboard list views."""
+
     model_config = ConfigDict(from_attributes=True)
 
     internship: InternshipListResponse
@@ -42,6 +43,7 @@ class InternshipDashboardItem(BaseModel):
 
 class UserDashboardStats(BaseModel):
     """Role-scoped statistics for a single user's dashboard."""
+
     total_internships: int = 0
     pending_approval: int = 0
     approved: int = 0
@@ -55,6 +57,7 @@ class UserDashboardStats(BaseModel):
 
 class DashboardAlert(BaseModel):
     """Something that needs the user's attention."""
+
     severity: str  # info, warning, error
     message: str
     action_url: Optional[str] = None  # e.g. "?view=voorstel"
@@ -64,6 +67,7 @@ class DashboardAlert(BaseModel):
 
 class MeDashboardResponse(BaseModel):
     """Everything the frontend needs for the primary dashboard view."""
+
     model_config = ConfigDict(from_attributes=True)
 
     user: UserResponse

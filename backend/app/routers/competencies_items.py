@@ -1,4 +1,5 @@
 """Competency item CRUD endpoints."""
+
 from typing import List, Optional, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
@@ -26,7 +27,10 @@ def list_competencies(
     response: Response,
     profile_id: Optional[int] = None,
     active_only: bool = True,
-    search: Annotated[Optional[str], Query(min_length=1, max_length=100, description="Search competency name")] = None,
+    search: Annotated[
+        Optional[str],
+        Query(min_length=1, max_length=100, description="Search competency name"),
+    ] = None,
     pag: Annotated[dict, Depends(pagination)] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
@@ -66,14 +70,22 @@ def create_competency(
     current_user: User = Depends(require_admin),
 ):
     """Create a competency under a profile."""
-    profile = db.query(CompetencyProfile).filter(CompetencyProfile.id == data.profile_id).first()
+    profile = (
+        db.query(CompetencyProfile)
+        .filter(CompetencyProfile.id == data.profile_id)
+        .first()
+    )
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    existing = db.query(Competency).filter(
-        Competency.profile_id == data.profile_id,
-        Competency.name == data.name,
-    ).first()
+    existing = (
+        db.query(Competency)
+        .filter(
+            Competency.profile_id == data.profile_id,
+            Competency.name == data.name,
+        )
+        .first()
+    )
     if existing:
         raise HTTPException(
             status_code=400,
@@ -91,18 +103,33 @@ def create_competency(
     db.add(competency)
     db.commit()
     db.refresh(competency)
-    log_event(db, "competency.create", user=current_user, entity_type="competency", entity_id=competency.id, detail=f"Competentie aangemaakt: {competency.name}")
+    log_event(
+        db,
+        "competency.create",
+        user=current_user,
+        entity_type="competency",
+        entity_id=competency.id,
+        detail=f"Competentie aangemaakt: {competency.name}",
+    )
     return competency
 
 
-@router.post("/bulk", response_model=List[CompetencyResponse], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/bulk",
+    response_model=List[CompetencyResponse],
+    status_code=status.HTTP_201_CREATED,
+)
 def create_competencies_bulk(
     data: BulkCompetencyCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
     """Create multiple competencies at once with total-weight validation."""
-    profile = db.query(CompetencyProfile).filter(CompetencyProfile.id == data.profile_id).first()
+    profile = (
+        db.query(CompetencyProfile)
+        .filter(CompetencyProfile.id == data.profile_id)
+        .first()
+    )
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
@@ -115,10 +142,14 @@ def create_competencies_bulk(
 
     created = []
     for comp_data in data.competencies:
-        existing = db.query(Competency).filter(
-            Competency.profile_id == data.profile_id,
-            Competency.name == comp_data.name,
-        ).first()
+        existing = (
+            db.query(Competency)
+            .filter(
+                Competency.profile_id == data.profile_id,
+                Competency.name == comp_data.name,
+            )
+            .first()
+        )
         if existing:
             raise HTTPException(
                 status_code=400,
@@ -168,11 +199,15 @@ def update_competency(
         raise HTTPException(status_code=404, detail="Competency not found")
 
     if update.name is not None:
-        existing = db.query(Competency).filter(
-            Competency.profile_id == competency.profile_id,
-            Competency.name == update.name,
-            Competency.id != competency_id,
-        ).first()
+        existing = (
+            db.query(Competency)
+            .filter(
+                Competency.profile_id == competency.profile_id,
+                Competency.name == update.name,
+                Competency.id != competency_id,
+            )
+            .first()
+        )
         if existing:
             raise HTTPException(
                 status_code=400,
@@ -189,7 +224,14 @@ def update_competency(
 
     db.commit()
     db.refresh(competency)
-    log_event(db, "competency.update", user=current_user, entity_type="competency", entity_id=competency.id, detail=f"Competentie gewijzigd: {competency.name}")
+    log_event(
+        db,
+        "competency.update",
+        user=current_user,
+        entity_type="competency",
+        entity_id=competency.id,
+        detail=f"Competentie gewijzigd: {competency.name}",
+    )
     return competency
 
 
@@ -204,7 +246,11 @@ def delete_competency(
     if not competency:
         raise HTTPException(status_code=404, detail="Competency not found")
 
-    in_use = db.query(EvaluationRule).filter(EvaluationRule.competency_id == competency_id).first()
+    in_use = (
+        db.query(EvaluationRule)
+        .filter(EvaluationRule.competency_id == competency_id)
+        .first()
+    )
     if in_use:
         raise HTTPException(
             status_code=400,
@@ -213,7 +259,14 @@ def delete_competency(
 
     db.delete(competency)
     db.commit()
-    log_event(db, "competency.delete", user=current_user, entity_type="competency", entity_id=competency_id, detail=f"Competentie verwijderd: {competency.name}")
+    log_event(
+        db,
+        "competency.delete",
+        user=current_user,
+        entity_type="competency",
+        entity_id=competency_id,
+        detail=f"Competentie verwijderd: {competency.name}",
+    )
     return None
 
 
@@ -231,5 +284,12 @@ def deactivate_competency(
     competency.active = False
     db.commit()
     db.refresh(competency)
-    log_event(db, "competency.deactivate", user=current_user, entity_type="competency", entity_id=competency_id, detail=f"Competentie gedeactiveerd: {competency.name}")
+    log_event(
+        db,
+        "competency.deactivate",
+        user=current_user,
+        entity_type="competency",
+        entity_id=competency_id,
+        detail=f"Competentie gedeactiveerd: {competency.name}",
+    )
     return competency

@@ -1,4 +1,5 @@
 """Evaluation endpoints."""
+
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -47,12 +48,26 @@ def create_evaluation(
 ):
     """US-06, US-17, US-18: Create an evaluation (teacher, mentor, or student self-eval)."""
     result = create_evaluation_svc(db, current_user, internship_id, data)
-    log_event(db, "evaluation.create", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Evaluatie aangemaakt: {data.eval_type}")
+    log_event(
+        db,
+        "evaluation.create",
+        user=current_user,
+        entity_type="internship",
+        entity_id=internship_id,
+        detail=f"Evaluatie aangemaakt: {data.eval_type}",
+    )
 
     # ── Notify the student that a new evaluation is available ──
     from app.services.notifications import notify
-    eval_label = "eindevaluatie" if data.eval_type == "final" else "tussentijdse evaluatie"
-    evaluator_name = f"{current_user.first_name} {current_user.last_name}" if current_user else "Je docent"
+
+    eval_label = (
+        "eindevaluatie" if data.eval_type == "final" else "tussentijdse evaluatie"
+    )
+    evaluator_name = (
+        f"{current_user.first_name} {current_user.last_name}"
+        if current_user
+        else "Je docent"
+    )
     notify(
         db,
         user_id=result.internship.student_id,
@@ -87,7 +102,9 @@ def update_evaluation(
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
     if evaluation.finalized:
-        raise HTTPException(status_code=400, detail="Cannot update finalized evaluation")
+        raise HTTPException(
+            status_code=400, detail="Cannot update finalized evaluation"
+        )
 
     if update.comments is not None:
         evaluation.comments = update.comments
@@ -98,7 +115,8 @@ def update_evaluation(
 
 
 @router.patch(
-    "/evaluations/{evaluation_id}/rules/{rule_id}", response_model=EvaluationRuleResponse
+    "/evaluations/{evaluation_id}/rules/{rule_id}",
+    response_model=EvaluationRuleResponse,
 )
 def update_evaluation_rule(
     evaluation_id: int,
@@ -126,6 +144,7 @@ def finalize_evaluation_endpoint(
     """US-18: Finalize an evaluation - cannot be modified after.
     If this is a final evaluation, the internship is also marked as completed."""
     from sqlalchemy.orm import joinedload
+
     evaluation = (
         db.query(Evaluation)
         .options(joinedload(Evaluation.internship))
@@ -140,7 +159,9 @@ def finalize_evaluation_endpoint(
 
     # Auto-complete internship when final evaluation is finalized
     if finalized_eval.eval_type == "final":
-        lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+        lifecycle = InternshipLifecycle(
+            db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
+        )
         lifecycle.complete_internship(
             internship_id=finalized_eval.internship_id,
             actor=current_user,
@@ -148,8 +169,17 @@ def finalize_evaluation_endpoint(
 
     # ── Notify the student that their evaluation has been finalized ──
     from app.services.notifications import notify
-    evaluator_name = f"{current_user.first_name} {current_user.last_name}" if current_user else "Je docent"
-    eval_label = "eindevaluatie" if finalized_eval.eval_type == "final" else "tussentijdse evaluatie"
+
+    evaluator_name = (
+        f"{current_user.first_name} {current_user.last_name}"
+        if current_user
+        else "Je docent"
+    )
+    eval_label = (
+        "eindevaluatie"
+        if finalized_eval.eval_type == "final"
+        else "tussentijdse evaluatie"
+    )
     notify(
         db,
         user_id=finalized_eval.internship.student_id,
@@ -159,7 +189,14 @@ def finalize_evaluation_endpoint(
     )
     db.commit()
 
-    log_event(db, "evaluation.finalize", user=current_user, entity_type="internship", entity_id=finalized_eval.internship_id, detail=f"Evaluatie gefinaliseerd: {finalized_eval.eval_type}")
+    log_event(
+        db,
+        "evaluation.finalize",
+        user=current_user,
+        entity_type="internship",
+        entity_id=finalized_eval.internship_id,
+        detail=f"Evaluatie gefinaliseerd: {finalized_eval.eval_type}",
+    )
 
     return EvaluationWithScoreResponse(
         **EvaluationResponse.model_validate(finalized_eval).model_dump(),

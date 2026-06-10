@@ -1,4 +1,5 @@
 """Overeenkomst endpoints."""
+
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
@@ -30,7 +31,9 @@ def upload_agreement_endpoint(
 
     Alleen toegestaan als het voorstel goedgekeurd is.
     """
-    lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+    lifecycle = InternshipLifecycle(
+        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
+    )
     result = lifecycle.upload_agreement(
         internship_id=internship_id,
         actor=current_user,
@@ -38,15 +41,27 @@ def upload_agreement_endpoint(
         filename=file.filename,
         content_type=file.content_type,
     )
-    log_event(db, "agreement.upload", user=current_user, entity_type="internship", entity_id=internship_id, detail="Overeenkomst geüpload")
+    log_event(
+        db,
+        "agreement.upload",
+        user=current_user,
+        entity_type="internship",
+        entity_id=internship_id,
+        detail="Overeenkomst geüpload",
+    )
     return result.internship.agreement
 
 
 def _get_internship_with_agreement(db: Session, internship_id: int) -> Internship:
     """Haalt stage op met overeenkomst eager-loaded, of geeft 404."""
-    internship = db.query(Internship).options(
-        joinedload(Internship.agreement),
-    ).filter(Internship.id == internship_id).first()
+    internship = (
+        db.query(Internship)
+        .options(
+            joinedload(Internship.agreement),
+        )
+        .filter(Internship.id == internship_id)
+        .first()
+    )
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
     return internship
@@ -100,12 +115,21 @@ def validate_agreement_endpoint(
 
     Status: Gevalideerd of Onvolledig.
     """
-    lifecycle = InternshipLifecycle(db, LifecycleConfig(agreements_dir=Path("uploads/agreements")))
+    lifecycle = InternshipLifecycle(
+        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
+    )
     result = lifecycle.validate_agreement(
         internship_id=internship_id,
         actor=current_user,
         insurance_verified=update.insurance_verified,
         agreement_status=update.status,
     )
-    log_event(db, "agreement.validate", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Overeenkomst gevalideerd: {update.status}")
+    log_event(
+        db,
+        "agreement.validate",
+        user=current_user,
+        entity_type="internship",
+        entity_id=internship_id,
+        detail=f"Overeenkomst gevalideerd: {update.status}",
+    )
     return result.internship.agreement

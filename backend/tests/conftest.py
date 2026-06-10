@@ -57,7 +57,7 @@ def _create_test_user(db, email, password, first_name, role):
         first_name=first_name,
         last_name="User",
         role=role,
-        is_active=True
+        is_active=True,
     )
     db.add(user)
     db.commit()
@@ -82,7 +82,9 @@ def test_teacher(db):
 
 @pytest.fixture
 def test_committee(db):
-    return _create_test_user(db, "committee@test.com", "committee123", "Committee", "committee")
+    return _create_test_user(
+        db, "committee@test.com", "committee123", "Committee", "committee"
+    )
 
 
 @pytest.fixture
@@ -94,8 +96,7 @@ def test_mentor(db):
 def admin_token(client, test_admin):
     """Get admin access token."""
     response = client.post(
-        "/api/auth/login",
-        data={"username": "admin@test.com", "password": "admin123"}
+        "/api/auth/login", data={"username": "admin@test.com", "password": "admin123"}
     )
     return response.json()["access_token"]
 
@@ -105,7 +106,7 @@ def student_token(client, test_student):
     """Get student access token."""
     response = client.post(
         "/api/auth/login",
-        data={"username": "student@test.com", "password": "student123"}
+        data={"username": "student@test.com", "password": "student123"},
     )
     return response.json()["access_token"]
 
@@ -115,7 +116,7 @@ def teacher_token(client, test_teacher):
     """Get teacher access token."""
     response = client.post(
         "/api/auth/login",
-        data={"username": "teacher@test.com", "password": "teacher123"}
+        data={"username": "teacher@test.com", "password": "teacher123"},
     )
     return response.json()["access_token"]
 
@@ -125,7 +126,7 @@ def committee_token(client, test_committee):
     """Get committee access token."""
     response = client.post(
         "/api/auth/login",
-        data={"username": "committee@test.com", "password": "committee123"}
+        data={"username": "committee@test.com", "password": "committee123"},
     )
     return response.json()["access_token"]
 
@@ -134,8 +135,7 @@ def committee_token(client, test_committee):
 def mentor_token(client, test_mentor):
     """Get mentor access token."""
     response = client.post(
-        "/api/auth/login",
-        data={"username": "mentor@test.com", "password": "mentor123"}
+        "/api/auth/login", data={"username": "mentor@test.com", "password": "mentor123"}
     )
     return response.json()["access_token"]
 
@@ -147,19 +147,22 @@ def sample_competencies(db):
 
     # Create a competency profile first
     profile = CompetencyProfile(
-        name="Test Profile",
-        version="1.0",
-        academic_year="2024-2025",
-        active=True
+        name="Test Profile", version="1.0", academic_year="2024-2025", active=True
     )
     db.add(profile)
     db.flush()
 
     competencies = [
-        Competency(name="Technical Skills", weight=25.0, active=True, profile_id=profile.id),
-        Competency(name="Communication", weight=25.0, active=True, profile_id=profile.id),
+        Competency(
+            name="Technical Skills", weight=25.0, active=True, profile_id=profile.id
+        ),
+        Competency(
+            name="Communication", weight=25.0, active=True, profile_id=profile.id
+        ),
         Competency(name="Teamwork", weight=25.0, active=True, profile_id=profile.id),
-        Competency(name="Problem Solving", weight=25.0, active=True, profile_id=profile.id),
+        Competency(
+            name="Problem Solving", weight=25.0, active=True, profile_id=profile.id
+        ),
     ]
     for comp in competencies:
         db.add(comp)
@@ -202,18 +205,18 @@ def sample_internship(db, test_student, test_teacher):
     """Create a sample internship for testing with proper company and proposal."""
     from datetime import date, timedelta
     from app.models import Internship, Company, Proposal
-    
+
     # Create company first
     company = Company(
         name="Test Company",
         address="123 Test Street",
         sector="IT",
         contact_person="John Contact",
-        contact_email="john@test.com"
+        contact_email="john@test.com",
     )
     db.add(company)
     db.flush()
-    
+
     # Create internship with teacher assigned
     internship = Internship(
         student_id=test_student.id,
@@ -221,16 +224,16 @@ def sample_internship(db, test_student, test_teacher):
         company_id=company.id,
         start_date=date.today() + timedelta(days=30),
         end_date=date.today() + timedelta(days=120),
-        status="Lopend"
+        status="Lopend",
     )
     db.add(internship)
     db.flush()
-    
+
     # Create proposal
     proposal = Proposal(
         internship_id=internship.id,
         description="Test internship description",
-        status="Goedgekeurd"
+        status="Goedgekeurd",
     )
     db.add(proposal)
     db.commit()
@@ -243,16 +246,14 @@ def internship_with_logbook(db, test_student, test_mentor):
     """Create internship with Lopend status for logbook testing."""
     from datetime import date, timedelta
     from app.models import Internship, Company, Proposal
-    
+
     # Create company
     company = Company(
-        name="Test Company",
-        contact_person="John",
-        contact_email="john@test.com"
+        name="Test Company", contact_person="John", contact_email="john@test.com"
     )
     db.add(company)
     db.flush()
-    
+
     # Create internship with mentor assigned
     internship = Internship(
         student_id=test_student.id,
@@ -260,19 +261,17 @@ def internship_with_logbook(db, test_student, test_mentor):
         company_id=company.id,
         start_date=date.today(),
         end_date=date.today() + timedelta(days=90),
-        status="Lopend"
+        status="Lopend",
     )
     db.add(internship)
     db.flush()
-    
+
     # Create proposal
     proposal = Proposal(
-        internship_id=internship.id,
-        description="Test",
-        status="Goedgekeurd"
+        internship_id=internship.id, description="Test", status="Goedgekeurd"
     )
     db.add(proposal)
     db.commit()
     db.refresh(internship)
-    
+
     return internship

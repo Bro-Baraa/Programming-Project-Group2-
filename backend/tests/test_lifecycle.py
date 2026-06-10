@@ -47,7 +47,9 @@ class TestSubmitInternship:
         assert internship.teacher_id is None
         assert internship.mentor_id is None
 
-    def test_student_creates_internship_with_supervisors(self, db, test_student, test_teacher, test_mentor, config):
+    def test_student_creates_internship_with_supervisors(
+        self, db, test_student, test_teacher, test_mentor, config
+    ):
         lifecycle = InternshipLifecycle(db, config)
         result = lifecycle.submit_internship(
             actor=test_student,
@@ -105,7 +107,9 @@ class TestSubmitInternship:
         assert exc.value.status_code == 400
         assert "Mentor with id 99999 not found" in exc.value.detail
 
-    def test_wrong_role_for_teacher_raises_400(self, db, test_student, test_committee, config):
+    def test_wrong_role_for_teacher_raises_400(
+        self, db, test_student, test_committee, config
+    ):
         # Using test_committee as a fake teacher ID should fail
         lifecycle = InternshipLifecycle(db, config)
         with pytest.raises(HTTPException) as exc:
@@ -124,7 +128,9 @@ class TestSubmitInternship:
         assert exc.value.status_code == 400
         assert "not a teacher" in exc.value.detail
 
-    def test_wrong_role_for_mentor_raises_400(self, db, test_student, test_teacher, config):
+    def test_wrong_role_for_mentor_raises_400(
+        self, db, test_student, test_teacher, config
+    ):
         # Using test_teacher as a fake mentor ID should fail
         lifecycle = InternshipLifecycle(db, config)
         with pytest.raises(HTTPException) as exc:
@@ -179,7 +185,9 @@ class TestReviewProposal:
         )
         return result.internship
 
-    def test_committee_approves(self, db, pending_internship, test_committee, test_teacher, config):
+    def test_committee_approves(
+        self, db, pending_internship, test_committee, test_teacher, config
+    ):
         lifecycle = InternshipLifecycle(db, config)
         # Eerst naar "In Beoordeling" zetten
         lifecycle.review_proposal(
@@ -278,7 +286,9 @@ class TestUploadAgreement:
     """Test agreement upload transitions and file persistence."""
 
     @pytest.fixture
-    def approved_internship(self, db, test_student, test_committee, test_teacher, config):
+    def approved_internship(
+        self, db, test_student, test_committee, test_teacher, config
+    ):
         lifecycle = InternshipLifecycle(db, config)
         result = lifecycle.submit_internship(
             actor=test_student,
@@ -370,7 +380,9 @@ class TestValidateAgreement:
     """Test agreement validation transitions."""
 
     @pytest.fixture
-    def uploaded_agreement(self, db, test_student, test_committee, test_teacher, config):
+    def uploaded_agreement(
+        self, db, test_student, test_committee, test_teacher, config
+    ):
         lifecycle = InternshipLifecycle(db, config)
         result = lifecycle.submit_internship(
             actor=test_student,

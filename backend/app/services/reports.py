@@ -1,4 +1,5 @@
 """Dashboard and reporting service layer orchestration."""
+
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -15,15 +16,11 @@ def get_dashboard_stats(db: Session, current_user) -> DashboardStats:
     return get_dashboard_stats_impl(db, current_user)
 
 
-def get_agreement_status_report(
-    db: Session, current_user
-) -> List[AgreementStatusItem]:
+def get_agreement_status_report(db: Session, current_user) -> List[AgreementStatusItem]:
     """Return the agreement overview scoped to the caller's visibility."""
     return get_agreement_status_report_impl(db, current_user)
 
 
-def get_final_report(
-    db: Session, current_user, internship_id: int
-) -> FinalReportItem:
+def get_final_report(db: Session, current_user, internship_id: int) -> FinalReportItem:
     """Build the final internship report used by the router response."""
     return get_final_report_impl(db, current_user, internship_id)

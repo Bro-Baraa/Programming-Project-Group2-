@@ -1,4 +1,5 @@
 """Logbook endpoints."""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -13,7 +14,10 @@ from app.schemas import (
 )
 from app.auth import get_current_active_user, require_student
 from app.services.common import ensure_internship_access
-from app.services.logbooks import create_logbook as create_logbook_svc, update_logbook as update_logbook_svc
+from app.services.logbooks import (
+    create_logbook as create_logbook_svc,
+    update_logbook as update_logbook_svc,
+)
 from app.services.notifications import notify
 from app.services.audit import log_event
 
@@ -100,7 +104,14 @@ def create_logbook(
         raise HTTPException(status_code=404, detail="Internship not found")
 
     result = create_logbook_svc(db, internship, current_user, data)
-    log_event(db, "logbook.create", user=current_user, entity_type="internship", entity_id=internship_id, detail=f"Logboek week {data.week_number} aangemaakt")
+    log_event(
+        db,
+        "logbook.create",
+        user=current_user,
+        entity_type="internship",
+        entity_id=internship_id,
+        detail=f"Logboek week {data.week_number} aangemaakt",
+    )
     return result
 
 
@@ -118,7 +129,14 @@ def update_logbook(
 
     result = update_logbook_svc(db, logbook, current_user, update)
     if current_user.role == "mentor" and update.mentor_validated:
-        log_event(db, "logbook.validate", user=current_user, entity_type="internship", entity_id=logbook.internship_id, detail=f"Logboek week {logbook.week_number} gevalideerd")
+        log_event(
+            db,
+            "logbook.validate",
+            user=current_user,
+            entity_type="internship",
+            entity_id=logbook.internship_id,
+            detail=f"Logboek week {logbook.week_number} gevalideerd",
+        )
     return result
 
 
@@ -141,13 +159,18 @@ def submit_logbook(
 
     logbook.status = "submitted"
     from datetime import datetime, UTC
+
     logbook.submitted_at = datetime.now(UTC)
     db.commit()
     db.refresh(logbook)
 
     # ── Notify the mentor and teacher that a logbook has been submitted ──
     internship = logbook.internship
-    student_name = f"{internship.student.first_name} {internship.student.last_name}" if internship.student else "Een student"
+    student_name = (
+        f"{internship.student.first_name} {internship.student.last_name}"
+        if internship.student
+        else "Een student"
+    )
     if internship.mentor_id:
         notify(
             db,
@@ -166,5 +189,12 @@ def submit_logbook(
         )
     db.commit()
 
-    log_event(db, "logbook.submit", user=current_user, entity_type="internship", entity_id=logbook.internship_id, detail=f"Logboek week {logbook.week_number} definitief ingediend")
+    log_event(
+        db,
+        "logbook.submit",
+        user=current_user,
+        entity_type="internship",
+        entity_id=logbook.internship_id,
+        detail=f"Logboek week {logbook.week_number} definitief ingediend",
+    )
     return logbook
