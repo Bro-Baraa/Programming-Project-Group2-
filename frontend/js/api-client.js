@@ -1,12 +1,5 @@
-// ============================================
-// Stage Monitoring Tool - API Client
-// Communicates with the FastAPI backend
-// ============================================
-
 const API_BASE_URL = '/api';
-console.log('[API] API_BASE_URL resolved to:', API_BASE_URL);
 
-// Token storage — wrapped in try/catch for file:// protocol where localStorage may fail
 function safeStorage(key, value = undefined) {
   try {
     if (value === undefined) {
@@ -17,8 +10,7 @@ function safeStorage(key, value = undefined) {
     } else {
       localStorage.setItem(key, value);
     }
-  } catch (e) {
-    console.warn('[Auth] localStorage not available:', e.message);
+  } catch {
     return null;
   }
 }
@@ -46,10 +38,8 @@ function setCurrentUser(user) {
   safeStorage('stageMonitoringUser', user ? JSON.stringify(user) : null);
 }
 
-// 401 redirect guard — voorkomt meerdere redirects tegelijk
 let _redirectingToLogin = false;
 
-// Helper: format FastAPI error detail (string or array) into readable message
 function formatError(error) {
   if (Array.isArray(error.detail)) {
     return error.detail.map(d => d.msg || String(d)).join(', ');
@@ -61,10 +51,9 @@ function formatError(error) {
   return JSON.stringify(error);
 }
 
-// Generic API request
 async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -72,29 +61,26 @@ async function apiRequest(endpoint, options = {}) {
     },
     ...options
   };
-  
-  // Add auth token if available
+
   const token = getToken();
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
-  
-  // Handle FormData (remove Content-Type to let browser set it with boundary)
+
   if (options.body instanceof FormData) {
     delete config.headers['Content-Type'];
   }
-  
+
   let response;
   try {
     response = await fetch(url, config);
-  } catch (networkError) {
+  } catch {
     throw new Error('Kan geen verbinding maken met de server. Controleer je internetverbinding of probeer het later opnieuw.');
   }
-  
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
-    
-    // Handle auth errors
+
     if (response.status === 401) {
       if (!_redirectingToLogin) {
         _redirectingToLogin = true;
@@ -102,163 +88,115 @@ async function apiRequest(endpoint, options = {}) {
         setCurrentUser(null);
         window.location.href = 'index.html?view=login';
       }
-      return Promise.reject(new Error('Sessie verlopen, opnieuw inloggen...'));
+      throw new Error('Sessie verlopen, opnieuw inloggen...');
     }
-    
-    const errorMsg = formatError(error);
-    throw new Error(errorMsg || `HTTP error! status: ${response.status}`);
+
+    throw new Error(formatError(error) || `HTTP error! status: ${response.status}`);
   }
-  
-  // Handle empty responses
+
   if (response.status === 204) {
     return null;
   }
-  
+
   return response.json();
 }
 
-// ============================================
-// Auth API
-// ============================================
+async function _postAuth(url, body, headers) {
+  let response;
+  try {
+    response = await fetch(url, { method: 'POST', headers, body });
+  } catch {
+    throw new Error('Kan geen verbinding maken met de server. Is de backend gestart?');
+  }
+
+  if (!response.ok) {
+    let errorText;
+    try {
+      errorText = formatError(await response.json());
+    } catch {
+      errorText = `HTTP ${response.status} - ${response.statusText}`;
+    }
+    throw new Error(errorText);
+  }
+
+  const data = await response.json();
+  setToken(data.access_token);
+  setCurrentUser(data.user);
+  return data;
+}
 
 const AuthAPI = {
-  async login(email, password) {
+  login(email, password) {
     const formData = new URLSearchParams();
     formData.append('username', email);
     formData.append('password', password);
-
-    const url = `${API_BASE_URL}/auth/login`;
-
-    let response;
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: formData
-      });
-    } catch (networkError) {
-      console.error('[DEBUG] Network error during login:', networkError);
-      throw new Error('Kan geen verbinding maken met de server. Is de backend gestart?');
-    }
-
-    console.log('[DEBUG] Login response status:', response.status);
-
-    if (!response.ok) {
-      let errorText;
-      try {
-        const errorJson = await response.json();
-        errorText = formatError(errorJson) || JSON.stringify(errorJson);
-      } catch (e) {
-        errorText = `HTTP ${response.status} - ${response.statusText}`;
-      }
-      console.error('[DEBUG] Login error:', errorText);
-      throw new Error(errorText);
-    }
-
-    const data = await response.json();
-    console.log('[DEBUG] Login success, user:', data.user?.email, 'role:', data.user?.role);
-    setToken(data.access_token);
-    setCurrentUser(data.user);
-    return data;
+    return _postAuth(`${API_BASE_URL}/auth/login`, formData, {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    });
   },
 
-  async demoLogin(email) {
-    const url = `${API_BASE_URL}/auth/demo-login`;
-
-    let response;
-    try {
-      response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ email })
-      });
-    } catch (networkError) {
-      console.error('[DEBUG] Network error during demo login:', networkError);
-      throw new Error('Kan geen verbinding maken met de server. Is de backend gestart?');
-    }
-
-    if (!response.ok) {
-      let errorText;
-      try {
-        const errorJson = await response.json();
-        errorText = formatError(errorJson) || JSON.stringify(errorJson);
-      } catch (e) {
-        errorText = `HTTP ${response.status} - ${response.statusText}`;
-      }
-      throw new Error(errorText);
-    }
-
-    const data = await response.json();
-    setToken(data.access_token);
-    setCurrentUser(data.user);
-    return data;
+  demoLogin(email) {
+    return _postAuth(`${API_BASE_URL}/auth/demo-login`, JSON.stringify({ email }), {
+      'Content-Type': 'application/json'
+    });
   },
-  
+
   register(userData) {
     return apiRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData)
     });
   },
-  
+
   getMe() {
     return apiRequest('/auth/me');
   },
-  
+
   logout() {
     setToken(null);
     setCurrentUser(null);
   },
-  
+
   isLoggedIn() {
     return !!getToken();
   },
-  
+
   getUser() {
     return getCurrentUser();
   },
-  
+
   getRole() {
     const user = getCurrentUser();
     return user ? user.role : null;
   }
 };
 
-// ============================================
-// Internships API
-// ============================================
-
 const InternshipsAPI = {
   list(status = null) {
     const params = status ? `?status=${encodeURIComponent(status)}` : '';
     return apiRequest(`/internships${params}`);
   },
-  
+
   get(id) {
     return apiRequest(`/internships/${id}`);
   },
-  
+
   create(data) {
     return apiRequest('/internships', {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
-  
+
   uploadAgreement(id, file) {
     const formData = new FormData();
     formData.append('file', file);
-    
     return apiRequest(`/internships/${id}/agreement`, {
       method: 'POST',
       body: formData
     });
   },
-  
+
   getLogbooks(internshipId) {
     return apiRequest(`/internships/${internshipId}/logbooks`);
   },
@@ -266,25 +204,25 @@ const InternshipsAPI = {
   getLogbookWeeks(internshipId) {
     return apiRequest(`/internships/${internshipId}/logbooks/weeks`);
   },
-  
+
   createLogbook(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/logbooks`, {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
-  
+
   updateLogbook(logbookId, data) {
     return apiRequest(`/internships/logbooks/${logbookId}`, {
       method: 'PATCH',
       body: JSON.stringify(data)
     });
   },
-  
+
   getEvaluations(internshipId) {
     return apiRequest(`/internships/${internshipId}/evaluations`);
   },
-  
+
   createEvaluation(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/evaluations`, {
       method: 'POST',
@@ -295,14 +233,14 @@ const InternshipsAPI = {
   getFeedback(internshipId) {
     return apiRequest(`/internships/${internshipId}/feedback`);
   },
-  
+
   createFeedback(internshipId, data) {
     return apiRequest(`/internships/${internshipId}/feedback`, {
       method: 'POST',
       body: JSON.stringify(data)
     });
   },
-  
+
   getDashboardStats() {
     return apiRequest('/internships/stats/dashboard');
   },
@@ -311,20 +249,16 @@ const InternshipsAPI = {
     return apiRequest(`/internships/${internshipId}/final-report`);
   },
 
+  downloadFinalReport(internshipId) {
+    return downloadFile(`${API_BASE_URL}/internships/${internshipId}/final-report/pdf`);
+  },
+
   submitLogbook(logbookId) {
     return apiRequest(`/internships/logbooks/${logbookId}/submit`, {
       method: 'POST'
     });
   }
 };
-
-// ============================================
-// Competencies API
-// ============================================
-
-// ============================================
-// Competency Profile API
-// ============================================
 
 const CompetencyProfileAPI = {
   list(activeOnly = false) {
@@ -351,10 +285,6 @@ const CompetencyProfileAPI = {
     });
   }
 };
-
-// ============================================
-// Competencies API
-// ============================================
 
 const CompetenciesAPI = {
   list(profileId = null, activeOnly = true, search = null, skip = 0, limit = 50) {
@@ -407,10 +337,6 @@ const CompetenciesAPI = {
   }
 };
 
-// ============================================
-// Proposals
-// ============================================
-
 const ProposalsAPI = {
   review(internshipId, status, feedback = null, teacherId = null) {
     const body = { status };
@@ -444,10 +370,6 @@ const ProposalsAPI = {
   }
 };
 
-// ============================================
-// Evaluations
-// ============================================
-
 const EvaluationsAPI = {
   update(evaluationId, data) {
     return apiRequest(`/internships/evaluations/${evaluationId}`, {
@@ -456,10 +378,6 @@ const EvaluationsAPI = {
     });
   }
 };
-
-// ============================================
-// Evaluation Rules
-// ============================================
 
 const EvaluationRulesAPI = {
   update(evaluationId, ruleId, data) {
@@ -470,18 +388,18 @@ const EvaluationRulesAPI = {
   }
 };
 
-// ============================================
-// Agreements (validate)
-// ============================================
-
-async function downloadFile(url, filename) {
-  const token = getToken();
+async function downloadFile(url, fallbackFilename = null) {
   const response = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {}
+    headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {}
   });
   if (!response.ok) {
     throw new Error(`Download failed: ${response.status}`);
   }
+
+  const disposition = response.headers.get('content-disposition');
+  const filename = disposition?.match(/filename="?([^"]+)"?/)?.[1]
+    || fallbackFilename || 'download';
+
   const blob = await response.blob();
   const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -509,19 +427,11 @@ const AgreementsAPI = {
   }
 };
 
-// ============================================
-// Reports API
-// ============================================
-
 const ReportsAPI = {
   listAgreements() {
     return apiRequest('/internships/reports/agreements');
   }
 };
-
-// ============================================
-// Users API
-// ============================================
 
 const UsersAPI = {
   async list(role = null, search = null, activeOnly = true, skip = 0, limit = 50) {
@@ -559,10 +469,6 @@ const UsersAPI = {
   }
 };
 
-// ============================================
-// Audit Log API
-// ============================================
-
 const AuditAPI = {
   list(action = null, userEmail = null, entityType = null, skip = 0, limit = 50) {
     const params = new URLSearchParams();
@@ -575,10 +481,6 @@ const AuditAPI = {
   }
 };
 
-// ============================================
-// Health Check
-// ============================================
-
 const HealthAPI = {
   async check() {
     try {
@@ -589,6 +491,3 @@ const HealthAPI = {
     }
   }
 };
-
-// API clients are available globally for browser use
-// No module.exports needed - this is browser-only code

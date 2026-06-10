@@ -1,5 +1,6 @@
 """Dashboard and reporting endpoints."""
 from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -7,11 +8,8 @@ from app.database import get_db
 from app.models import User
 from app.schemas import DashboardStats, AgreementStatusItem, FinalReportItem
 from app.auth import get_current_active_user, require_any_staff
-from app.services.reports import (
-    get_dashboard_stats as get_dashboard_stats_svc,
-    get_agreement_status_report as get_agreement_status_report_svc,
-    get_final_report as get_final_report_svc,
-)
+from app.services import reports as _reports
+from app.services.report_pdf import generate_final_report_pdf
 
 router = APIRouter(prefix="/internships", tags=["reports"])
 
@@ -21,8 +19,7 @@ def get_dashboard_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Get dashboard statistics - filtered by role"""
-    return get_dashboard_stats_svc(db, current_user)
+    return _reports.get_dashboard_stats(db, current_user)
 
 
 @router.get("/reports/agreements", response_model=List[AgreementStatusItem])
@@ -30,8 +27,7 @@ def get_agreement_status_report(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_staff),
 ):
-    """US-26: Admin view of agreement status for all students"""
-    return get_agreement_status_report_svc(db, current_user)
+    return _reports.get_agreement_status_report(db, current_user)
 
 
 @router.get("/{internship_id}/final-report", response_model=FinalReportItem)
@@ -40,5 +36,19 @@ def get_final_report(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """US-19: Generate final report for a student"""
-    return get_final_report_svc(db, current_user, internship_id)
+    return _reports.get_final_report(db, current_user, internship_id)
+
+
+@router.get("/{internship_id}/final-report/pdf")
+def get_final_report_pdf(
+    internship_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    pdf_path, student = generate_final_report_pdf(db, current_user, internship_id)
+    filename = f"eindrapport_{student.first_name}_{student.last_name}.pdf"
+    return FileResponse(
+        str(pdf_path),
+        media_type="application/pdf",
+        filename=filename,
+    )

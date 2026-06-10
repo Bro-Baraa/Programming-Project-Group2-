@@ -158,7 +158,6 @@ async function renderTeacherFinalReport() {
     return;
   }
 
-  // Bereken eindoverzicht lokaal vanuit currentEvaluations (geen extra API call)
   const finalEval = currentEvaluations.find(e => e.eval_type === 'final' && e.finalized);
   if (!finalEval || !finalEval.rules || finalEval.rules.length === 0) {
     container.innerHTML = '<p>Geen eindoverzicht beschikbaar. Finaliseer eerst een evaluatie.</p>';
@@ -166,12 +165,14 @@ async function renderTeacherFinalReport() {
   }
 
   const rows = formatReportRows(finalEval.rules);
-  let weightedScore = null;
+  let weightedScore = '-';
   const scoredRules = finalEval.rules.filter(r => r.score != null && r.competency?.weight != null);
   if (scoredRules.length > 0) {
     const totalWeight = scoredRules.reduce((sum, r) => sum + r.competency.weight, 0);
     const weightedSum = scoredRules.reduce((sum, r) => sum + (r.score * r.competency.weight), 0);
-    weightedScore = totalWeight > 0 ? (weightedSum / totalWeight / 20).toFixed(2) : '-';
+    if (totalWeight > 0) {
+      weightedScore = (weightedSum / totalWeight / 20).toFixed(2);
+    }
   }
 
   container.innerHTML = `
@@ -179,7 +180,7 @@ async function renderTeacherFinalReport() {
       <p><strong>Student:</strong> ${escapeHtml(currentInternship.student?.first_name || '')} ${escapeHtml(currentInternship.student?.last_name || 'Onbekend')}</p>
       <p><strong>Bedrijf:</strong> ${escapeHtml(currentInternship.company?.name || 'Onbekend')}</p>
       <p><strong>Periode:</strong> ${formatDate(currentInternship.start_date)} – ${formatDate(currentInternship.end_date)}</p>
-      <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore !== null ? weightedScore : '-'} / 5</span></p>
+      <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
     </div>
     <table style="margin-top: 1rem;">
       <thead>
@@ -187,8 +188,21 @@ async function renderTeacherFinalReport() {
       </thead>
       <tbody>${rows}</tbody>
     </table>
-    <button class="btn" style="margin-top: 1rem;" onclick="window.print()">${iconHtml('file-text', 16)} Afdrukken</button>
+    <button class="btn" style="margin-top: 1rem;" id="teacher-download-report">${iconHtml('download', 16)} Download PDF</button>
   `;
+
+  const downloadBtn = document.getElementById('teacher-download-report');
+  downloadBtn?.addEventListener('click', async () => {
+    showLoading(downloadBtn);
+    try {
+      await InternshipsAPI.downloadFinalReport(currentInternship.id);
+      showToast('PDF gedownload!', 'success');
+    } catch (error) {
+      showToast(error.message || 'Download mislukt', 'error');
+    } finally {
+      hideLoading(downloadBtn);
+    }
+  });
 }
 
 // ============================================

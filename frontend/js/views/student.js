@@ -1028,7 +1028,6 @@ async function renderStudentDashboard() {
       tbody.innerHTML = '<tr><td colspan="4">Geen evaluaties gevonden</td></tr>';
     }
 
-    // US-09: Eindoverzicht — berekend lokaal vanuit currentEvaluations (geen extra API call)
     const finalSummary = document.getElementById('final-summary');
     if (finalSummary && currentInternship) {
       const finalEval = currentEvaluations.find(e => e.eval_type === 'final' && e.finalized);
@@ -1039,24 +1038,39 @@ async function renderStudentDashboard() {
         `;
       } else {
         const rows = formatReportRows(finalEval.rules);
-        // Gewogen score berekenen: Σ(score × gewicht)/100, dan /20 voor schaal 0-5
-        let weightedScore = null;
+        let weightedScore = '-';
         const scoredRules = finalEval.rules.filter(r => r.score != null && r.competency?.weight != null);
         if (scoredRules.length > 0) {
           const totalWeight = scoredRules.reduce((sum, r) => sum + r.competency.weight, 0);
           const weightedSum = scoredRules.reduce((sum, r) => sum + (r.score * r.competency.weight), 0);
-          weightedScore = totalWeight > 0 ? (weightedSum / totalWeight / 20).toFixed(2) : '-';
+          if (totalWeight > 0) {
+            weightedScore = (weightedSum / totalWeight / 20).toFixed(2);
+          }
         }
 
         finalSummary.innerHTML = `
-          <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore !== null ? weightedScore : '-'} / 5</span></p>
+          <p><strong>Gewogen eindscore:</strong> <span class="score-highlight">${weightedScore} / 5</span></p>
           <table style="margin-top: 0.5rem;">
             <thead>
               <tr><th>Competentie</th><th>Gewicht</th><th>Score</th><th>Mijn beschrijving</th><th>Feedback</th></tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
+          <button class="btn" style="margin-top: 0.75rem;" id="student-download-report">${iconHtml('download', 16)} Download PDF</button>
         `;
+
+        const downloadBtn = document.getElementById('student-download-report');
+        downloadBtn?.addEventListener('click', async () => {
+          showLoading(downloadBtn);
+          try {
+            await InternshipsAPI.downloadFinalReport(currentInternship.id);
+            showToast('PDF gedownload!', 'success');
+          } catch (error) {
+            showToast(error.message || 'Download mislukt', 'error');
+          } finally {
+            hideLoading(downloadBtn);
+          }
+        });
       }
     }
 
