@@ -97,12 +97,18 @@ function selectProposalForReview(internshipId) {
       `;
       document.getElementById('btn-review')?.addEventListener('click', () => doReview(internship.id, 'In Beoordeling'));
     } else if (status === 'In Beoordeling') {
-      // Dan pas beslissen — docent is verplicht bij goedkeuring
+      // Dan pas beslissen — docent is verplicht, mentor is optioneel bij goedkeuring
       actionsDiv.innerHTML = `
         <div class="row full" style="margin-bottom: 0.75rem;">
           <label>Docent aanduiden (verplicht bij goedkeuring)</label>
           <select id="approve-teacher-select">
             <option value="">Laden...</option>
+          </select>
+        </div>
+        <div class="row full" style="margin-bottom: 0.75rem;">
+          <label>Mentor aanduiden (optioneel bij goedkeuring)</label>
+          <select id="approve-mentor-select">
+            <option value="">-- Geen mentor --</option>
           </select>
         </div>
         <button id="btn-approve" class="btn success">${iconHtml('check-circle', 14)} Goedkeuren</button>
@@ -122,13 +128,28 @@ function selectProposalForReview(internshipId) {
         if (select) select.innerHTML = '<option value="">Kon docenten niet laden</option>';
       });
 
+      // Laad mentors in de dropdown
+      UsersAPI.list('mentor').then(mentors => {
+        const select = document.getElementById('approve-mentor-select');
+        if (select) {
+          select.innerHTML = '<option value="">-- Geen mentor --</option>' +
+            mentors.map(m => `<option value="${m.id}">${m.first_name} ${m.last_name}</option>`).join('');
+        }
+      }).catch(() => {
+        const select = document.getElementById('approve-mentor-select');
+        if (select) select.innerHTML = '<option value="">Kon mentors niet laden</option>';
+      });
+
       document.getElementById('btn-approve')?.addEventListener('click', () => {
         const teacherId = parseInt(document.getElementById('approve-teacher-select')?.value);
         if (!teacherId) {
           showToast('Duid eerst een docent aan voor goedkeuring', 'warning');
           return;
         }
-        doReview(internship.id, 'Goedgekeurd', teacherId);
+        // Mentor is optioneel — null als niets gekozen
+        const mentorVal = document.getElementById('approve-mentor-select')?.value;
+        const mentorId = mentorVal ? parseInt(mentorVal) : null;
+        doReview(internship.id, 'Goedgekeurd', teacherId, mentorId);
       });
       document.getElementById('btn-reject')?.addEventListener('click', () => doReview(internship.id, 'Afgekeurd'));
       document.getElementById('btn-changes')?.addEventListener('click', () => doReview(internship.id, 'Aanpassingen Vereist'));
@@ -138,7 +159,7 @@ function selectProposalForReview(internshipId) {
   }
 }
 
-async function doReview(internshipId, decision, teacherId = null) {
+async function doReview(internshipId, decision, teacherId = null, mentorId = null) {
   const feedback = document.getElementById('feedback-box')?.value || null;
 
   if (decision === 'Aanpassingen Vereist' && !feedback) {
@@ -147,7 +168,7 @@ async function doReview(internshipId, decision, teacherId = null) {
   }
 
   try {
-    await ProposalsAPI.review(internshipId, decision, feedback, teacherId);
+    await ProposalsAPI.review(internshipId, decision, feedback, teacherId, mentorId);
     showToast(`Voorstel ${decision.toLowerCase()}!`, 'success');
     // Gegevens verversen
     allInternships = await InternshipsAPI.list();

@@ -17,6 +17,7 @@ class ProposalUpdate(BaseModel):
     status: Optional[str] = None
     feedback: Optional[str] = None
     teacher_id: Optional[int] = None
+    mentor_id: Optional[int] = None
 
 
 class ProposalResponse(ProposalBase):
