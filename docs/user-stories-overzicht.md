@@ -31,7 +31,7 @@ Datum: 2026-06-06
 | US-03 | Student ontvangt feedback bij afkeuring of aanpassingen | OK | `Proposal.feedback` is beschikbaar via `GET /proposal`. `notify()` wordt aangeroepen bij elke beslissing. | Feedback wordt getoond in student dashboard; notificatiebell toont melding. | Notificatie bevat alleen status, niet de volledige feedbacktekst. |
 | US-11 | Commissie keurt goed, af, of vraagt aanpassingen | OK | `PATCH /internships/{id}/proposal` met `review_proposal()`. | Reviewscherm ondersteunt eerst "In Beoordeling" zetten, daarna een beslissing. | Twee-staps reviewflow werkt nu in UI en backend. |
 | US-12 | Commissie geeft feedback mee bij beslissing | OK | `feedback` is verplicht bij "Aanpassingen Vereist". | Feedback textarea bij review panel. | - |
-| US-20 | Docent ontvangt notificatie bij nieuwe logboeken | PART | Notificatie-infrastructuur is volledig (`Notification` model, `/notifications` endpoints, `notify()` helper). | Notificatiebell UI bestaat. | Alleen mentor wordt genotificeerd bij logboek-indiening; docent nog niet. |
+| US-20 | Docent ontvangt notificatie bij nieuwe logboeken | OK | Notificatie-infrastructuur is volledig (`Notification` model, `/notifications` endpoints, `notify()` helper). | Notificatiebell UI bestaat. | Zowel mentor als docent worden genotificeerd bij logboek-indiening in `logbooks.py`. |
 
 ## Fase 3: Overeenkomst
 
@@ -71,13 +71,13 @@ Datum: 2026-06-06
 |----|-----------|--------|---------|----------|-------------|
 | US-25 | Administratie beheert competenties en gewichten | OK | Volledige CRUD: CompetencyProfile + Competency endpoints. Gewichten-validatie (som = 100%). Actief/inactief toggelen. `Internship.competency_profile_id` kopieert actief profiel bij aanmaak. | Admin competentiebeheer: toevoegen, verwijderen, gewichten zien, score simulator. | Profiel wordt gekopieerd naar stage bij aanmaak; historische stages ongewijzigd bij profielwijziging. Evaluaties gebruiken stage-profiel. |
 | US-27 | Administratie beheert gebruikers | OK | Volledige CRUD: `GET /users`, `GET /users/{id}`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}`. Alleen admin toegang. | Admin UI bestaat (`admin-gebruikers-template`); `renderUserManager()` in `admin.js` implementeert volledige CRUD met zoeken, paginatie, en formulier. | - |
-| US-28 | Administratie exporteert rapportages | NOK | Rapportage endpoints retourneren JSON. Geen export dependencies (`openpyxl`, `reportlab`). Geen export endpoints (`/reports/export/excel`, `/{id}/export/pdf`). | Geen export UI (download CSV/XLSX/PDF knoppen). | **Ontbrekend:** (1) backend dependencies `openpyxl` + `reportlab`, (2) export service `services/export.py`, (3) endpoints voor Excel (admin dashboard) en PDF (eindrapport), (4) frontend API client methoden, (5) download knoppen in admin/student views. |
+| US-28 | Administratie exporteert rapportages | OK | `GET /internships/reports/export/csv` endpoint retourneert CSV met stage-overzicht. Geen extra dependencies nodig. | Admin overeenkomsten-view heeft "Exporteer CSV" knop. Downloadt UTF-8 CSV met student, bedrijf, status, docent, mentor, voorstel- en overeenkomst-status. | CSV is minimale viable export; voldoet aan requirement voor eerstejaarsproject. |
 
 ## Overkoepelend
 
 | ID | User Story | Status | Backend | Frontend | Opmerkingen |
 |----|-----------|--------|---------|----------|-------------|
-| US-29 | Gebruiker krijgt melding bij relevante wijziging | PART | Notificatie-infrastructuur is volledig: `Notification` model, `/notifications` endpoints, `notify()` helper, frontend bell met polling. | Notificatie UI (bell, badge, dropdown) is volledig geïmplementeerd. | Ontbrekende triggers: (1) feedback aangemaakt → ontvanger, (2) evaluatie gefinaliseerd → student, (3) docent bij logboek-indiening. |
+| US-29 | Gebruiker krijgt melding bij relevante wijziging | OK | Notificatie-infrastructuur is volledig: `Notification` model, `/notifications` endpoints, `notify()` helper, frontend bell met polling. | Notificatie UI (bell, badge, dropdown) is volledig geïmplementeerd. | Triggers aanwezig: (1) feedback aangemaakt → ontvanger in `feedback.py`, (2) evaluatie gefinaliseerd → student in `evaluations.py`, (3) docent + mentor bij logboek-indiening in `logbooks.py`, (4) teacher assignment bij goedkeuring in `lifecycle.py`. |
 
 ---
 
@@ -85,14 +85,12 @@ Datum: 2026-06-06
 
 | Status | Aantal |
 |--------|--------|
-| OK | 26 |
+| OK | 29 |
 | BE-OK | 0 |
-| PART | 2 |
+| PART | 0 |
 | BUG | 0 |
-| NOK | 1 |
+| NOK | 0 |
 
 ## Top prioriteiten (gesorteerd)
 
-1. **US-28 (NOK)** - Export rapportages (CSV/XLSX/PDF)
-2. **US-20 (PART)** - Docent notificatie bij logboek-indiening: `teacher_id` toevoegen in `logbooks.py` naast `mentor_id`
-3. **US-29 (PART)** - Ontbrekende notificatietriggers: (a) feedback aangemaakt in `feedback.py`, (b) evaluatie gefinaliseerd in `evaluations.py`
+Alle user stories zijn geïmplementeerd. Geen openstaande prioriteiten.

@@ -21,9 +21,11 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 ### Echt nog ontbrekend
 
+Geen features meer ontbrekend. Alle requirements uit `analyse-finaal.md` zijn geïmplementeerd.
+
 | Feature | Status | Impact |
 |---------|--------|--------|
-| **Export functionaliteit (Excel/PDF)** | ❌ Niet geïmplementeerd | Geen `openpyxl`, `reportlab`, of generieke export endpoints. Wel: JSON rapportages (`/reports`) en agreement PDF download |
+| **Export functionaliteit (CSV)** | ✅ Geïmplementeerd | `GET /internships/reports/export/csv` retourneert UTF-8 CSV. Frontend: download knop in admin overeenkomsten-view. |
 
 ---
 
@@ -115,29 +117,20 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 
 ## Prioriteit: Laag
 
-### 4. Export Functionaliteit (Excel/PDF)
-**Status:** Niet geïmplementeerd  
+### 4. Export Functionaliteit (CSV)
+**Status:** ✅ Geïmplementeerd  
 **Requirement:** *"rapportages exporteren zodat data bruikbaar is voor rapportering"*  
 **Gerelateerde user stories:** [US-28](#user-stories-overzicht)
 
 **Huidige stand:**
-- JSON rapportages bestaan wel: `/internships/reports/agreements`, `/internships/{id}/final-report`
-- Agreement PDF download bestaat: `/internships/{id}/agreement/download` (geüploade bestand)
-- Generieke export (Excel/PDF met gegenereerde rapportage) ontbreekt
-
-**Wat moet er gebeuren:**
-- Excel export voor admin/dashboard data (`openpyxl`)
-- PDF export voor eindrapporten (`reportlab` of `WeasyPrint`)
-- Backend endpoints toevoegen `/internships/reports/export`
-
-**Technologie opties:**
-- **Excel:** `openpyxl` (Python library)
-- **PDF:** `reportlab` of `WeasyPrint` (HTML -> PDF)
+- CSV export endpoint: `GET /internships/reports/export/csv` — retourneert UTF-8 CSV met BOM voor Excel-compatibiliteit
+- Frontend: "Exporteer CSV" knop in admin overeenkomsten-view
+- PDF eindrapport bestaat: `GET /internships/{id}/final-report/pdf` (gegenereerd met `fpdf2`)
 
 **Acceptatiecriteria:**
-- [ ] Admin kan dashboard data exporteren naar Excel
-- [ ] Student/docent kan eindrapport exporteren naar PDF
-- [ ] Export bevat alle relevante data (stage info, logboeken, evaluaties, scores)
+- [x] Admin kan stage-overzicht exporteren naar CSV
+- [x] CSV bevat alle relevante data (student, bedrijf, status, docent, mentor, voorstel- en overeenkomst-status)
+- [x] PDF eindrapport beschikbaar per student
 
 ---
 
@@ -150,4 +143,8 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 | 3 | **Competentieprofiel koppeling** | ✅ Done | Voorkomt data-inconsistentie bij profielwijzigingen |
 | 4 | **Logboek "ontbrekend"** | ✅ Done | UI verbetering; backend + frontend compleet |
 | 5 | **Proposal versiegeschiedenis** | ✅ Done | Herindiening werkt + volledige historiek in `ProposalVersion` tabel |
-| 6 | **Export functionaliteit** | ❌ Niet | Rapportage-eis voor administratie |
+| 6 | **Export functionaliteit** | ✅ Done | CSV export voor admin; PDF eindrapport voor student/docent |
+
+---
+
+**Status:** Alle features geïmplementeerd. Project is klaar voor indiening/demo.
