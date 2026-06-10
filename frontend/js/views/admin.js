@@ -782,6 +782,26 @@ let currentAgreements = [];
 async function renderAdminAgreements() {
   const tbody = document.querySelector('#admin-agreements-table tbody');
   const detailPanel = document.getElementById('admin-agreement-detail-panel');
+  const exportBtn = document.getElementById('btn-export-csv');
+
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      try {
+        const blob = await ReportsAPI.exportCsv();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `stage_export_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        showToast('CSV export gedownload', 'success');
+      } catch (error) {
+        showToast(error.message || 'Export mislukt', 'error');
+      }
+    });
+  }
 
   if (tbody) tbody.innerHTML = '<tr><td colspan="5">Laden...</td></tr>';
 
