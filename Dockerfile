@@ -38,11 +38,21 @@ ENV PYTHONPATH=/app/backend
 # Create data directory
 RUN mkdir -p /app/data
 
+# Create a non-root user and group
+RUN useradd -u 1001 -U -m appuser
+
+# Change ownership of the app directory to the non-root user
+RUN chown -R appuser:appuser /app
+
 # ── Entrypoint ──
-COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY --chown=appuser:appuser docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
+
+# Switch to non-root user
+USER appuser
 
 EXPOSE 8080
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["uvicorn", "docker_main:app", "--host", "0.0.0.0", "--port", "8080"]
+
