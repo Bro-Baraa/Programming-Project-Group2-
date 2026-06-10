@@ -48,7 +48,7 @@ class TestDownloadAgreement:
         db.commit()
 
         response = client.get(
-            f"/internships/{internship.id}/agreement/download",
+            f"/api/internships/{internship.id}/agreement/download",
             headers=auth_headers_student,
         )
         assert response.status_code == 200
@@ -61,13 +61,13 @@ class TestDownloadAgreement:
 
     def test_download_agreement_no_auth(self, client, sample_internship):
         """Unauthenticated requests are rejected."""
-        response = client.get(f"/internships/{sample_internship.id}/agreement/download")
+        response = client.get(f"/api/internships/{sample_internship.id}/agreement/download")
         assert response.status_code == 401
 
     def test_download_agreement_not_found(self, client, auth_headers_student, sample_internship):
         """404 when internship has no agreement."""
         response = client.get(
-            f"/internships/{sample_internship.id}/agreement/download",
+            f"/api/internships/{sample_internship.id}/agreement/download",
             headers=auth_headers_student,
         )
         assert response.status_code == 404
@@ -107,7 +107,7 @@ class TestDownloadAgreement:
         db.commit()
 
         response = client.get(
-            f"/internships/{internship.id}/agreement/download",
+            f"/api/internships/{internship.id}/agreement/download",
             headers=auth_headers_student,
         )
         assert response.status_code == 404
@@ -163,7 +163,7 @@ class TestDownloadAgreement:
         db.commit()
 
         response = client.get(
-            f"/internships/{internship.id}/agreement/download",
+            f"/api/internships/{internship.id}/agreement/download",
             headers=auth_headers_student,
         )
         assert response.status_code == 403

@@ -15,7 +15,7 @@ class TestCreateUser:
             "role": "student",
             "password": "securepass123"
         }
-        response = client.post("/users", json=new_user, headers=auth_headers_admin)
+        response = client.post("/api/users", json=new_user, headers=auth_headers_admin)
         assert response.status_code == 201
         data = response.json()
         assert data["email"] == "newuser@test.com"
@@ -35,7 +35,7 @@ class TestCreateUser:
             "role": "admin",
             "password": "hackpass123"
         }
-        response = client.post("/users", json=new_user, headers=auth_headers_student)
+        response = client.post("/api/users", json=new_user, headers=auth_headers_student)
         assert response.status_code == 403
 
     def test_cannot_create_user_with_existing_email(self, client, auth_headers_admin, test_student):
@@ -47,7 +47,7 @@ class TestCreateUser:
             "role": "student",
             "password": "pass123"
         }
-        response = client.post("/users", json=new_user, headers=auth_headers_admin)
+        response = client.post("/api/users", json=new_user, headers=auth_headers_admin)
         assert response.status_code == 400
         assert "already exists" in response.json()["detail"].lower() or "email" in response.json()["detail"].lower()
 
@@ -60,7 +60,7 @@ class TestCreateUser:
             "role": "student",
             "password": "pass123"
         }
-        response = client.post("/users", json=new_user)
+        response = client.post("/api/users", json=new_user)
         assert response.status_code == 401
 
 
@@ -74,7 +74,7 @@ class TestUpdateUser:
             "last_name": "Student",
             "role": "teacher"
         }
-        response = client.patch(f"/users/{test_student.id}", json=update_data, headers=auth_headers_admin)
+        response = client.patch(f"/api/users/{test_student.id}", json=update_data, headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert data["first_name"] == "Gewijzigd"
@@ -84,13 +84,13 @@ class TestUpdateUser:
     def test_non_admin_cannot_update_user(self, client, auth_headers_student, test_teacher):
         """US-27: Niet-admin mag geen gebruiker wijzigen."""
         update_data = {"first_name": "Hacked"}
-        response = client.patch(f"/users/{test_teacher.id}", json=update_data, headers=auth_headers_student)
+        response = client.patch(f"/api/users/{test_teacher.id}", json=update_data, headers=auth_headers_student)
         assert response.status_code == 403
 
     def test_update_nonexistent_user(self, client, auth_headers_admin):
         """US-27: Wijzigen van niet-bestaande gebruiker geeft 404."""
         update_data = {"first_name": "Ghost"}
-        response = client.patch("/users/99999", json=update_data, headers=auth_headers_admin)
+        response = client.patch("/api/users/99999", json=update_data, headers=auth_headers_admin)
         assert response.status_code == 404
 
 
@@ -114,21 +114,21 @@ class TestDeleteUser:
         db.commit()
         db.refresh(user)
 
-        response = client.delete(f"/users/{user.id}", headers=auth_headers_admin)
+        response = client.delete(f"/api/users/{user.id}", headers=auth_headers_admin)
         assert response.status_code == 204
 
         # Verify user is gone
-        get_response = client.get(f"/users/{user.id}", headers=auth_headers_admin)
+        get_response = client.get(f"/api/users/{user.id}", headers=auth_headers_admin)
         assert get_response.status_code == 404
 
     def test_non_admin_cannot_delete_user(self, client, auth_headers_student, test_teacher):
         """US-27: Niet-admin mag geen gebruiker verwijderen."""
-        response = client.delete(f"/users/{test_teacher.id}", headers=auth_headers_student)
+        response = client.delete(f"/api/users/{test_teacher.id}", headers=auth_headers_student)
         assert response.status_code == 403
 
     def test_delete_nonexistent_user(self, client, auth_headers_admin):
         """US-27: Verwijderen van niet-bestaande gebruiker geeft 404."""
-        response = client.delete("/users/99999", headers=auth_headers_admin)
+        response = client.delete("/api/users/99999", headers=auth_headers_admin)
         assert response.status_code == 404
 
 
@@ -137,12 +137,12 @@ class TestListUsers:
 
     def test_list_users_unauthorized(self, client):
         """Must be authenticated to list users."""
-        response = client.get("/users")
+        response = client.get("/api/users")
         assert response.status_code == 401
 
     def test_list_all_users(self, client, auth_headers_student, test_student, test_teacher, test_mentor):
         """Authenticated user can list all active users."""
-        response = client.get("/users", headers=auth_headers_student)
+        response = client.get("/api/users", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 3
@@ -153,7 +153,7 @@ class TestListUsers:
 
     def test_list_users_filter_by_role(self, client, auth_headers_student, test_student, test_teacher, test_mentor):
         """Filter users by role."""
-        response = client.get("/users?role=teacher", headers=auth_headers_student)
+        response = client.get("/api/users?role=teacher", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -162,7 +162,7 @@ class TestListUsers:
 
     def test_list_users_filter_by_role_mentor(self, client, auth_headers_student, test_mentor):
         """Filter users by mentor role."""
-        response = client.get("/users?role=mentor", headers=auth_headers_student)
+        response = client.get("/api/users?role=mentor", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -170,13 +170,13 @@ class TestListUsers:
 
     def test_list_users_invalid_role(self, client, auth_headers_student):
         """Invalid role returns 400."""
-        response = client.get("/users?role=superhero", headers=auth_headers_student)
+        response = client.get("/api/users?role=superhero", headers=auth_headers_student)
         assert response.status_code == 400
         assert "Invalid role" in response.json()["detail"]
 
     def test_list_users_includes_all_roles(self, client, auth_headers_admin, test_admin, test_student, test_teacher, test_committee, test_mentor):
         """Admin can see all user roles."""
-        response = client.get("/users", headers=auth_headers_admin)
+        response = client.get("/api/users", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 5
@@ -185,7 +185,7 @@ class TestListUsers:
 
     def test_list_users_sorted_by_name(self, client, auth_headers_student, test_student, test_teacher, test_mentor):
         """Users are sorted by last_name, first_name."""
-        response = client.get("/users", headers=auth_headers_student)
+        response = client.get("/api/users", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         # All have last_name "User", so sorted by first_name
@@ -194,7 +194,7 @@ class TestListUsers:
 
     def test_list_users_response_does_not_include_password(self, client, auth_headers_student):
         """Password hash must never be exposed."""
-        response = client.get("/users", headers=auth_headers_student)
+        response = client.get("/api/users", headers=auth_headers_student)
         assert response.status_code == 200
         for user in response.json():
             assert "password_hash" not in user
@@ -206,7 +206,7 @@ class TestGetUser:
 
     def test_get_user_by_id(self, client, auth_headers_student, test_teacher):
         """Get a specific user by ID."""
-        response = client.get(f"/users/{test_teacher.id}", headers=auth_headers_student)
+        response = client.get(f"/api/users/{test_teacher.id}", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == test_teacher.id
@@ -217,18 +217,18 @@ class TestGetUser:
 
     def test_get_user_not_found(self, client, auth_headers_student):
         """Non-existent user returns 404."""
-        response = client.get("/users/99999", headers=auth_headers_student)
+        response = client.get("/api/users/99999", headers=auth_headers_student)
         assert response.status_code == 404
         assert "User not found" in response.json()["detail"]
 
     def test_get_user_unauthorized(self, client, test_student):
         """Must be authenticated."""
-        response = client.get(f"/users/{test_student.id}")
+        response = client.get(f"/api/users/{test_student.id}")
         assert response.status_code == 401
 
     def test_get_user_no_password_exposure(self, client, auth_headers_student, test_teacher):
         """Password hash must never be exposed."""
-        response = client.get(f"/users/{test_teacher.id}", headers=auth_headers_student)
+        response = client.get(f"/api/users/{test_teacher.id}", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert "password_hash" not in data

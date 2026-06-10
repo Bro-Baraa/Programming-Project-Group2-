@@ -28,7 +28,7 @@ class TestInternshipPagination:
             db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/internships", headers=auth_headers_admin)
+        response = client.get("/api/internships", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 3
@@ -56,32 +56,32 @@ class TestInternshipPagination:
         db.commit()
 
         # Page 1: first 2
-        response = client.get("/internships?skip=0&limit=2", headers=auth_headers_admin)
+        response = client.get("/api/internships?skip=0&limit=2", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
         assert response.headers.get("X-Total-Count") == "5"
 
         # Page 2: next 2
-        response = client.get("/internships?skip=2&limit=2", headers=auth_headers_admin)
+        response = client.get("/api/internships?skip=2&limit=2", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
 
         # Page 3: last 1
-        response = client.get("/internships?skip=4&limit=2", headers=auth_headers_admin)
+        response = client.get("/api/internships?skip=4&limit=2", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
 
     def test_limit_max_200(self, client, auth_headers_admin):
         """Limit cannot exceed 200."""
-        response = client.get("/internships?limit=500", headers=auth_headers_admin)
+        response = client.get("/api/internships?limit=500", headers=auth_headers_admin)
         assert response.status_code == 422  # FastAPI validation error
 
     def test_skip_must_be_non_negative(self, client, auth_headers_admin):
         """Skip must be >= 0."""
-        response = client.get("/internships?skip=-1", headers=auth_headers_admin)
+        response = client.get("/api/internships?skip=-1", headers=auth_headers_admin)
         assert response.status_code == 422
 
 
@@ -111,14 +111,14 @@ class TestInternshipSearch:
         db.commit()
 
         # Search by student first name
-        response = client.get(f"/internships?search=Student", headers=auth_headers_admin)
+        response = client.get(f"/api/internships?search=Student", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["student"]["first_name"] == "Student"
 
         # Search by student last name
-        response = client.get(f"/internships?search=User", headers=auth_headers_admin)
+        response = client.get(f"/api/internships?search=User", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -144,7 +144,7 @@ class TestInternshipSearch:
         db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/internships?search=Acme", headers=auth_headers_admin)
+        response = client.get("/api/internships?search=Acme", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -152,7 +152,7 @@ class TestInternshipSearch:
 
     def test_search_no_results(self, client, auth_headers_admin):
         """Search with no matches returns empty list with count 0."""
-        response = client.get("/internships?search=NONEXISTENT", headers=auth_headers_admin)
+        response = client.get("/api/internships?search=NONEXISTENT", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert data == []
@@ -179,7 +179,7 @@ class TestInternshipSearch:
         db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/internships?search=bigcorp", headers=auth_headers_admin)
+        response = client.get("/api/internships?search=bigcorp", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -209,7 +209,7 @@ class TestInternshipMultiStatus:
         db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/internships?status=Ingediend", headers=auth_headers_admin)
+        response = client.get("/api/internships?status=Ingediend", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -246,7 +246,7 @@ class TestInternshipMultiStatus:
         db.add(Proposal(internship_id=intern2.id, description="D", status="Goedgekeurd"))
         db.commit()
 
-        response = client.get("/internships?status=Ingediend,Goedgekeurd", headers=auth_headers_admin)
+        response = client.get("/api/internships?status=Ingediend,Goedgekeurd", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -255,13 +255,13 @@ class TestInternshipMultiStatus:
 
     def test_invalid_status(self, client, auth_headers_admin):
         """Invalid status returns 400 with clear error."""
-        response = client.get("/internships?status=InvalidStatus", headers=auth_headers_admin)
+        response = client.get("/api/internships?status=InvalidStatus", headers=auth_headers_admin)
         assert response.status_code == 400
         assert "Invalid status" in response.json()["detail"]
 
     def test_invalid_multi_status(self, client, auth_headers_admin):
         """If any status in comma-list is invalid, return 400."""
-        response = client.get("/internships?status=Ingediend,Invalid", headers=auth_headers_admin)
+        response = client.get("/api/internships?status=Ingediend,Invalid", headers=auth_headers_admin)
         assert response.status_code == 400
         assert "Invalid" in response.json()["detail"]
 
@@ -301,19 +301,19 @@ class TestInternshipDateFilter:
         db.add(Proposal(internship_id=intern2.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/internships?start_date_from=2025-08-01", headers=auth_headers_admin)
+        response = client.get("/api/internships?start_date_from=2025-08-01", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["company"]["name"] == "Late"
 
-        response = client.get("/internships?start_date_to=2025-06-01", headers=auth_headers_admin)
+        response = client.get("/api/internships?start_date_to=2025-06-01", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["company"]["name"] == "Early"
 
-        response = client.get("/internships?start_date_from=2025-01-01&start_date_to=2025-12-31", headers=auth_headers_admin)
+        response = client.get("/api/internships?start_date_from=2025-01-01&start_date_to=2025-12-31", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -343,7 +343,7 @@ class TestInternshipSorting:
             db.add(Proposal(internship_id=intern.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/internships?sort=-created_at", headers=auth_headers_admin)
+        response = client.get("/api/internships?sort=-created_at", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         # Should be newest first
@@ -381,7 +381,7 @@ class TestInternshipSorting:
         db.add(Proposal(internship_id=intern2.id, description="D", status="Ingediend"))
         db.commit()
 
-        response = client.get("/internships?sort=status", headers=auth_headers_admin)
+        response = client.get("/api/internships?sort=status", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert data[0]["status"] == "Goedgekeurd"
@@ -393,7 +393,7 @@ class TestUserPagination:
 
     def test_users_pagination(self, client, auth_headers_admin, test_admin, test_student, test_teacher):
         """Users list supports skip/limit and X-Total-Count."""
-        response = client.get("/users?skip=0&limit=2", headers=auth_headers_admin)
+        response = client.get("/api/users?skip=0&limit=2", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -401,13 +401,13 @@ class TestUserPagination:
 
     def test_users_search(self, client, auth_headers_admin, test_student):
         """Search users by name or email."""
-        response = client.get("/users?search=Student", headers=auth_headers_admin)
+        response = client.get("/api/users?search=Student", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["email"] == "student@test.com"
 
-        response = client.get("/users?search=student@test", headers=auth_headers_admin)
+        response = client.get("/api/users?search=student@test", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -418,7 +418,7 @@ class TestCompetencyPagination:
 
     def test_competencies_pagination(self, client, auth_headers_admin, sample_competencies):
         """Competencies list supports pagination."""
-        response = client.get("/competencies?skip=0&limit=2", headers=auth_headers_admin)
+        response = client.get("/api/competencies?skip=0&limit=2", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -426,7 +426,7 @@ class TestCompetencyPagination:
 
     def test_competencies_search(self, client, auth_headers_admin, sample_competencies):
         """Search competencies by name."""
-        response = client.get("/competencies?search=Technical", headers=auth_headers_admin)
+        response = client.get("/api/competencies?search=Technical", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1

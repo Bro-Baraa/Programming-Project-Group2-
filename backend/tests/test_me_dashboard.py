@@ -7,7 +7,7 @@ class TestMeDashboardUnauthorized:
     """Auth requirements."""
 
     def test_dashboard_requires_auth(self, client):
-        response = client.get("/me/dashboard")
+        response = client.get("/api/me/dashboard")
         assert response.status_code == 401
 
 
@@ -16,7 +16,7 @@ class TestMeDashboardStudent:
 
     def test_student_dashboard_empty(self, client, auth_headers_student):
         """Student with no internships gets empty but valid dashboard."""
-        response = client.get("/me/dashboard", headers=auth_headers_student)
+        response = client.get("/api/me/dashboard", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert data["user"]["email"] == "student@test.com"
@@ -30,7 +30,7 @@ class TestMeDashboardStudent:
         self, client, auth_headers_student, sample_internship
     ):
         """Student sees their internship with computed summaries."""
-        response = client.get("/me/dashboard", headers=auth_headers_student)
+        response = client.get("/api/me/dashboard", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
 
@@ -82,7 +82,7 @@ class TestMeDashboardStudent:
         db.add(proposal)
         db.commit()
 
-        response = client.get("/me/dashboard", headers=auth_headers_student)
+        response = client.get("/api/me/dashboard", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
 
@@ -128,7 +128,7 @@ class TestMeDashboardStudent:
         db.add(proposal)
         db.commit()
 
-        response = client.get("/me/dashboard", headers=auth_headers_student)
+        response = client.get("/api/me/dashboard", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert len(data["internships"]) == 0
@@ -139,7 +139,7 @@ class TestMeDashboardTeacher:
 
     def test_teacher_dashboard(self, client, auth_headers_teacher, sample_internship):
         """Teacher sees internships where they are assigned."""
-        response = client.get("/me/dashboard", headers=auth_headers_teacher)
+        response = client.get("/api/me/dashboard", headers=auth_headers_teacher)
         assert response.status_code == 200
         data = response.json()
 
@@ -150,7 +150,7 @@ class TestMeDashboardTeacher:
 
     def test_teacher_dashboard_empty(self, client, auth_headers_teacher):
         """Teacher with no assigned internships gets empty dashboard."""
-        response = client.get("/me/dashboard", headers=auth_headers_teacher)
+        response = client.get("/api/me/dashboard", headers=auth_headers_teacher)
         assert response.status_code == 200
         data = response.json()
         assert data["internships"] == []
@@ -162,7 +162,7 @@ class TestMeDashboardCommittee:
 
     def test_committee_sees_all(self, client, auth_headers_committee, sample_internship):
         """Committee sees all internships in the system."""
-        response = client.get("/me/dashboard", headers=auth_headers_committee)
+        response = client.get("/api/me/dashboard", headers=auth_headers_committee)
         assert response.status_code == 200
         data = response.json()
 
@@ -196,7 +196,7 @@ class TestMeDashboardCommittee:
         db.add(proposal)
         db.commit()
 
-        response = client.get("/me/dashboard", headers=auth_headers_committee)
+        response = client.get("/api/me/dashboard", headers=auth_headers_committee)
         assert response.status_code == 200
         data = response.json()
 
@@ -210,7 +210,7 @@ class TestMeDashboardAdmin:
 
     def test_admin_dashboard(self, client, auth_headers_admin, test_admin, sample_internship):
         """Admin sees all internships."""
-        response = client.get("/me/dashboard", headers=auth_headers_admin)
+        response = client.get("/api/me/dashboard", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
 
@@ -245,7 +245,7 @@ class TestMeDashboardMentor:
         db.add(proposal)
         db.commit()
 
-        response = client.get("/me/dashboard", headers=auth_headers_mentor)
+        response = client.get("/api/me/dashboard", headers=auth_headers_mentor)
         assert response.status_code == 200
         data = response.json()
 
@@ -255,7 +255,7 @@ class TestMeDashboardMentor:
 
     def test_mentor_dashboard_empty(self, client, auth_headers_mentor):
         """Mentor with no mentees gets empty dashboard."""
-        response = client.get("/me/dashboard", headers=auth_headers_mentor)
+        response = client.get("/api/me/dashboard", headers=auth_headers_mentor)
         assert response.status_code == 200
         data = response.json()
         assert data["internships"] == []
@@ -265,7 +265,7 @@ class TestMeDashboardResponseShape:
     """Verify the response structure is consistent."""
 
     def test_response_has_all_required_fields(self, client, auth_headers_student, sample_internship):
-        response = client.get("/me/dashboard", headers=auth_headers_student)
+        response = client.get("/api/me/dashboard", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
 

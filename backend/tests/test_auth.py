@@ -6,7 +6,7 @@ class TestAuthEndpoints:
 
     def test_login_success(self, client, test_admin):
         response = client.post(
-            "/auth/login",
+            "/api/auth/login",
             data={"username": "admin@test.com", "password": "admin123"}
         )
         assert response.status_code == 200
@@ -18,7 +18,7 @@ class TestAuthEndpoints:
 
     def test_login_invalid_password(self, client, test_admin):
         response = client.post(
-            "/auth/login",
+            "/api/auth/login",
             data={"username": "admin@test.com", "password": "wrongpassword"}
         )
         assert response.status_code == 401
@@ -26,14 +26,14 @@ class TestAuthEndpoints:
 
     def test_login_invalid_email(self, client):
         response = client.post(
-            "/auth/login",
+            "/api/auth/login",
             data={"username": "nonexistent@test.com", "password": "password123"}
         )
         assert response.status_code == 401
         assert "Incorrect email or password" in response.json()["detail"]
 
     def test_get_me_success(self, client, auth_headers_admin, test_admin):
-        response = client.get("/auth/me", headers=auth_headers_admin)
+        response = client.get("/api/auth/me", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert data["email"] == "admin@test.com"
@@ -42,12 +42,12 @@ class TestAuthEndpoints:
         assert data["last_name"] == "User"
 
     def test_get_me_no_token(self, client):
-        response = client.get("/auth/me")
+        response = client.get("/api/auth/me")
         assert response.status_code == 401
 
     def test_get_me_invalid_token(self, client):
         response = client.get(
-            "/auth/me",
+            "/api/auth/me",
             headers={"Authorization": "Bearer invalid_token"}
         )
         assert response.status_code == 401
@@ -65,7 +65,7 @@ class TestUserRegistration:
             "role": "student"
         }
         response = client.post(
-            "/auth/register",
+            "/api/auth/register",
             json=user_data,
             headers=auth_headers_admin
         )
@@ -84,7 +84,7 @@ class TestUserRegistration:
             "role": "student"
         }
         response = client.post(
-            "/auth/register",
+            "/api/auth/register",
             json=user_data,
             headers=auth_headers_student
         )
@@ -100,7 +100,7 @@ class TestUserRegistration:
             "role": "student"
         }
         response = client.post(
-            "/auth/register",
+            "/api/auth/register",
             json=user_data,
             headers=auth_headers_admin
         )
@@ -114,7 +114,7 @@ class TestUserRegistration:
             # Missing first_name, last_name, role
         }
         response = client.post(
-            "/auth/register",
+            "/api/auth/register",
             json=user_data,
             headers=auth_headers_admin
         )
@@ -124,10 +124,10 @@ class TestUserRegistration:
 class TestRoleBasedAccess:
     """Test role-based access control."""
 
-    def test_student_cannot_access_teacher_endpoint(self, client, auth_headers_student):
-        # Try to create an evaluation (teacher only)
+    def test_student_cannot_access_teacher_endpoint(self, client, auth_headers_student, sample_internship):
+        # Try to create a final evaluation as student (should be forbidden)
         response = client.post(
-            "/internships/1/evaluations",
+            f"/api/internships/{sample_internship.id}/evaluations",
             json={"eval_type": "final"},
             headers=auth_headers_student
         )
@@ -136,7 +136,7 @@ class TestRoleBasedAccess:
     def test_teacher_can_access_teacher_endpoint(self, client, auth_headers_teacher):
         # The endpoint validates input before checking internship
         response = client.post(
-            "/internships/999/evaluations",
+            "/api/internships/999/evaluations",
             json={"eval_type": "final"},
             headers=auth_headers_teacher
         )

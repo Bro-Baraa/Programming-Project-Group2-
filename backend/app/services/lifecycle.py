@@ -290,6 +290,7 @@ class InternshipLifecycle:
 
         # ── Notify the teacher when assigned to an internship ──
         if decision == "Goedgekeurd" and teacher_id:
+            student_name = f"{internship.student.first_name} {internship.student.last_name}"
             notify(
                 self.db,
                 user_id=teacher_id,

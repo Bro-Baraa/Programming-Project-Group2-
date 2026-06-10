@@ -17,7 +17,7 @@ class TestInternshipCreation:
             "description": "Test internship description"
         }
         response = client.post(
-            "/internships",
+            "/api/internships",
             json=internship_data,
             headers=auth_headers_student
         )
@@ -44,7 +44,7 @@ class TestInternshipCreation:
             "mentor_id": test_mentor.id,
         }
         response = client.post(
-            "/internships",
+            "/api/internships",
             json=internship_data,
             headers=auth_headers_student
         )
@@ -69,7 +69,7 @@ class TestInternshipCreation:
             "teacher_id": 99999,
         }
         response = client.post(
-            "/internships",
+            "/api/internships",
             json=internship_data,
             headers=auth_headers_student
         )
@@ -87,7 +87,7 @@ class TestInternshipCreation:
             "description": "Test internship"
         }
         response = client.post(
-            "/internships",
+            "/api/internships",
             json=internship_data,
             headers=auth_headers_teacher
         )
@@ -100,7 +100,7 @@ class TestInternshipCreation:
             # Missing required fields
         }
         response = client.post(
-            "/internships",
+            "/api/internships",
             json=internship_data,
             headers=auth_headers_student
         )
@@ -158,7 +158,7 @@ class TestInternshipListing:
 
     def test_student_sees_own_internships(self, client, auth_headers_student, sample_internships, test_student):
         """Test student sees only their own internships."""
-        response = client.get("/internships", headers=auth_headers_student)
+        response = client.get("/api/internships", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -166,7 +166,7 @@ class TestInternshipListing:
 
     def test_committee_sees_all_internships(self, client, auth_headers_committee, sample_internships):
         """Test committee sees all internships."""
-        response = client.get("/internships", headers=auth_headers_committee)
+        response = client.get("/api/internships", headers=auth_headers_committee)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -174,7 +174,7 @@ class TestInternshipListing:
     def test_filter_by_status(self, client, auth_headers_committee, sample_internships):
         """Test filtering internships by status."""
         response = client.get(
-            "/internships?status=Ingediend",
+            "/api/internships?status=Ingediend",
             headers=auth_headers_committee
         )
         assert response.status_code == 200
@@ -198,7 +198,7 @@ class TestInternshipWorkflow:
             "description": "Test internship"
         }
         response = client.post(
-            "/internships",
+            "/api/internships",
             json=internship_data,
             headers=auth_headers_student
         )
@@ -210,7 +210,7 @@ class TestInternshipWorkflow:
 
         # Step 1: Set to "In Beoordeling"
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "In Beoordeling", "feedback": ""},
             headers=auth_headers_committee
         )
@@ -219,7 +219,7 @@ class TestInternshipWorkflow:
 
         # Step 2: Approve proposal
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "Goedgekeurd", "feedback": "", "teacher_id": test_teacher.id},
             headers=auth_headers_committee
         )
@@ -228,7 +228,7 @@ class TestInternshipWorkflow:
 
         # Verify internship status was also updated
         internship_response = client.get(
-            f"/internships/{internship_id}",
+            f"/api/internships/{internship_id}",
             headers=auth_headers_committee
         )
         assert internship_response.status_code == 200
@@ -240,7 +240,7 @@ class TestInternshipWorkflow:
 
         # Step 1: Set to "In Beoordeling"
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "In Beoordeling", "feedback": ""},
             headers=auth_headers_committee
         )
@@ -248,7 +248,7 @@ class TestInternshipWorkflow:
 
         # Step 2: Cannot set status to "Aanpassingen Vereist" without providing feedback
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "Aanpassingen Vereist"},  # Missing feedback
             headers=auth_headers_committee
         )
@@ -261,7 +261,7 @@ class TestInternshipWorkflow:
 
         # Students cannot use the proposal approval endpoint
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "In Beoordeling"},
             headers=auth_headers_student
         )
@@ -275,7 +275,7 @@ class TestInternshipWorkflow:
 
         # Step 1: Set to "In Beoordeling"
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "In Beoordeling", "feedback": ""},
             headers=auth_headers_committee
         )
@@ -283,7 +283,7 @@ class TestInternshipWorkflow:
 
         # Step 2: Approve the proposal
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "Goedgekeurd", "feedback": "", "teacher_id": test_teacher.id},
             headers=auth_headers_committee
         )
@@ -292,26 +292,26 @@ class TestInternshipWorkflow:
         # Step 2: Student uploads agreement
         pdf_content = b"%PDF-1.4 fake pdf content"
         response = client.post(
-            f"/internships/{internship_id}/agreement",
+            f"/api/internships/{internship_id}/agreement",
             files={"file": ("agreement.pdf", io.BytesIO(pdf_content), "application/pdf")},
             headers=auth_headers_student
         )
         assert response.status_code == 200
 
         # Verify internship status changed to "Overeenkomst Ingediend"
-        internship = client.get(f"/internships/{internship_id}", headers=auth_headers_committee).json()
+        internship = client.get(f"/api/internships/{internship_id}", headers=auth_headers_committee).json()
         assert internship["status"] == "Overeenkomst Ingediend"
 
         # Step 3: Committee validates agreement
         response = client.patch(
-            f"/internships/{internship_id}/agreement",
+            f"/api/internships/{internship_id}/agreement",
             json={"status": "Gevalideerd", "insurance_verified": True},
             headers=auth_headers_committee
         )
         assert response.status_code == 200
 
         # Verify internship status changed to "Lopend"
-        internship = client.get(f"/internships/{internship_id}", headers=auth_headers_committee).json()
+        internship = client.get(f"/api/internships/{internship_id}", headers=auth_headers_committee).json()
         assert internship["status"] == "Lopend"
 
     def test_get_internship_detail(self, client, auth_headers_student, created_internship):
@@ -319,7 +319,7 @@ class TestInternshipWorkflow:
         internship_id = created_internship["id"]
 
         response = client.get(
-            f"/internships/{internship_id}",
+            f"/api/internships/{internship_id}",
             headers=auth_headers_student
         )
         assert response.status_code == 200
@@ -333,7 +333,7 @@ class TestInternshipWorkflow:
         internship_id = created_internship["id"]
 
         response = client.patch(
-            f"/internships/{internship_id}/proposal/edit",
+            f"/api/internships/{internship_id}/proposal/edit",
             json={
                 "description": "Updated internship description",
                 "company_name": "Updated Company"
@@ -347,7 +347,7 @@ class TestInternshipWorkflow:
         assert data["status"] == "Ingediend"
 
         # Verify internship company was updated
-        internship = client.get(f"/internships/{internship_id}", headers=auth_headers_student).json()
+        internship = client.get(f"/api/internships/{internship_id}", headers=auth_headers_student).json()
         assert internship["company"]["name"] == "Updated Company"
         assert internship["status"] == "Ingediend"
 
@@ -357,7 +357,7 @@ class TestInternshipWorkflow:
 
         # Committee sets to In Beoordeling
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "In Beoordeling", "feedback": ""},
             headers=auth_headers_committee
         )
@@ -365,7 +365,7 @@ class TestInternshipWorkflow:
 
         # Student tries to edit
         response = client.patch(
-            f"/internships/{internship_id}/proposal/edit",
+            f"/api/internships/{internship_id}/proposal/edit",
             json={"description": "Should not work"},
             headers=auth_headers_student
         )
@@ -377,14 +377,14 @@ class TestInternshipWorkflow:
         internship_id = created_internship["id"]
 
         response = client.delete(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             headers=auth_headers_student
         )
         assert response.status_code == 200
         assert "ingetrokken" in response.json()["detail"]
 
         # Verify internship is gone
-        response = client.get(f"/internships/{internship_id}", headers=auth_headers_student)
+        response = client.get(f"/api/internships/{internship_id}", headers=auth_headers_student)
         assert response.status_code == 404
 
     def test_student_cannot_withdraw_after_review(self, client, auth_headers_student, auth_headers_committee, created_internship):
@@ -393,7 +393,7 @@ class TestInternshipWorkflow:
 
         # Committee sets to In Beoordeling
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "In Beoordeling", "feedback": ""},
             headers=auth_headers_committee
         )
@@ -401,7 +401,7 @@ class TestInternshipWorkflow:
 
         # Student tries to withdraw
         response = client.delete(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             headers=auth_headers_student
         )
         assert response.status_code == 400
@@ -413,31 +413,31 @@ class TestInternshipWorkflow:
 
         # Committee: In Beoordeling → Aanpassingen Vereist with feedback
         client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "In Beoordeling", "feedback": ""},
             headers=auth_headers_committee
         )
         response = client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "Aanpassingen Vereist", "feedback": "Please fix the description"},
             headers=auth_headers_committee
         )
         assert response.status_code == 200
 
         # Verify feedback is present
-        proposal = client.get(f"/internships/{internship_id}/proposal", headers=auth_headers_student).json()
+        proposal = client.get(f"/api/internships/{internship_id}/proposal", headers=auth_headers_student).json()
         assert proposal["feedback"] == "Please fix the description"
 
         # Student resubmits
         response = client.post(
-            f"/internships/{internship_id}/resubmit",
+            f"/api/internships/{internship_id}/resubmit",
             json={"new_description": "Fixed description"},
             headers=auth_headers_student
         )
         assert response.status_code == 200
 
         # Verify feedback is cleared
-        proposal = client.get(f"/internships/{internship_id}/proposal", headers=auth_headers_student).json()
+        proposal = client.get(f"/api/internships/{internship_id}/proposal", headers=auth_headers_student).json()
         assert proposal["feedback"] is None
 
     def test_revision_count_on_resubmit(self, client, auth_headers_student, auth_headers_committee, created_internship):
@@ -446,19 +446,19 @@ class TestInternshipWorkflow:
 
         # Committee: In Beoordeling → Aanpassingen Vereist
         client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "In Beoordeling", "feedback": ""},
             headers=auth_headers_committee
         )
         client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "Aanpassingen Vereist", "feedback": "Fix this"},
             headers=auth_headers_committee
         )
 
         # First resubmit
         response = client.post(
-            f"/internships/{internship_id}/resubmit",
+            f"/api/internships/{internship_id}/resubmit",
             json={"new_description": "First fix"},
             headers=auth_headers_student
         )
@@ -469,14 +469,14 @@ class TestInternshipWorkflow:
 
         # Committee sends back for changes again
         client.patch(
-            f"/internships/{internship_id}/proposal",
+            f"/api/internships/{internship_id}/proposal",
             json={"status": "Aanpassingen Vereist", "feedback": "Still not right"},
             headers=auth_headers_committee
         )
 
         # Second resubmit
         response = client.post(
-            f"/internships/{internship_id}/resubmit",
+            f"/api/internships/{internship_id}/resubmit",
             json={"new_description": "Second fix"},
             headers=auth_headers_student
         )
@@ -500,7 +500,7 @@ class TestLogbooks:
         }
         
         response = client.post(
-            f"/internships/{internship_id}/logbooks",
+            f"/api/internships/{internship_id}/logbooks",
             json=logbook_data,
             headers=auth_headers_student
         )
@@ -516,14 +516,14 @@ class TestLogbooks:
         
         # Create first logbook
         client.post(
-            f"/internships/{internship_id}/logbooks",
+            f"/api/internships/{internship_id}/logbooks",
             json={"week_number": 1, "tasks": "Week 1 work"},
             headers=auth_headers_student
         )
         
         # Try to create second for same week
         response = client.post(
-            f"/internships/{internship_id}/logbooks",
+            f"/api/internships/{internship_id}/logbooks",
             json={"week_number": 1, "tasks": "Week 1 work again"},
             headers=auth_headers_student
         )
@@ -548,7 +548,7 @@ class TestLogbooks:
         
         # Mentor validates the logbook
         response = client.patch(
-            f"/internships/logbooks/{logbook.id}",
+            f"/api/internships/logbooks/{logbook.id}",
             json={"mentor_validated": True},
             headers=auth_headers_mentor
         )
@@ -559,7 +559,7 @@ class TestLogbooks:
         
         # Verify mentor can list logbooks
         response = client.get(
-            f"/internships/{internship_with_logbook.id}/logbooks",
+            f"/api/internships/{internship_with_logbook.id}/logbooks",
             headers=auth_headers_mentor
         )
         assert response.status_code == 200
@@ -584,7 +584,7 @@ class TestLogbooks:
         db.refresh(logbook)
 
         response = client.patch(
-            f"/internships/logbooks/{logbook.id}",
+            f"/api/internships/logbooks/{logbook.id}",
             json={"mentor_feedback": "Goed werk deze week!"},
             headers=auth_headers_mentor
         )
@@ -611,7 +611,7 @@ class TestLogbooks:
         
         # Submit logbook
         response = client.post(
-            f"/internships/logbooks/{logbook.id}/submit",
+            f"/api/internships/logbooks/{logbook.id}/submit",
             headers=auth_headers_student
         )
         assert response.status_code == 200
@@ -635,7 +635,7 @@ class TestLogbooks:
         db.refresh(logbook)
         
         response = client.post(
-            f"/internships/logbooks/{logbook.id}/submit",
+            f"/api/internships/logbooks/{logbook.id}/submit",
             headers=auth_headers_mentor
         )
         assert response.status_code == 403
@@ -656,7 +656,7 @@ class TestLogbooks:
         db.refresh(logbook)
         
         response = client.post(
-            f"/internships/logbooks/{logbook.id}/submit",
+            f"/api/internships/logbooks/{logbook.id}/submit",
             headers=auth_headers_student
         )
         assert response.status_code == 400
@@ -719,7 +719,7 @@ class TestDashboardStats:
         db.commit()
         
         response = client.get(
-            "/internships/stats/dashboard",
+            "/api/internships/stats/dashboard",
             headers=auth_headers_admin
         )
         assert response.status_code == 200
@@ -750,7 +750,7 @@ class TestFeedback:
         }
         
         response = client.post(
-            f"/internships/{internship_id}/feedback",
+            f"/api/internships/{internship_id}/feedback",
             json=feedback_data,
             headers=auth_headers_teacher
         )
@@ -769,7 +769,7 @@ class TestEvaluations:
     def created_evaluation(self, client, auth_headers_teacher, sample_internship, sample_competencies):
         """Create and return an evaluation."""
         response = client.post(
-            f"/internships/{sample_internship.id}/evaluations",
+            f"/api/internships/{sample_internship.id}/evaluations",
             json={"eval_type": "tussentijds", "comments": "Initial comment"},
             headers=auth_headers_teacher
         )
@@ -792,7 +792,7 @@ class TestEvaluations:
         }
 
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
             json=update_data,
             headers=auth_headers_teacher
         )
@@ -814,7 +814,7 @@ class TestEvaluations:
         # Score ALL rules (required before finalization)
         for rule in rules:
             response = client.patch(
-                f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+                f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
                 json={"score": 4},
                 headers=auth_headers_teacher
             )
@@ -822,7 +822,7 @@ class TestEvaluations:
 
         # Finalize the evaluation
         response = client.post(
-            f"/internships/evaluations/{evaluation_id}/finalize",
+            f"/api/internships/evaluations/{evaluation_id}/finalize",
             json={},
             headers=auth_headers_teacher
         )
@@ -830,7 +830,7 @@ class TestEvaluations:
 
         # Try to update the first rule after finalization
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rules[0].id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rules[0].id}",
             json={"score": 5, "evaluator_feedback": "Should fail"},
             headers=auth_headers_teacher
         )
@@ -846,13 +846,13 @@ class TestEvaluations:
         rules = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).all()
         for rule in rules:
             client.patch(
-                f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+                f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
                 json={"score": 4},
                 headers=auth_headers_teacher
             )
 
         response = client.post(
-            f"/internships/evaluations/{evaluation_id}/finalize",
+            f"/api/internships/evaluations/{evaluation_id}/finalize",
             json={},  # Finalize doesn't take scores - uses existing rule scores
             headers=auth_headers_teacher
         )
@@ -872,21 +872,21 @@ class TestEvaluations:
         rules = db.query(EvaluationRule).filter(EvaluationRule.evaluation_id == evaluation_id).all()
         for rule in rules:
             client.patch(
-                f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+                f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
                 json={"score": 4},
                 headers=auth_headers_teacher
             )
 
         # First finalize
         client.post(
-            f"/internships/evaluations/{evaluation_id}/finalize",
+            f"/api/internships/evaluations/{evaluation_id}/finalize",
             json={},
             headers=auth_headers_teacher
         )
 
         # Try to finalize again
         response = client.post(
-            f"/internships/evaluations/{evaluation_id}/finalize",
+            f"/api/internships/evaluations/{evaluation_id}/finalize",
             json={},
             headers=auth_headers_teacher
         )
@@ -897,7 +897,7 @@ class TestEvaluations:
         evaluation_id = created_evaluation["id"]
 
         response = client.post(
-            f"/internships/evaluations/{evaluation_id}/finalize",
+            f"/api/internships/evaluations/{evaluation_id}/finalize",
             json={},  # Students rejected by role regardless of body
             headers=auth_headers_student
         )
@@ -918,7 +918,7 @@ class TestEvaluations:
         }
 
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
             json=update_data,
             headers=auth_headers_student
         )
@@ -938,7 +938,7 @@ class TestEvaluations:
 
         # Try to set score (should be ignored by service)
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
             json={"score": 5, "student_description": "Valid description"},
             headers=auth_headers_student
         )
@@ -972,7 +972,7 @@ class TestEvaluations:
 
         # Log in als andere student
         login_response = client.post(
-            "/auth/login",
+            "/api/auth/login",
             data={"username": "other_student@test.com", "password": "other123"}
         )
         assert login_response.status_code == 200
@@ -980,7 +980,7 @@ class TestEvaluations:
         other_headers = {"Authorization": f"Bearer {other_token}"}
 
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
             json={"student_description": "Hacked description"},
             headers=other_headers
         )
@@ -997,13 +997,13 @@ class TestEvaluations:
         # Docent finaliseert de evaluatie (score alle rules eerst)
         for rule in rules:
             client.patch(
-                f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+                f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
                 json={"score": 4},
                 headers=auth_headers_teacher
             )
 
         finalize_response = client.post(
-            f"/internships/evaluations/{evaluation_id}/finalize",
+            f"/api/internships/evaluations/{evaluation_id}/finalize",
             json={},
             headers=auth_headers_teacher
         )
@@ -1011,7 +1011,7 @@ class TestEvaluations:
 
         # Student probeert te updaten
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rules[0].id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rules[0].id}",
             json={"student_description": "Te laat"},
             headers=auth_headers_student
         )
@@ -1026,7 +1026,7 @@ class TestEvaluations:
         assert rule is not None
 
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
             json={"evaluator_feedback": "Self-praise", "student_description": "Valid description"},
             headers=auth_headers_student
         )
@@ -1048,20 +1048,20 @@ class TestEvaluations:
         # Eerst student_description door student laten zetten
         student_login = db.query(User).filter(User.email == "student@test.com").first()
         assert student_login is not None
-        student_response = client.post("/auth/login", data={"username": "student@test.com", "password": "student123"})
+        student_response = client.post("/api/auth/login", data={"username": "student@test.com", "password": "student123"})
         assert student_response.status_code == 200
         student_token = student_response.json()["access_token"]
         student_headers = {"Authorization": f"Bearer {student_token}"}
 
         client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
             json={"student_description": "Original student text"},
             headers=student_headers
         )
 
         # Teacher probeert student_description te overschrijven
         response = client.patch(
-            f"/internships/evaluations/{evaluation_id}/rules/{rule.id}",
+            f"/api/internships/evaluations/{evaluation_id}/rules/{rule.id}",
             json={"student_description": "Teacher override", "score": 4},
             headers=auth_headers_teacher
         )

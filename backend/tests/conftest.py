@@ -94,7 +94,7 @@ def test_mentor(db):
 def admin_token(client, test_admin):
     """Get admin access token."""
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={"username": "admin@test.com", "password": "admin123"}
     )
     return response.json()["access_token"]
@@ -104,7 +104,7 @@ def admin_token(client, test_admin):
 def student_token(client, test_student):
     """Get student access token."""
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={"username": "student@test.com", "password": "student123"}
     )
     return response.json()["access_token"]
@@ -114,7 +114,7 @@ def student_token(client, test_student):
 def teacher_token(client, test_teacher):
     """Get teacher access token."""
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={"username": "teacher@test.com", "password": "teacher123"}
     )
     return response.json()["access_token"]
@@ -124,7 +124,7 @@ def teacher_token(client, test_teacher):
 def committee_token(client, test_committee):
     """Get committee access token."""
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={"username": "committee@test.com", "password": "committee123"}
     )
     return response.json()["access_token"]
@@ -134,7 +134,7 @@ def committee_token(client, test_committee):
 def mentor_token(client, test_mentor):
     """Get mentor access token."""
     response = client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={"username": "mentor@test.com", "password": "mentor123"}
     )
     return response.json()["access_token"]

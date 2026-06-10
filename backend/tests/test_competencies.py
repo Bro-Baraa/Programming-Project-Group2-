@@ -6,7 +6,7 @@ class TestCompetencyListing:
 
     def test_list_competencies_default_active(self, client, auth_headers_student, sample_competencies):
         """Test listing active competencies by default."""
-        response = client.get("/competencies", headers=auth_headers_student)
+        response = client.get("/api/competencies", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 4  # All sample competencies are active
@@ -21,7 +21,7 @@ class TestCompetencyListing:
         db.add(inactive)
         db.commit()
 
-        response = client.get("/competencies?active_only=false", headers=auth_headers_student)
+        response = client.get("/api/competencies?active_only=false", headers=auth_headers_student)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 5  # 4 active + 1 inactive
@@ -39,7 +39,7 @@ class TestCompetencyCreation:
             "profile_id": profile_id
         }
         response = client.post(
-            "/competencies",
+            "/api/competencies",
             json=competency_data,
             headers=auth_headers_admin
         )
@@ -56,7 +56,7 @@ class TestCompetencyCreation:
             "weight": 50.0
         }
         response = client.post(
-            "/competencies",
+            "/api/competencies",
             json=competency_data,
             headers=auth_headers_student
         )
@@ -69,7 +69,7 @@ class TestCompetencyCreation:
             "weight": 30.0
         }
         response = client.post(
-            "/competencies",
+            "/api/competencies",
             json=competency_data,
             headers=auth_headers_teacher
         )
@@ -84,7 +84,7 @@ class TestCompetencyCreation:
             "profile_id": profile_id
         }
         response = client.post(
-            "/competencies",
+            "/api/competencies",
             json=competency_data,
             headers=auth_headers_admin
         )
@@ -105,7 +105,7 @@ class TestCompetencyUpdate:
             "active": True
         }
         response = client.patch(
-            f"/competencies/{competency_id}",
+            f"/api/competencies/{competency_id}",
             json=update_data,
             headers=auth_headers_admin
         )
@@ -123,7 +123,7 @@ class TestCompetencyUpdate:
             "weight": 35.0
         }
         response = client.patch(
-            f"/competencies/{competency_id}",
+            f"/api/competencies/{competency_id}",
             json=update_data,
             headers=auth_headers_admin
         )
@@ -138,7 +138,7 @@ class TestCompetencyUpdate:
         
         update_data = {"weight": 99.0}
         response = client.patch(
-            f"/competencies/{competency_id}",
+            f"/api/competencies/{competency_id}",
             json=update_data,
             headers=auth_headers_teacher
         )
@@ -148,7 +148,7 @@ class TestCompetencyUpdate:
         """Test 404 on updating non-existent competency."""
         update_data = {"weight": 50.0}
         response = client.patch(
-            "/competencies/99999",
+            "/api/competencies/99999",
             json=update_data,
             headers=auth_headers_admin
         )
@@ -164,14 +164,14 @@ class TestCompetencyDeletion:
 
         # The endpoint returns 204 No Content on successful deletion
         response = client.delete(
-            f"/competencies/{competency_id}",
+            f"/api/competencies/{competency_id}",
             headers=auth_headers_admin
         )
         assert response.status_code == 204
 
         # Verify it's actually deleted (hard delete when not in use)
         response = client.get(
-            f"/competencies/{competency_id}",
+            f"/api/competencies/{competency_id}",
             headers=auth_headers_admin
         )
         assert response.status_code == 404
@@ -181,7 +181,7 @@ class TestCompetencyDeletion:
         competency_id = sample_competencies[0].id
         
         response = client.delete(
-            f"/competencies/{competency_id}",
+            f"/api/competencies/{competency_id}",
             headers=auth_headers_student
         )
         assert response.status_code == 403
@@ -192,7 +192,7 @@ class TestWeightValidation:
 
     def test_valid_weights_sum_100(self, client, auth_headers_admin, sample_competencies):
         """Test weight check endpoint with valid weights."""
-        response = client.get("/competencies/check-weights", headers=auth_headers_admin)
+        response = client.get("/api/competencies/check-weights", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert data["total_weight"] == 100.0
@@ -211,7 +211,7 @@ class TestWeightValidation:
         db.add(extra)
         db.commit()
 
-        response = client.get("/competencies/check-weights", headers=auth_headers_admin)
+        response = client.get("/api/competencies/check-weights", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert data["total_weight"] == 110.0
@@ -220,7 +220,7 @@ class TestWeightValidation:
 
     def test_weight_check_student_access(self, client, auth_headers_student, sample_competencies):
         """Test students can access weight check."""
-        response = client.get("/competencies/check-weights", headers=auth_headers_student)
+        response = client.get("/api/competencies/check-weights", headers=auth_headers_student)
         assert response.status_code == 200
         assert response.json()["valid"] is True
 
@@ -237,7 +237,7 @@ class TestCompetencyEdgeCases:
             "profile_id": profile_id
         }
         response = client.post(
-            "/competencies",
+            "/api/competencies",
             json=competency_data,
             headers=auth_headers_admin
         )
@@ -252,7 +252,7 @@ class TestCompetencyEdgeCases:
             "profile_id": profile_id
         }
         response = client.post(
-            "/competencies",
+            "/api/competencies",
             json=competency_data,
             headers=auth_headers_admin
         )

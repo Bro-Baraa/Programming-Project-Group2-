@@ -5,18 +5,14 @@ class TestRootEndpoints:
     """Test root and health endpoints."""
 
     def test_root_endpoint(self, client):
-        """Test root endpoint returns API info."""
+        """Test root endpoint serves frontend (static files) or health."""
+        # Root serves static frontend files; just check it returns 200
         response = client.get("/")
         assert response.status_code == 200
-        data = response.json()
-        assert "message" in data
-        assert "Stage Monitoring Tool API" in data["message"]
-        assert "version" in data
-        assert data["version"] == "1.0.0"
 
     def test_health_check(self, client):
-        """Test health check endpoint."""
-        response = client.get("/health")
+        """Test health check endpoint at /api/health."""
+        response = client.get("/api/health")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
@@ -36,20 +32,21 @@ class TestCORSMiddleware:
     """Test CORS configuration."""
 
     def test_cors_headers_present(self, client):
-        """Test CORS headers are present on responses."""
+        """Test CORS headers are present on API responses."""
         response = client.get(
-            "/",
+            "/api/health",
             headers={"Origin": "http://localhost:8080"}
         )
         assert response.status_code == 200
         # FastAPI CORS middleware adds these headers
         assert "access-control-allow-origin" in response.headers
-        assert response.headers["access-control-allow-origin"] == "http://localhost:8080"
+        # In test env FRONTEND_ORIGINS is unset, so CORS defaults to '*' (allow any origin)
+        assert response.headers["access-control-allow-origin"] == "*"
 
     def test_cors_preflight(self, client):
         """Test CORS preflight request."""
         response = client.options(
-            "/",
+            "/api/health",
             headers={
                 "Origin": "http://localhost:8080",
                 "Access-Control-Request-Method": "POST",
@@ -71,7 +68,7 @@ class Test404Handling:
     def test_nonexistent_resource(self, client, auth_headers_admin):
         """Test 404 on non-existent resource."""
         response = client.get(
-            "/internships/99999",
+            "/api/internships/99999",
             headers=auth_headers_admin
         )
         assert response.status_code == 404
