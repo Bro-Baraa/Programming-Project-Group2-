@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROTOTYPE — Stage Switcher UI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ═════════════════════════════════════════════════════════════
+       PROTOTYPE STYLES — Stage Switcher UI Variations
+       Throwaway. Do not ship to production.
+       ═════════════════════════════════════════════════════════════ */
+
+    /* ── Role selector (demo) ── */
+    .proto-role-bar {
+      background: var(--accent);
+      color: white;
+      text-align: center;
+      padding: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .proto-role-bar select {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      border: none;
+      font-size: 0.8rem;
+      background: white;
+      color: var(--ink);
+    }
+
+    /* ═════════════════════════════════════════════════════════════
+       VARIANT A — Popover Dropdown
+       ═════════════════════════════════════════════════════════════ */
+    .proto-variant-a .topbar {
+      position: relative;
+    }
+    .proto-a-wrapper {
+      position: relative;
+    }
+    .proto-a-trigger {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.75rem;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .proto-a-trigger:hover {
+      background: rgba(255,255,255,0.95);
+      box-shadow: var(--shadow);
+    }
+    .proto-a-trigger-icon { font-size: 1rem; }
+    .proto-a-trigger-label {
+      font-weight: 500;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .proto-a-trigger-status {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-weight: 600;
+    }
+    .proto-a-trigger-chevron {
+      font-size: 0.65rem;
+      color: var(--ink-soft);
+      margin-left: 0.25rem;
+    }
+    .proto-a-popover {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      min-width: 340px;
+      max-width: 90vw;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      z-index: 100;
+      overflow: hidden;
+      animation: protoFadeIn 0.15s ease-out;
+    }
+    @keyframes protoFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .proto-a-search {
+      padding: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .proto-a-search input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background: var(--bg-1);
+    }
+    .proto-a-search input:focus {
+      outline: none;
+      border-color: var(--accent-2);
+    }
+    .proto-a-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .proto-a-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    .proto-a-item:hover {
+      background: var(--info-bg);
+    }
+    .proto-a-item.active {
+      background: var(--good-bg);
+      border-left: 3px solid var(--good);
+      padding-left: calc(1rem - 3px);
+    }
+    .proto-a-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.25rem;
+    }
+    .proto-a-item-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .proto-a-item-badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .proto-a-item-company {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      margin-bottom: 0.25rem;
+    }
+    .proto-a-item-meta {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+    }
+    .proto-a-item-sector {
+      background: var(--bg-2);
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+    }
+    .proto-a-footer {
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .proto-a-count {
+      font-weight: 500;
+    }
+
+    /* ═════════════════════════════════════════════════════════════
+       VARIANT B — Sidebar Context
+       ═════════════════════════════════════════════════════════════ */
+    .proto-variant-b {
+      /* Sidebar is fixed left, main content shifts */
+    }
+    .proto-variant-b .topbar {
+      padding-left: 280px;
+    }
+    .proto-variant-b .nav-bar {
+      padding-left: 280px;
+    }
+    .proto-b-sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 260px;
+      background: white;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 50;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+    }
+    .proto-b-header {
+      padding: 1.2rem 1rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .proto-b-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    .proto-b-count {
+      font-size: 0.75rem;
+      background: var(--bg-2);
+      color: var(--ink-soft);
+      padding: 0.2rem 0.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+    .proto-b-search {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .proto-b-search input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background: var(--bg-1);
+    }
+    .proto-b-list {
+      list-style: none;
+      margin: 0;
+      padding: 0.5rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .proto-b-card {
+      padding: 0.85rem;
+      margin-bottom: 0.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .proto-b-card:hover {
+      border-color: var(--accent-2);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .proto-b-card.active {
+      border-color: var(--accent-2);
+      background: var(--info-bg);
+      box-shadow: 0 2px 12px rgba(0,121,140,0.08);
+    }
+    .proto-b-card-top {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+    .proto-b-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .proto-b-card-info {
+      min-width: 0;
+    }
+    .proto-b-card-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .proto-b-card-company {
+      font-size: 0.78rem;
+      color: var(--ink-soft);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .proto-b-card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+    }
+    .proto-b-card-status {
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      font-size: 0.65rem;
+    }
+    .proto-b-card-date {
+      color: var(--ink-soft);
+    }
+    .proto-b-card-indicator {
+      position: absolute;
+      left: 0;
+      top: 0.75rem;
+      bottom: 0.75rem;
+      width: 3px;
+      background: var(--accent-2);
+      border-radius: 0 2px 2px 0;
+    }
+    .proto-b-footer {
+      padding: 0.75rem 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .proto-b-btn {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .proto-b-btn:hover {
+      border-color: var(--accent-2);
+      color: var(--accent-2);
+      background: var(--info-bg);
+    }
+
+    /* ═════════════════════════════════════════════════════════════
+       VARIANT C — Stage Cards Overview
+       ═════════════════════════════════════════════════════════════ */
+    .proto-variant-c .topbar {
+      position: relative;
+    }
+    .proto-variant-c .nav-bar {
+      display: none; /* Overview replaces nav-tabs */
+    }
+    .proto-c-overview {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+    .proto-c-header {
+      margin-bottom: 1.5rem;
+    }
+    .proto-c-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+    .proto-c-subtitle {
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+    .proto-c-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .proto-c-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .proto-c-card:hover {
+      border-color: var(--accent-2);
+      box-shadow: var(--shadow);
+      transform: translateY(-2px);
+    }
+    .proto-c-card.active {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 3px var(--info-bg);
+    }
+    .proto-c-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .proto-c-card-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .proto-c-card-title-block {
+      min-width: 0;
+    }
+    .proto-c-card-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .proto-c-card-company {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .proto-c-card-body {
+      margin-bottom: 0.75rem;
+    }
+    .proto-c-card-meta {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .proto-c-card-status {
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      font-size: 0.7rem;
+    }
+    .proto-c-card-sector {
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      background: var(--bg-2);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+    }
+    .proto-c-card-dates {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .proto-c-card-date-icon {
+      font-size: 0.85rem;
+    }
+    .proto-c-card-progress {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .proto-c-progress-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .proto-c-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+    .proto-c-progress-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--ink-soft);
+      min-width: 2.5rem;
+      text-align: right;
+    }
+    .proto-c-card-desc {
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      line-height: 1.4;
+      margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .proto-c-card-footer {
+      border-top: 1px solid var(--border);
+      padding-top: 0.75rem;
+    }
+    .proto-c-card-btn {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: white;
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .proto-c-card-btn:hover {
+      border-color: var(--accent-2);
+      color: var(--accent-2);
+    }
+    .proto-c-card-btn.active {
+      background: var(--accent-2);
+      color: white;
+      border-color: var(--accent-2);
+    }
+    .proto-c-new {
+      text-align: center;
+      margin-top: 1rem;
+    }
+    .proto-c-new-btn {
+      padding: 0.75rem 1.5rem;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .proto-c-new-btn:hover {
+      border-color: var(--accent-2);
+      color: var(--accent-2);
+      background: var(--info-bg);
+    }
+
+    /* ═════════════════════════════════════════════════════════════
+       SHARED — Content placeholder (all variants)
+       ═════════════════════════════════════════════════════════════ */
+    .proto-content-header {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .proto-content-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-bottom: 0.75rem;
+    }
+    .proto-content-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+    .proto-content-subtitle {
+      color: var(--ink-soft);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+    .proto-content-body {
+      display: grid;
+      gap: 1rem;
+    }
+    .proto-content-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+    .proto-content-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .proto-content-card.full {
+      grid-column: 1 / -1;
+    }
+    .proto-content-card h4 {
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+    }
+    .proto-content-card p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+    .proto-content-progress {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .proto-content-bar {
+      flex: 1;
+      height: 6px;
+      background: var(--bg-1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .proto-content-bar > div {
+      height: 100%;
+      background: var(--accent-2);
+      border-radius: 3px;
+    }
+    .proto-content-tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+      margin-bottom: 0.5rem;
+    }
+    .proto-content-tab {
+      padding: 0.6rem 1rem;
+      border: none;
+      background: transparent;
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.2s;
+    }
+    .proto-content-tab:hover {
+      color: var(--ink);
+    }
+    .proto-content-tab.active {
+      color: var(--accent-2);
+      border-bottom-color: var(--accent-2);
+      font-weight: 600;
+    }
+    .proto-content-placeholder {
+      background: var(--bg-1);
+      border-radius: 10px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--ink-soft);
+      min-height: 120px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .proto-content-placeholder p {
+      margin: 0.25rem 0;
+    }
+
+    /* Responsive: mobile sidebar */
+    @media (max-width: 768px) {
+      .proto-variant-b .topbar,
+      .proto-variant-b .nav-bar {
+        padding-left: 0;
+      }
+      .proto-b-sidebar {
+        width: 100%;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        box-shadow: none;
+        max-height: 50vh;
+      }
+      .proto-variant-b #main-content {
+        margin-left: 0 !important;
+      }
+      .proto-content-grid {
+        grid-template-columns: 1fr;
+      }
+      .proto-c-grid {
+        grid-template-columns: 1fr;
+      }
+      .proto-a-popover {
+        min-width: 280px;
+        right: -1rem;
+      }
+    }
+
+    /* ═════════════════════════════════════════════════════════════
+       PROTOTYPE FLOATING SWITCHER BAR
+       ═════════════════════════════════════════════════════════════ */
+    .prototype-switcher-bar {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--ink);
+      color: white;
+      padding: 0.6rem 1rem;
+      border-radius: 50px;
+      box-shadow: 0 8px 30px rgba(18, 38, 58, 0.25);
+      z-index: 1000;
+      font-size: 0.85rem;
+      font-family: 'IBM Plex Sans', sans-serif;
+    }
+    .proto-switcher-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 0.3rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .proto-switcher-btn:hover {
+      background: rgba(255,255,255,0.15);
+    }
+    .proto-switcher-label {
+      padding: 0 0.5rem;
+      white-space: nowrap;
+    }
+    .proto-switcher-label strong {
+      font-size: 1rem;
+      margin-right: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Role selector for demo purposes -->
+  <div class="proto-role-bar">
+    <span>🎭 Simuleer rol:</span>
+    <select id="proto-role-selector">
+      <option value="student">Student</option>
+      <option value="teacher" selected>Docent</option>
+      <option value="committee">Commissie</option>
+      <option value="admin">Admin</option>
+    </select>
+    <span>|</span>
+    <span>💡 Gebruik ← → pijltjes om tussen varianten te wisselen</span>
+  </div>
+
+  <!-- Topbar (same as production app) -->
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/logo.svg" alt="" class="brand-logo" width="32" height="32" />
+      <h1>Stage Monitoring Tool</h1>
+    </div>
+    <div class="user-info">
+      <!-- Stage switcher gets injected here -->
+      <div id="stage-switcher-root"></div>
+      <div class="user-badge">
+        <img src="icons/user.svg" alt="" width="16" height="16" class="icon-img" />
+        <span class="user-name">Demo Gebruiker</span>
+        <span class="user-role">Docent</span>
+      </div>
+      <button class="btn logout"><img src="icons/log-out.svg" alt="" width="14" height="14" class="icon-img" /> Uitloggen</button>
+    </div>
+  </header>
+
+  <!-- Nav bar (only for variants A & B) -->
+  <nav class="nav-bar" id="nav-panel">
+    <ul class="nav-tabs">
+      <li><button class="nav-tab active">Opvolging</button></li>
+      <li><button class="nav-tab">Evaluatie</button></li>
+      <li><button class="nav-tab">Eindoverzicht</button></li>
+    </ul>
+  </nav>
+
+  <!-- Main content area -->
+  <main id="main-content" class="layout">
+    <section class="content" id="proto-content"></section>
+  </main>
+
+  <!-- Prototype scripts -->
+  <script src="js/prototype-stage-switcher.js"></script>
+</body>
+</html>
