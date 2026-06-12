@@ -99,6 +99,6 @@ class BulkCompetencyCreate(BaseModel):
     @classmethod
     def validate_total_weight(cls, competencies):
         total = sum(c.weight for c in competencies)
-        if total != 100:
+        if abs(total - 100) > 0.01:
             raise ValueError(f"Total weight must be exactly 100%, got {total}%")
         return competencies
