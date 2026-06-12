@@ -515,6 +515,7 @@ window.deleteProfile = deleteProfile;
 let currentUsers = [];
 let userSearchQuery = '';
 let userRoleFilter = '';
+let userShowInactive = false;
 let userSkip = 0;
 const userLimit = 20;
 
@@ -529,7 +530,7 @@ async function renderUserManager() {
       tbody.innerHTML = '<tr><td colspan="5">Laden...</td></tr>';
     }
     try {
-      const users = await UsersAPI.list(userRoleFilter || null, userSearchQuery || null, true, userSkip, userLimit);
+      const users = await UsersAPI.list(userRoleFilter || null, userSearchQuery || null, !userShowInactive, userSkip, userLimit);
       currentUsers = users;
       renderUserList();
     } catch (error) {
@@ -564,6 +565,13 @@ async function renderUserManager() {
 
   roleFilter?.addEventListener('change', () => {
     userRoleFilter = roleFilter.value;
+    userSkip = 0;
+    loadUsers();
+  });
+
+  const showInactiveCheckbox = document.getElementById('user-show-inactive');
+  showInactiveCheckbox?.addEventListener('change', () => {
+    userShowInactive = showInactiveCheckbox.checked;
     userSkip = 0;
     loadUsers();
   });
@@ -679,7 +687,7 @@ function changeUserPage(delta) {
   userSkip = Math.max(0, userSkip + delta * userLimit);
   const tbody = document.getElementById('users-table')?.querySelector('tbody');
   if (tbody) tbody.innerHTML = '<tr><td colspan="5">Laden...</td></tr>';
-  UsersAPI.list(userRoleFilter || null, userSearchQuery || null, true, userSkip, userLimit)
+  UsersAPI.list(userRoleFilter || null, userSearchQuery || null, !userShowInactive, userSkip, userLimit)
     .then(users => {
       currentUsers = users;
       _renderUserTable();
