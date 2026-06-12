@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 
 from app.database import get_db
-from app.models import User
+from app.models import User, Internship
 from app.schemas import UserResponse, UserCreate, UserUpdate, SeedUser
 from app.auth import get_current_active_user, get_password_hash
 from app.dependencies import pagination
@@ -212,6 +212,24 @@ def delete_user(
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Guard: prevent deletion if user has related internships
+    related = (
+        db.query(Internship)
+        .filter(
+            or_(
+                Internship.student_id == user_id,
+                Internship.teacher_id == user_id,
+                Internship.mentor_id == user_id,
+            )
+        )
+        .first()
+    )
+    if related:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Cannot delete user: they have related internships",
         )
 
     db.delete(user)
