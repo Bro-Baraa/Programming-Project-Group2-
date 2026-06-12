@@ -28,7 +28,7 @@ def calculate_evaluation_score(db: Session, evaluation: Evaluation) -> dict:
     for rule in rules:
         competency = rule.competency
         if competency:
-            weight = competency.weight
+            weight = rule.weight_snapshot if rule.weight_snapshot is not None else competency.weight
             total_weight += weight
             if rule.score is not None:
                 achieved_weight += (rule.score / 5.0) * weight

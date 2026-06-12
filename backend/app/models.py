@@ -285,6 +285,7 @@ class EvaluationRule(Base):
     evaluation_id = Column(Integer, ForeignKey("evaluations.id"), nullable=False)
     competency_id = Column(Integer, ForeignKey("competencies.id"), nullable=False)
     score = Column(Integer, nullable=True)  # 1-5
+    weight_snapshot = Column(Float, nullable=True)
     student_description = Column(Text, nullable=True)
     evaluator_feedback = Column(Text, nullable=True)
 

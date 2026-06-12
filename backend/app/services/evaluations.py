@@ -149,6 +149,10 @@ def finalize_evaluation(
     ensure_all_rules_scored(db, evaluation.id)
     mark_finalized(evaluation)
 
+    for rule in evaluation.rules:
+        if rule.competency:
+            rule.weight_snapshot = rule.competency.weight
+
     db.commit()
     db.refresh(evaluation)
 
