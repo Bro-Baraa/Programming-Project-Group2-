@@ -153,7 +153,7 @@ def finalize_evaluation(
         if rule.competency:
             rule.weight_snapshot = rule.competency.weight
 
-    db.commit()
+    db.flush()
     db.refresh(evaluation)
 
     return evaluation, calculate_evaluation_score(db, evaluation)

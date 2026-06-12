@@ -167,6 +167,8 @@ def finalize_evaluation_endpoint(
             actor=current_user,
         )
 
+    db.commit()
+
     # ── Notify the student that their evaluation has been finalized ──
     from app.services.notifications import notify
 
