@@ -15,14 +15,12 @@ class TestGetNotifications:
             Notification(
                 user_id=test_student.id,
                 message="Je stagevoorstel is goedgekeurd.",
-                internship_id=1,
                 link_view="voorstellen",
                 is_read=False,
             ),
             Notification(
                 user_id=test_student.id,
                 message="Logboek week 1 ingediend.",
-                internship_id=1,
                 link_view="logboek",
                 is_read=True,
             ),

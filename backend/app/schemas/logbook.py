@@ -31,6 +31,17 @@ class LogbookUpdate(BaseModel):
     entry_date: Optional[date] = None
 
 
+class LogbookWeekStatus(BaseModel):
+    """Status for a specific week (for displaying weeks)"""
+
+    week_number: int
+    logbook_id: Optional[int] = None
+    status: str  # missing, draft, submitted
+    mentor_validated: bool = False
+    mentor_feedback: Optional[str] = None
+
+
+
 class LogbookResponse(LogbookBase):
     model_config = ConfigDict(from_attributes=True)
 

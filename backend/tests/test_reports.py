@@ -104,9 +104,9 @@ class TestFinalReportJson:
         assert data["company_name"] == "Final Corp"
         assert data["proposal_status"] == "Goedgekeurd"
         assert data["agreement_status"] == "Gevalideerd"
-        assert data["total_weeks"] == 12
+        assert data["total_days"] == 81
         assert data["submitted_logbooks"] == 4
-        assert data["missing_logbooks"] == 8
+        assert data["missing_logbooks"] == 77
         assert data["final_evaluation"] is not None
         assert data["weighted_final_score"] is not None
         assert data["weighted_final_score"] > 0

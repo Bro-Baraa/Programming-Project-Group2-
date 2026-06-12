@@ -36,7 +36,7 @@ class TestSubmitInternship:
             description="Test internship",
         )
 
-        internship = result.internship
+        internship = result
         assert internship.status == "Ingediend"
         assert internship.student_id == test_student.id
         assert internship.company is not None
@@ -65,7 +65,7 @@ class TestSubmitInternship:
             mentor_id=test_mentor.id,
         )
 
-        internship = result.internship
+        internship = result
         assert internship.teacher_id == test_teacher.id
         assert internship.mentor_id == test_mentor.id
         assert internship.teacher == test_teacher
@@ -183,7 +183,7 @@ class TestReviewProposal:
             end_date=date.today(),
             description="Test",
         )
-        return result.internship
+        return result
 
     def test_committee_approves(
         self, db, pending_internship, test_committee, test_teacher, config
@@ -202,8 +202,8 @@ class TestReviewProposal:
             decision="Goedgekeurd",
             teacher_id=test_teacher.id,
         )
-        assert result.internship.status == "Goedgekeurd"
-        assert result.internship.proposal.status == "Goedgekeurd"
+        assert result.status == "Goedgekeurd"
+        assert result.proposal.status == "Goedgekeurd"
 
     def test_committee_rejects(self, db, pending_internship, test_committee, config):
         lifecycle = InternshipLifecycle(db, config)
@@ -217,7 +217,7 @@ class TestReviewProposal:
             actor=test_committee,
             decision="Afgekeurd",
         )
-        assert result.internship.status == "Afgekeurd"
+        assert result.status == "Afgekeurd"
 
     def test_committee_requests_changes_with_feedback(
         self, db, pending_internship, test_committee, config
@@ -234,8 +234,8 @@ class TestReviewProposal:
             decision="Aanpassingen Vereist",
             feedback="Needs more detail",
         )
-        assert result.internship.status == "Aanpassingen Vereist"
-        assert result.internship.proposal.feedback == "Needs more detail"
+        assert result.status == "Aanpassingen Vereist"
+        assert result.proposal.feedback == "Needs more detail"
 
     def test_requests_changes_without_feedback_raises_400(
         self, db, pending_internship, test_committee, config
@@ -302,17 +302,17 @@ class TestUploadAgreement:
             description="Test",
         )
         lifecycle.review_proposal(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_committee,
             decision="In Beoordeling",
         )
         lifecycle.review_proposal(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_committee,
             decision="Goedgekeurd",
             teacher_id=test_teacher.id,
         )
-        return result.internship
+        return result
 
     def test_student_uploads_pdf(self, db, approved_internship, test_student, config):
         lifecycle = InternshipLifecycle(db, config)
@@ -327,7 +327,7 @@ class TestUploadAgreement:
             content_type="application/pdf",
         )
 
-        internship = result.internship
+        internship = result
         assert internship.status == "Overeenkomst Ingediend"
         assert internship.agreement is not None
         assert internship.agreement.status == "Ingediend"
@@ -396,12 +396,12 @@ class TestValidateAgreement:
             description="Test",
         )
         lifecycle.review_proposal(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_committee,
             decision="In Beoordeling",
         )
         lifecycle.review_proposal(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_committee,
             decision="Goedgekeurd",
             teacher_id=test_teacher.id,
@@ -409,13 +409,13 @@ class TestValidateAgreement:
         from io import BytesIO
 
         lifecycle.upload_agreement(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_student,
             file_stream=BytesIO(b"%PDF-1.4 fake"),
             filename="agreement.pdf",
             content_type="application/pdf",
         )
-        return result.internship
+        return result
 
     def test_committee_validates_to_lopend(
         self, db, uploaded_agreement, test_committee, config
@@ -427,7 +427,7 @@ class TestValidateAgreement:
             insurance_verified=True,
             agreement_status="Gevalideerd",
         )
-        internship = result.internship
+        internship = result
         assert internship.status == "Lopend"
         assert internship.agreement.status == "Gevalideerd"
         assert internship.agreement.insurance_verified is True
@@ -442,7 +442,7 @@ class TestValidateAgreement:
             actor=test_committee,
             agreement_status="Onvolledig",
         )
-        internship = result.internship
+        internship = result
         assert internship.status == "Overeenkomst Ingediend"  # unchanged
         assert internship.agreement.status == "Onvolledig"
         # ── Verify the student is notified ──
@@ -474,7 +474,7 @@ class TestValidateAgreement:
             actor=test_committee,
             agreement_status="Onvolledig",
         )
-        internship = result.internship
+        internship = result
         assert internship.status == "Overeenkomst Ingediend"
         assert internship.agreement.status == "Onvolledig"
         # ── Verify student can re-upload from this state ──
@@ -520,17 +520,17 @@ class TestResubmitProposal:
             description="Original",
         )
         lifecycle.review_proposal(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_committee,
             decision="In Beoordeling",
         )
         lifecycle.review_proposal(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_committee,
             decision="Aanpassingen Vereist",
             feedback="Expand scope",
         )
-        return result.internship
+        return result
 
     def test_student_resubmits(self, db, changes_requested, test_student, config):
         lifecycle = InternshipLifecycle(db, config)
@@ -539,7 +539,7 @@ class TestResubmitProposal:
             actor=test_student,
             new_description="Expanded scope description",
         )
-        internship = result.internship
+        internship = result
         assert internship.status == "In Beoordeling"
         assert internship.proposal.status == "In Beoordeling"
         assert internship.proposal.description == "Expanded scope description"
@@ -562,12 +562,12 @@ class TestResubmitProposal:
             description="Test",
         )
         lifecycle.review_proposal(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_committee,
             decision="In Beoordeling",
         )
         lifecycle.review_proposal(
-            internship_id=result.internship.id,
+            internship_id=result.id,
             actor=test_committee,
             decision="Goedgekeurd",
             teacher_id=test_teacher.id,
@@ -576,7 +576,7 @@ class TestResubmitProposal:
         # Resubmit from Goedgekeurd is illegal
         with pytest.raises(HTTPException) as exc:
             lifecycle.resubmit_proposal(
-                internship_id=result.internship.id,
+                internship_id=result.id,
                 actor=test_student,
                 new_description="Nope",
             )
@@ -600,7 +600,7 @@ class TestForceStatus:
             end_date=date.today(),
             description="Test",
         )
-        return result.internship
+        return result
 
     def test_admin_can_force_status(self, db, any_internship, test_admin, config):
         lifecycle = InternshipLifecycle(db, config)

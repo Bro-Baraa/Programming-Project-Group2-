@@ -41,3 +41,21 @@ class TestCsvExport:
         lines = content.strip().split("\n")
         assert len(lines) >= 1  # at least header
         assert "Student" in lines[0]
+
+    def test_csv_export_mentor_forbidden(self, client, auth_headers_mentor):
+        response = client.get(
+            "/api/internships/reports/export/csv",
+            headers=auth_headers_mentor,
+        )
+        assert response.status_code == 403
+
+    def test_csv_export_teacher_success(self, client, auth_headers_teacher):
+        response = client.get(
+            "/api/internships/reports/export/csv",
+            headers=auth_headers_teacher,
+        )
+        assert response.status_code == 200
+        content = response.content.decode("utf-8-sig")
+        lines = content.strip().split("\n")
+        assert len(lines) >= 1  # at least header
+        assert "Student" in lines[0]

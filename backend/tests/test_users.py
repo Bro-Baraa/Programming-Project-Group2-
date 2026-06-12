@@ -49,7 +49,7 @@ class TestCreateUser:
             "first_name": "Duplicate",
             "last_name": "User",
             "role": "student",
-            "password": "pass123",
+            "password": "password123",
         }
         response = client.post("/api/users", json=new_user, headers=auth_headers_admin)
         assert response.status_code == 400
@@ -65,7 +65,7 @@ class TestCreateUser:
             "first_name": "Anon",
             "last_name": "User",
             "role": "student",
-            "password": "pass123",
+            "password": "password123",
         }
         response = client.post("/api/users", json=new_user)
         assert response.status_code == 401
