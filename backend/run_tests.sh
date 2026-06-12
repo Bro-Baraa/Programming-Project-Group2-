@@ -8,12 +8,12 @@ echo "======================================="
 echo ""
 
 # Activate virtual environment if it exists
-if [ -d "venv" ] && [ -f "venv/bin/activate" ]; then
+if [ -d ".venv" ] && [ -f ".venv/bin/activate" ]; then
     echo "📦 Activating virtual environment..."
-    source venv/bin/activate
-elif [ -d "venv" ] && [ -f "venv/Scripts/activate" ]; then
+    source .venv/bin/activate
+elif [ -d ".venv" ] && [ -f ".venv/Scripts/activate" ]; then
     echo "📦 Activating virtual environment (Windows)..."
-    source venv/Scripts/activate
+    source .venv/Scripts/activate
 fi
 
 # Check if pytest is available
