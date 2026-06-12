@@ -85,7 +85,7 @@ def generate_final_report_pdf(
             pdf.cell(
                 0,
                 8,
-                f"Gewogen eindscore: {report.weighted_final_score:.2f} / 5",
+                f"Gewogen eindscore: {report.weighted_final_score:.2f} / 100",
                 ln=True,
             )
             pdf.ln(2)
