@@ -122,6 +122,9 @@ class Internship(Base):
     feedbacks = relationship(
         "Feedback", back_populates="internship", cascade="all, delete-orphan"
     )
+    notifications = relationship(
+        "Notification", back_populates="internship", cascade="all, delete-orphan"
+    )
 
     @property
     def proposal_status(self) -> str | None:
@@ -304,13 +307,13 @@ class Notification(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     message = Column(Text, nullable=False)
-    internship_id = Column(Integer, ForeignKey("internships.id"), nullable=True)
+    internship_id = Column(Integer, ForeignKey("internships.id", ondelete="CASCADE"), nullable=True)
     link_view = Column(String, nullable=True)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", foreign_keys=[user_id])
-    internship = relationship("Internship", foreign_keys=[internship_id])
+    internship = relationship("Internship", foreign_keys=[internship_id], back_populates="notifications")
 
 
 class Feedback(Base):
