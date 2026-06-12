@@ -103,7 +103,7 @@ async def rate_limit(request: Request, call_next):
             _last_cleanup = now
 
         _rate_limit[ip] = [t for t in _rate_limit[ip] if now - t < 60]
-        if len(_rate_limit[ip]) > 10:
+        if len(_rate_limit[ip]) >= 10:
             return Response("Too many requests", status_code=429)
         _rate_limit[ip].append(now)
     return await call_next(request)
