@@ -175,7 +175,6 @@ function renderLogin() {
     const form = document.getElementById('login-form');
     form?.addEventListener('submit', handleLogin);
     
-    // Quick-login dropdown vullen vanuit seed data (lazy load)
     const quickLogin = document.getElementById('quick-login');
     if (quickLogin) {
       quickLogin.textContent = '';
@@ -189,7 +188,15 @@ function renderLogin() {
         loadBtn.disabled = true;
         loadBtn.textContent = 'Laden...';
         fetch(`${API_BASE_URL}/users/seed`)
-          .then(r => r.ok ? r.json() : [])
+          .then(r => {
+            if (!r.ok) {
+              if (r.status === 0) {
+                throw new Error('Kan geen verbinding maken met de backend. Is de server gestart?');
+              }
+              throw new Error(`Server fout: ${r.status}`);
+            }
+            return r.json();
+          })
           .then(accounts => {
             if (!accounts.length) {
               quickLogin.textContent = '';
@@ -238,12 +245,17 @@ function renderLogin() {
               }
             });
           })
-          .catch(() => {
+          .catch((err) => {
             quickLogin.textContent = '';
             const pErr = document.createElement('p');
             pErr.className = 'hint';
-            pErr.textContent = 'Kon test accounts niet laden';
+            pErr.textContent = err.message || 'Kon test accounts niet laden';
             quickLogin.appendChild(pErr);
+            console.error('[Login] Failed to load seed accounts:', err);
+          })
+          .finally(() => {
+            loadBtn.disabled = false;
+            loadBtn.textContent = 'Test accounts laden';
           });
       });
     }

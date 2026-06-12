@@ -2,6 +2,25 @@
 // Studentweergaven
 // ============================================
 
+function _loadUserDropdown(select, role, label) {
+  if (!select) return;
+  const roleLabel = label || (role === 'teacher' ? 'docent' : 'mentor');
+  select.innerHTML = '<option value="">Laden...</option>';
+  select.disabled = true;
+  UsersAPI.list(role).then(users => {
+    select.innerHTML = `<option value="">-- Kies een ${roleLabel} --</option>`;
+    users.forEach(u => {
+      const option = document.createElement('option');
+      option.value = u.id;
+      option.textContent = `${u.first_name} ${u.last_name} (${u.email})`;
+      select.appendChild(option);
+    });
+    select.disabled = false;
+  }).catch(() => {
+    select.innerHTML = `<option value="">Kon ${roleLabel}s niet laden</option>`;
+  });
+}
+
 async function renderStudentDashboard() {
     if (!currentInternship) {
       content.innerHTML = `
@@ -88,26 +107,39 @@ async function renderStudentDashboard() {
       }
     }
 
-    // Logboeken tabel bijwerken - toon alle weken inclusief ontbrekende (US-08)
-    // Berekend lokaal vanuit currentInternship + currentLogbooks — geen extra API call
+    // Dagelijkse logboeken tabel bijwerken
     const tbody = document.querySelector('table tbody');
     if (tbody && currentInternship) {
       const start = currentInternship.start_date ? new Date(currentInternship.start_date) : null;
       const end = currentInternship.end_date ? new Date(currentInternship.end_date) : null;
-      let totalWeeks = 0;
-      if (start && end && end > start) {
-        const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-        totalWeeks = Math.max(1, Math.floor(days / 7) + 1);
+      let totalDays = 0;
+      if (start && end && end >= start) {
+        totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
       }
 
-      const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+      const logbookMap = new Map();
+      for (const lb of currentLogbooks) {
+        if (lb.entry_date) {
+          logbookMap.set(lb.entry_date, lb);
+        } else if (lb.week_number && start) {
+          const computed = new Date(start);
+          computed.setDate(computed.getDate() + (lb.week_number - 1) * 7);
+          logbookMap.set(computed.toISOString().split('T')[0], lb);
+        }
+      }
+
       const rows = [];
-      for (let w = 1; w <= totalWeeks; w++) {
-        const lb = logbookMap.get(w);
+      const maxRows = Math.min(totalDays, 14); // show last 14 days on dashboard
+      for (let d = Math.max(0, totalDays - 14); d < totalDays; d++) {
+        const dayDate = new Date(start);
+        dayDate.setDate(dayDate.getDate() + d);
+        const dateStr = dayDate.toISOString().split('T')[0];
+        const lb = logbookMap.get(dateStr);
+        const dayLabel = `${dayDate.getDate()}/${dayDate.getMonth() + 1}`;
         if (!lb) {
           rows.push(`
             <tr class="missing-row">
-              <td>${escapeHtml(w)}</td>
+              <td>${escapeHtml(dayLabel)}</td>
               <td><span class="status-pill status-warn">Ontbrekend</span></td>
               <td>-</td>
               <td>-</td>
@@ -116,7 +148,7 @@ async function renderStudentDashboard() {
         } else {
           rows.push(`
             <tr>
-              <td>${escapeHtml(w)}</td>
+              <td>${escapeHtml(dayLabel)}</td>
               <td>${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</td>
               <td>${lb.mentor_validated ? 'Goedgekeurd' : (lb.status === 'submitted' ? 'In afwachting' : '-')}</td>
               <td>${lb.mentor_feedback ? escapeHtml(lb.mentor_feedback) : '<span class="hint">-</span>'}</td>
@@ -124,7 +156,7 @@ async function renderStudentDashboard() {
           `);
         }
       }
-      tbody.innerHTML = rows.join('') || '<tr><td colspan="4">Geen logboekweken gevonden</td></tr>';
+      tbody.innerHTML = rows.join('') || '<tr><td colspan="4">Geen logboekdagen gevonden</td></tr>';
     }
 
     // Competentie Progressie bijwerken
@@ -186,7 +218,7 @@ async function renderStudentDashboard() {
     }
   }
 
-  function wireProposalForm() {
+  async function wireProposalForm() {
     const container = content.querySelector('.panel.card');
     if (!container) return;
 
@@ -196,42 +228,8 @@ async function renderStudentDashboard() {
       if (!form) return;
 
       // teacher en mentor dropdowns
-      const teacherSelect = document.getElementById('teacher-select');
-      const mentorSelect = document.getElementById('mentor-select');
-
-      if (teacherSelect) {
-        teacherSelect.innerHTML = '<option value="">Laden...</option>';
-        teacherSelect.disabled = true;
-        UsersAPI.list('teacher').then(teachers => {
-          teacherSelect.innerHTML = '<option value="">-- Kies een docent --</option>';
-          teachers.forEach(t => {
-            const option = document.createElement('option');
-            option.value = t.id;
-            option.textContent = `${t.first_name} ${t.last_name} (${t.email})`;
-            teacherSelect.appendChild(option);
-          });
-          teacherSelect.disabled = false;
-        }).catch(() => {
-          teacherSelect.innerHTML = '<option value="">Kon docenten niet laden</option>';
-        });
-      }
-
-      if (mentorSelect) {
-        mentorSelect.innerHTML = '<option value="">Laden...</option>';
-        mentorSelect.disabled = true;
-        UsersAPI.list('mentor').then(mentors => {
-          mentorSelect.innerHTML = '<option value="">-- Kies een mentor --</option>';
-          mentors.forEach(m => {
-            const option = document.createElement('option');
-            option.value = m.id;
-            option.textContent = `${m.first_name} ${m.last_name} (${m.email})`;
-            mentorSelect.appendChild(option);
-          });
-          mentorSelect.disabled = false;
-        }).catch(() => {
-          mentorSelect.innerHTML = '<option value="">Kon mentors niet laden</option>';
-        });
-      }
+      _loadUserDropdown(document.getElementById('teacher-select'), 'teacher', 'docent');
+      _loadUserDropdown(document.getElementById('mentor-select'), 'mentor');
 
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -620,42 +618,8 @@ async function renderStudentDashboard() {
         </form>
       `;
 
-      const teacherSelect = document.getElementById('new-teacher-select');
-      const mentorSelect = document.getElementById('new-mentor-select');
-
-      if (teacherSelect) {
-        teacherSelect.innerHTML = '<option value="">Laden...</option>';
-        teacherSelect.disabled = true;
-        UsersAPI.list('teacher').then(teachers => {
-          teacherSelect.innerHTML = '<option value="">-- Kies een docent --</option>';
-          teachers.forEach(t => {
-            const option = document.createElement('option');
-            option.value = t.id;
-            option.textContent = `${t.first_name} ${t.last_name} (${t.email})`;
-            teacherSelect.appendChild(option);
-          });
-          teacherSelect.disabled = false;
-        }).catch(() => {
-          teacherSelect.innerHTML = '<option value="">Kon docenten niet laden</option>';
-        });
-      }
-
-      if (mentorSelect) {
-        mentorSelect.innerHTML = '<option value="">Laden...</option>';
-        mentorSelect.disabled = true;
-        UsersAPI.list('mentor').then(mentors => {
-          mentorSelect.innerHTML = '<option value="">-- Kies een mentor --</option>';
-          mentors.forEach(m => {
-            const option = document.createElement('option');
-            option.value = m.id;
-            option.textContent = `${m.first_name} ${m.last_name} (${m.email})`;
-            mentorSelect.appendChild(option);
-          });
-          mentorSelect.disabled = false;
-        }).catch(() => {
-          mentorSelect.innerHTML = '<option value="">Kon mentors niet laden</option>';
-        });
-      }
+      _loadUserDropdown(document.getElementById('new-teacher-select'), 'teacher', 'docent');
+      _loadUserDropdown(document.getElementById('new-mentor-select'), 'mentor');
 
       document.getElementById('btn-cancel-new-proposal')?.addEventListener('click', () => {
         renderView();
@@ -701,9 +665,10 @@ async function renderStudentDashboard() {
     const form = document.getElementById('logbook-form');
     const submitBtn = document.getElementById('submit-logbook');
     const cancelBtn = document.getElementById('cancel-logbook');
-    const gridEl = document.getElementById('logbook-week-grid');
+    const gridEl = document.getElementById('logbook-day-grid');
     const formPanel = document.getElementById('logbook-form-panel');
-    const formWeekLabel = document.getElementById('form-week-label');
+    const formDayLabel = document.getElementById('form-day-label');
+    const entryDateInput = document.getElementById('log-entry-date');
 
     if (!currentInternship) {
       content.innerHTML = `
@@ -728,81 +693,114 @@ async function renderStudentDashboard() {
       return;
     }
 
-    let selectedWeek = null;
+    let selectedDayOffset = null;
     let selectedLogbook = null;
 
-    // ── Build week grid ──
-    function renderWeekGrid() {
+    function _dateStr(d) {
+      return d.toISOString().split('T')[0];
+    }
+
+    function _parseDate(str) {
+      if (!str) return null;
+      const d = new Date(str);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // ── Build day grid ──
+    function renderDayGrid() {
       if (!gridEl) return;
-      const start = currentInternship.start_date ? new Date(currentInternship.start_date) : null;
-      const end = currentInternship.end_date ? new Date(currentInternship.end_date) : null;
-      let totalWeeks = 0;
-      if (start && end && end > start) {
-        const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-        totalWeeks = Math.max(1, Math.floor(days / 7) + 1);
+      const start = currentInternship.start_date ? _parseDate(currentInternship.start_date) : null;
+      const end = currentInternship.end_date ? _parseDate(currentInternship.end_date) : null;
+      let totalDays = 0;
+      if (start && end && end >= start) {
+        totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
       }
-      if (!totalWeeks) {
-        gridEl.innerHTML = '<p class="hint">Stageperiode niet ingesteld.</p>';
+      if (!totalDays || totalDays > 365) {
+        gridEl.innerHTML = '<p class="hint">Stageperiode niet ingesteld of te lang.</p>';
         return;
       }
 
-      const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+      const logbookMap = new Map();
+      for (const lb of currentLogbooks) {
+        if (lb.entry_date) {
+          logbookMap.set(lb.entry_date, lb);
+        } else if (lb.week_number && start) {
+          const computed = new Date(start);
+          computed.setDate(computed.getDate() + (lb.week_number - 1) * 7);
+          logbookMap.set(_dateStr(computed), lb);
+        }
+      }
 
       gridEl.innerHTML = '';
-      for (let w = 1; w <= totalWeeks; w++) {
-        const lb = logbookMap.get(w);
-        let statusClass = 'status-missing';
-        let statusLabel = 'Ontbrekend';
-        if (lb) {
-          if (lb.status === 'submitted') {
-            statusClass = 'status-submitted';
-            statusLabel = lb.mentor_validated ? 'Aftekend' : 'Ingediend';
-          } else {
-            statusClass = 'status-draft';
-            statusLabel = 'Concept';
+      // Show days in groups of 7 (weeks) for compactness
+      const weeksToShow = Math.ceil(totalDays / 7);
+      for (let w = 0; w < weeksToShow; w++) {
+        const weekRow = document.createElement('div');
+        weekRow.className = 'day-week-row';
+        weekRow.style.display = 'flex';
+        weekRow.style.gap = '0.35rem';
+        weekRow.style.marginBottom = '0.35rem';
+        for (let d = 0; d < 7; d++) {
+          const dayOffset = w * 7 + d;
+          if (dayOffset >= totalDays) break;
+          const dayDate = new Date(start);
+          dayDate.setDate(dayDate.getDate() + dayOffset);
+          const dateStr = _dateStr(dayDate);
+          const lb = logbookMap.get(dateStr);
+          let statusClass = 'status-missing';
+          let statusLabel = 'Ontb.';
+          if (lb) {
+            if (lb.status === 'submitted') {
+              statusClass = lb.mentor_validated ? 'status-good' : 'status-submitted';
+              statusLabel = lb.mentor_validated ? '✓' : '✓';
+            } else {
+              statusClass = 'status-draft';
+              statusLabel = '…';
+            }
           }
+          const cell = document.createElement('div');
+          cell.className = `day-cell ${statusClass}`;
+          cell.dataset.dayOffset = dayOffset;
+          cell.dataset.date = dateStr;
+          cell.title = `${dayDate.getDate()}/${dayDate.getMonth() + 1}: ${lb ? (lb.status === 'submitted' ? 'Ingediend' : 'Concept') : 'Ontbrekend'}`;
+          cell.style.cssText = 'flex:1; min-width:32px; text-align:center; padding:0.25rem 0; border-radius:6px; cursor:pointer; font-size:0.75rem; border:1px solid var(--border);';
+          cell.innerHTML = `<div style="font-weight:700;">${dayDate.getDate()}</div><div style="font-size:0.65rem;">${statusLabel}</div>`;
+          cell.addEventListener('click', () => openDay(dayOffset, dateStr));
+          weekRow.appendChild(cell);
         }
-
-        const cell = document.createElement('div');
-        cell.className = `week-cell ${statusClass}`;
-        cell.dataset.week = w;
-        cell.setAttribute('role', 'button');
-        cell.setAttribute('tabindex', '0');
-        cell.setAttribute('aria-label', `Week ${w}: ${statusLabel}`);
-        cell.innerHTML = `
-          <span class="week-number">${w}</span>
-          <span class="week-status">${statusLabel}</span>
-        `;
-        cell.addEventListener('click', () => openWeek(w));
-        cell.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openWeek(w);
-          }
-        });
-        gridEl.appendChild(cell);
+        gridEl.appendChild(weekRow);
       }
     }
 
-    // ── Open a week in the form ──
-    function openWeek(week) {
-      selectedWeek = week;
-      selectedLogbook = currentLogbooks.find(lb => lb.week_number === week) || null;
+    // ── Open a day in the form ──
+    function openDay(dayOffset, dateStr) {
+      selectedDayOffset = dayOffset;
+      const start = currentInternship.start_date ? _parseDate(currentInternship.start_date) : null;
+      selectedLogbook = currentLogbooks.find(lb => {
+        if (lb.entry_date) return lb.entry_date === dateStr;
+        if (lb.week_number && start) {
+          const computed = new Date(start);
+          computed.setDate(computed.getDate() + (lb.week_number - 1) * 7);
+          return _dateStr(computed) === dateStr;
+        }
+        return false;
+      }) || null;
 
-      // Highlight selected cell
-      gridEl?.querySelectorAll('.week-cell').forEach(c => c.classList.remove('selected'));
-      gridEl?.querySelector(`[data-week="${week}"]`)?.classList.add('selected');
+      gridEl?.querySelectorAll('.day-cell').forEach(c => c.classList.remove('selected'));
+      gridEl?.querySelector(`[data-date="${dateStr}"]`)?.classList.add('selected');
 
-      // Show form panel
       if (formPanel) formPanel.style.display = 'block';
-      if (formWeekLabel) formWeekLabel.textContent = week;
+      const dayDate = new Date(start);
+      dayDate.setDate(dayDate.getDate() + dayOffset);
+      const label = `${dayDate.getDate()}/${dayDate.getMonth() + 1}/${dayDate.getFullYear()}`;
+      if (formDayLabel) formDayLabel.textContent = label;
 
-      document.getElementById('log-week').value = week;
+      document.getElementById('log-day-offset').value = dayOffset;
+      if (entryDateInput) entryDateInput.value = dateStr;
       document.getElementById('log-tasks').value = selectedLogbook?.tasks || '';
       document.getElementById('log-reflection').value = selectedLogbook?.reflection || '';
       document.getElementById('log-issues').value = selectedLogbook?.issues || '';
 
-      // Disable submit if already submitted
       if (submitBtn) {
         submitBtn.disabled = selectedLogbook?.status === 'submitted';
         submitBtn.textContent = selectedLogbook?.status === 'submitted' ? 'Reeds ingediend' : 'Definitief Indienen';
@@ -811,8 +809,8 @@ async function renderStudentDashboard() {
 
     function closeForm() {
       if (formPanel) formPanel.style.display = 'none';
-      gridEl?.querySelectorAll('.week-cell').forEach(c => c.classList.remove('selected'));
-      selectedWeek = null;
+      gridEl?.querySelectorAll('.day-cell').forEach(c => c.classList.remove('selected'));
+      selectedDayOffset = null;
       selectedLogbook = null;
     }
 
@@ -820,11 +818,11 @@ async function renderStudentDashboard() {
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const saveBtn = form.querySelector('button[type="submit"]');
-      const week = parseInt(document.getElementById('log-week').value);
+      const entryDate = document.getElementById('log-entry-date').value;
       const tasks = document.getElementById('log-tasks').value;
 
-      if (!week) {
-        showToast('Selecteer een week', 'error');
+      if (!entryDate) {
+        showToast('Selecteer een datum', 'error');
         return;
       }
 
@@ -832,7 +830,7 @@ async function renderStudentDashboard() {
 
       try {
         const payload = {
-          week_number: week,
+          entry_date: entryDate,
           tasks: tasks,
           reflection: document.getElementById('log-reflection').value,
           issues: document.getElementById('log-issues').value,
@@ -848,11 +846,14 @@ async function renderStudentDashboard() {
         hideLoading(saveBtn);
         showToast('Logboek opgeslagen als concept', 'info');
 
-        // Refresh data and re-render grid
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
-        renderWeekGrid();
-        // Re-open same week to update selectedLogbook reference
-        if (selectedWeek) openWeek(selectedWeek);
+        renderDayGrid();
+        if (selectedDayOffset !== null) {
+          const start = currentInternship.start_date ? _parseDate(currentInternship.start_date) : null;
+          const d = new Date(start);
+          d.setDate(d.getDate() + selectedDayOffset);
+          openDay(selectedDayOffset, _dateStr(d));
+        }
       } catch (error) {
         hideLoading(saveBtn);
         showToast(error.message, 'error');
@@ -861,11 +862,11 @@ async function renderStudentDashboard() {
 
     // ── Submit ──
     submitBtn?.addEventListener('click', async () => {
-      const week = parseInt(document.getElementById('log-week').value);
+      const entryDate = document.getElementById('log-entry-date').value;
       const tasks = document.getElementById('log-tasks').value;
 
-      if (!week) {
-        showToast('Selecteer een week', 'error');
+      if (!entryDate) {
+        showToast('Selecteer een datum', 'error');
         return;
       }
       if (!tasks) {
@@ -880,11 +881,10 @@ async function renderStudentDashboard() {
       showLoading(submitBtn, 'Indienen...');
 
       try {
-        // Ensure logbook exists first
         let logbook = selectedLogbook;
         if (!logbook) {
           logbook = await InternshipsAPI.createLogbook(currentInternship.id, {
-            week_number: week,
+            entry_date: entryDate,
             tasks: tasks,
             reflection: document.getElementById('log-reflection').value,
             issues: document.getElementById('log-issues').value,
@@ -892,16 +892,19 @@ async function renderStudentDashboard() {
           });
         }
 
-        // Submit via dedicated endpoint
         await InternshipsAPI.submitLogbook(logbook.id);
 
         hideLoading(submitBtn);
-        showToast(`Logboek week ${week} ingediend!`, 'success');
+        showToast(`Logboek ${entryDate} ingediend!`, 'success');
 
-        // Refresh data and re-render grid
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
-        renderWeekGrid();
-        if (selectedWeek) openWeek(selectedWeek);
+        renderDayGrid();
+        if (selectedDayOffset !== null) {
+          const start = currentInternship.start_date ? _parseDate(currentInternship.start_date) : null;
+          const d = new Date(start);
+          d.setDate(d.getDate() + selectedDayOffset);
+          openDay(selectedDayOffset, _dateStr(d));
+        }
       } catch (error) {
         hideLoading(submitBtn);
         showToast(error.message, 'error');
@@ -912,7 +915,7 @@ async function renderStudentDashboard() {
     cancelBtn?.addEventListener('click', closeForm);
 
     // ── Initial render ──
-    renderWeekGrid();
+    renderDayGrid();
   }
 
   function wireAgreementUpload() {

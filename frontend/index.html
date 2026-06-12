@@ -121,11 +121,11 @@
 
     <div class="grid two-col">
       <article class="panel card">
-        <h2>Logboeken Overzicht</h2>
+        <h2>Logboeken Overzicht (Laatste 14 dagen)</h2>
         <table>
           <thead>
             <tr>
-              <th>Week</th>
+              <th>Dag</th>
               <th>Status</th>
               <th>Mentor</th>
               <th>Feedback</th>
@@ -133,7 +133,7 @@
           </thead>
           <tbody>
             <tr>
-              <td colspan="4">Nog geen logboeken. Klik op een week in het overzicht om te beginnen.</td>
+              <td colspan="4">Nog geen logboeken. Klik op een dag in het overzicht om te beginnen.</td>
             </tr>
           </tbody>
         </table>
@@ -218,9 +218,9 @@
 
   <template id="student-logboek-template">
     <div class="panel card">
-      <h2>Logboeken Overzicht</h2>
-      <p class="hint">Klik op een week om het logboek te bewerken of in te vullen. Groen = ingediend, oranje = concept.</p>
-      <div id="logbook-week-grid" class="week-grid"></div>
+      <h2>Dagelijkse Logboeken</h2>
+      <p class="hint">Klik op een dag om het logboek te bewerken of in te vullen. Groen = ingediend, oranje = concept.</p>
+      <div id="logbook-day-grid" class="day-grid"></div>
       <div id="logbook-legend" style="margin-top: 0.75rem; display: flex; gap: 1rem; font-size: 0.8rem;">
         <span><span class="dot" style="background:var(--good);"></span> Ingediend</span>
         <span><span class="dot" style="background:var(--warn);"></span> Concept</span>
@@ -229,16 +229,20 @@
     </div>
 
     <div id="logbook-form-panel" class="panel card" style="display:none;">
-      <h2>Logboek Week <span id="form-week-label">—</span></h2>
+      <h2>Logboek <span id="form-day-label">—</span></h2>
       <form id="logbook-form">
-        <input type="hidden" id="log-week" />
+        <input type="hidden" id="log-day-offset" />
         <div class="row full">
-          <label>Taken deze week</label>
-          <textarea id="log-tasks" rows="3" placeholder="Wat heb je deze week gedaan?"></textarea>
+          <label>Datum</label>
+          <input type="date" id="log-entry-date" required />
+        </div>
+        <div class="row full">
+          <label>Taken deze dag</label>
+          <textarea id="log-tasks" rows="3" placeholder="Wat heb je deze dag gedaan?"></textarea>
         </div>
         <div class="row full">
           <label>Reflectie</label>
-          <textarea id="log-reflection" rows="3" placeholder="Hoe verliep de week? Wat leerde je?"></textarea>
+          <textarea id="log-reflection" rows="3" placeholder="Hoe verliep de dag? Wat leerde je?"></textarea>
         </div>
         <div class="row full">
           <label>Problemen / Leerpunten</label>
@@ -627,7 +631,10 @@
     <div class="panel card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
         <h2 style="margin: 0;">Overeenkomsten Overzicht</h2>
-        <button id="btn-export-csv" class="btn small"><img src="icons/download.svg" alt="" width="14" height="14" class="icon-img" /> Exporteer CSV</button>
+        <div class="btn-group">
+          <button id="btn-export-csv" class="btn small"><img src="icons/download.svg" alt="" width="14" height="14" class="icon-img" /> Exporteer CSV</button>
+          <button id="btn-export-excel" class="btn small secondary"><img src="icons/download.svg" alt="" width="14" height="14" class="icon-img" /> Exporteer Excel</button>
+        </div>
       </div>
       <p class="hint">Overzicht van alle studenten en hun overeenkomststatus. Alleen studenten met een goedgekeurd voorstel worden getoond.</p>
       <table id="admin-agreements-table">
@@ -786,18 +793,6 @@
     </div>
   </template>
 
-<<<<<<< HEAD
-  <script src="js/api-client.js"></script>
-  <script src="js/notifications.js"></script>
-  <script src="js/ui-helpers.js"></script>
-  <script src="js/table-cards.js"></script>
-  <script src="js/views/student.js"></script>
-  <script src="js/views/committee.js"></script>
-  <script src="js/views/teacher.js"></script>
-  <script src="js/views/mentor.js"></script>
-  <script src="js/views/admin.js"></script>
-  <script src="js/app.js"></script>
-||||||| parent of 248415a (search bar + sort/filter options)
   <script src="js/api-client.js?v=2026-06-06-1"></script>
   <script src="js/notifications.js?v=2026-06-06-1"></script>
   <script src="js/ui-helpers.js?v=2026-06-06-1"></script>
@@ -809,19 +804,6 @@
   <script src="js/views/mentor.js?v=2026-06-06-1"></script>
   <script src="js/views/admin.js?v=2026-06-06-1"></script>
   <script src="js/app.js?v=2026-06-06-1"></script>
-=======
-  <script src="js/api-client.js?v=2026-06-06-1"></script>
-  <script src="js/notifications.js?v=2026-06-06-1"></script>
-  <script src="js/ui-helpers.js?v=2026-06-06-1"></script>
-  <script src="js/table-cards.js?v=2026-06-06-1"></script>
-  <script src="js/table-utils.js?v=2026-06-06-1"></script>
-  <script src="js/views/student.js?v=2026-06-06-1"></script>
-  <script src="js/views/committee.js?v=2026-06-06-1"></script>
-  <script src="js/views/teacher.js?v=2026-06-06-1"></script>
-  <script src="js/views/mentor.js?v=2026-06-06-1"></script>
-  <script src="js/views/admin.js?v=2026-06-06-1"></script>
-  <script src="js/app.js?v=2026-06-06-1"></script>
->>>>>>> 248415a (search bar + sort/filter options)
 </body>
 
 </html>

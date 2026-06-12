@@ -204,8 +204,8 @@ const InternshipsAPI = {
     return apiRequest(`/internships/${internshipId}/logbooks`);
   },
 
-  getLogbookWeeks(internshipId) {
-    return apiRequest(`/internships/${internshipId}/logbooks/weeks`);
+  getLogbookDays(internshipId) {
+    return apiRequest(`/internships/${internshipId}/logbooks/days`);
   },
 
   createLogbook(internshipId, data) {
@@ -444,14 +444,13 @@ const ReportsAPI = {
   },
 
   exportCsv() {
-    const token = getToken();
     const url = `${API_BASE_URL}/internships/reports/export/csv`;
-    return fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    }).then(response => {
-      if (!response.ok) throw new Error('Export mislukt');
-      return response.blob();
-    });
+    return downloadFile(url, `stage_export_${new Date().toISOString().slice(0, 10)}.csv`);
+  },
+
+  exportExcel() {
+    const url = `${API_BASE_URL}/internships/reports/export/excel`;
+    return downloadFile(url, `stage_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
   }
 };
 

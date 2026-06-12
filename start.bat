@@ -73,7 +73,7 @@ pause
 exit /b 1
 
 :python_found
-echo [OK] Python gevonden: %PYTHON_RUNNER%
+echo [OK] Python gevonden: !PYTHON_RUNNER!
 
 REM ── Node.js controleren ──────────────────────────────────────────────
 if "%BACKEND_ONLY%"=="false" (
@@ -205,9 +205,9 @@ cursor.execute('SELECT COUNT(*) FROM users')
 count = cursor.fetchone()[0]
 conn.close()
 if count == 0:
-    print('LEEG')
+    sys.exit(1)
 " >nul 2>&1
-  if !errorlevel! == 0 (
+  if !errorlevel! neq 0 (
     echo [INFO] Database leeg. Vullen...
     %INIT_RUNNER% seed_loader.py
     echo [OK] Database gevuld

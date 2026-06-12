@@ -538,37 +538,7 @@ async function renderUserManager() {
   }
 
   function renderUserList() {
-    if (!tbody) return;
-
-    if (currentUsers.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5">Geen gebruikers gevonden</td></tr>';
-      pagination.innerHTML = '';
-      return;
-    }
-
-    tbody.innerHTML = currentUsers.map(u => {
-      const statusClass = u.is_active ? 'status-good' : 'status-warn';
-      const statusText = u.is_active ? 'Actief' : 'Inactief';
-      return `
-        <tr>
-          <td>${u.first_name} ${u.last_name}</td>
-          <td>${u.email}</td>
-          <td>${roleDisplayNames[u.role] || u.role}</td>
-          <td><span class="status-pill ${statusClass}">${statusText}</span></td>
-          <td>
-            <button class="btn small" onclick="handleEditUser(${u.id})">${iconHtml('edit', 14)} Bewerk</button>
-            <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">${iconHtml('trash', 14)} Verwijder</button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-
-    // Pagination controls
-    pagination.innerHTML = `
-      <button class="btn small" ${userSkip === 0 ? 'disabled' : ''} onclick="changeUserPage(-1)">${iconHtml('chevron-left', 14)} Vorige</button>
-      <span style="align-self: center;">Pagina ${Math.floor(userSkip / userLimit) + 1}</span>
-      <button class="btn small" ${currentUsers.length < userLimit ? 'disabled' : ''} onclick="changeUserPage(1)">Volgende ${iconHtml('chevron-right', 14)}</button>
-    `;
+    _renderUserTable();
   }
 
   // Search and filter handlers
@@ -699,30 +669,7 @@ async function handleDeleteUser(id) {
     await UsersAPI.delete(id);
     currentUsers = currentUsers.filter(u => u.id !== id);
     showToast('Gebruiker verwijderd', 'info');
-    // Re-render the list
-    const tbody = document.getElementById('users-table')?.querySelector('tbody');
-    if (tbody) {
-      if (currentUsers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5">Geen gebruikers gevonden</td></tr>';
-      } else {
-        tbody.innerHTML = currentUsers.map(u => {
-          const statusClass = u.is_active ? 'status-good' : 'status-warn';
-          const statusText = u.is_active ? 'Actief' : 'Inactief';
-          return `
-            <tr>
-              <td>${u.first_name} ${u.last_name}</td>
-              <td>${u.email}</td>
-              <td>${roleDisplayNames[u.role] || u.role}</td>
-              <td><span class="status-pill ${statusClass}">${statusText}</span></td>
-              <td>
-                <button class="btn small" onclick="handleEditUser(${u.id})">${iconHtml('edit', 14)} Bewerk</button>
-                <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">${iconHtml('trash', 14)} Verwijder</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      }
-    }
+    _renderUserTable();
   } catch (error) {
     showToast(error.message, 'error');
   }
@@ -735,44 +682,54 @@ function changeUserPage(delta) {
   UsersAPI.list(userRoleFilter || null, userSearchQuery || null, true, userSkip, userLimit)
     .then(users => {
       currentUsers = users;
-      const tbody2 = document.getElementById('users-table')?.querySelector('tbody');
-      const pagination = document.getElementById('user-pagination');
-      if (currentUsers.length === 0) {
-        if (tbody2) tbody2.innerHTML = '<tr><td colspan="5">Geen gebruikers gevonden</td></tr>';
-        pagination.innerHTML = '';
-        return;
-      }
-      if (tbody2) {
-        tbody2.innerHTML = currentUsers.map(u => {
-          const statusClass = u.is_active ? 'status-good' : 'status-warn';
-          const statusText = u.is_active ? 'Actief' : 'Inactief';
-          return `
-            <tr>
-              <td>${u.first_name} ${u.last_name}</td>
-              <td>${u.email}</td>
-              <td>${roleDisplayNames[u.role] || u.role}</td>
-              <td><span class="status-pill ${statusClass}">${statusText}</span></td>
-              <td>
-                <button class="btn small" onclick="handleEditUser(${u.id})">${iconHtml('edit', 14)} Bewerk</button>
-                <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">${iconHtml('trash', 14)} Verwijder</button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      }
-      pagination.innerHTML = `
-        <button class="btn small" ${userSkip === 0 ? 'disabled' : ''} onclick="changeUserPage(-1)">${iconHtml('chevron-left', 14)} Vorige</button>
-        <span style="align-self: center;">Pagina ${Math.floor(userSkip / userLimit) + 1}</span>
-        <button class="btn small" ${currentUsers.length < userLimit ? 'disabled' : ''} onclick="changeUserPage(1)">Volgende ${iconHtml('chevron-right', 14)}</button>
-      `;
+      _renderUserTable();
     })
     .catch(error => {
-      const tbody2 = document.getElementById('users-table')?.querySelector('tbody');
-      if (tbody2) tbody2.innerHTML = `<tr><td colspan="5">Fout: ${escapeHtml(error.message)}</td></tr>`;
+      const tbody = document.getElementById('users-table')?.querySelector('tbody');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="5">Fout: ${escapeHtml(error.message)}</td></tr>`;
     });
 }
 
+function _renderUserTable() {
+  const tbody = document.getElementById('users-table')?.querySelector('tbody');
+  const pagination = document.getElementById('user-pagination');
+  if (!tbody) return;
+
+  if (currentUsers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5">Geen gebruikers gevonden</td></tr>';
+    if (pagination) pagination.innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = currentUsers.map(u => {
+    const statusClass = u.is_active ? 'status-good' : 'status-warn';
+    const statusText = u.is_active ? 'Actief' : 'Inactief';
+    return `
+      <tr>
+        <td>${u.first_name} ${u.last_name}</td>
+        <td>${u.email}</td>
+        <td>${roleDisplayNames[u.role] || u.role}</td>
+        <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+        <td>
+          <button class="btn small" onclick="handleEditUser(${u.id})">${iconHtml('edit', 14)} Bewerk</button>
+          <button class="btn small secondary" onclick="handleDeleteUser(${u.id})">${iconHtml('trash', 14)} Verwijder</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (pagination) {
+    pagination.innerHTML = `
+      <button class="btn small" ${userSkip === 0 ? 'disabled' : ''} onclick="changeUserPage(-1)">${iconHtml('chevron-left', 14)} Vorige</button>
+      <span style="align-self: center;">Pagina ${Math.floor(userSkip / userLimit) + 1}</span>
+      <button class="btn small" ${currentUsers.length < userLimit ? 'disabled' : ''} onclick="changeUserPage(1)">Volgende ${iconHtml('chevron-right', 14)}</button>
+    `;
+  }
+}
+
 window.handleEditUser = handleEditUser;
+window.changeUserPage = changeUserPage;
+
 // ============================================
 // Admin - Overeenkomsten Overzicht (US-26)
 // ============================================
@@ -783,20 +740,24 @@ async function renderAdminAgreements() {
   const tbody = document.querySelector('#admin-agreements-table tbody');
   const detailPanel = document.getElementById('admin-agreement-detail-panel');
   const exportBtn = document.getElementById('btn-export-csv');
+  const exportExcelBtn = document.getElementById('btn-export-excel');
 
   if (exportBtn) {
     exportBtn.addEventListener('click', async () => {
       try {
-        const blob = await ReportsAPI.exportCsv();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `stage_export_${new Date().toISOString().slice(0,10).replace(/-/g,'')}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
+        await ReportsAPI.exportCsv();
         showToast('CSV export gedownload', 'success');
+      } catch (error) {
+        showToast(error.message || 'Export mislukt', 'error');
+      }
+    });
+  }
+
+  if (exportExcelBtn) {
+    exportExcelBtn.addEventListener('click', async () => {
+      try {
+        await ReportsAPI.exportExcel();
+        showToast('Excel export gedownload', 'success');
       } catch (error) {
         showToast(error.message || 'Export mislukt', 'error');
       }
@@ -932,21 +893,24 @@ async function renderAuditLog() {
       return;
     }
 
+    function _actionClass(action) {
+      if (action.startsWith('login')) return 'status-good';
+      if (action.includes('delete')) return 'status-bad';
+      if (action.includes('review') || action.includes('validate')) return 'status-warn';
+      return '';
+    }
+
     tbody.innerHTML = logs.map(log => {
       const ts = new Date(log.timestamp).toLocaleString('nl-BE', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
-      const actionClass = log.action.startsWith('login') ? 'status-good'
-        : log.action.includes('delete') ? 'status-bad'
-        : log.action.includes('review') || log.action.includes('validate') ? 'status-warn'
-        : '';
       return `
       <tr>
       <td style="white-space:nowrap;font-size:0.8rem;">${ts}</td>
       <td>${escapeHtml(log.user_email || '-')}</td>
       <td>${log.user_role ? `<span class="status-pill">${escapeHtml(log.user_role)}</span>` : '-'}</td>
-      <td><span class="status-pill ${actionClass}">${escapeHtml(log.action)}</span></td>
+      <td><span class="status-pill ${_actionClass(log.action)}">${escapeHtml(log.action)}</span></td>
       <td style="font-size:0.85rem;">${escapeHtml(log.detail || '-')}</td>
       <td style="font-size:0.75rem;color:var(--ink-soft);">${escapeHtml(log.ip_address || '-')}</td>
       </tr>
