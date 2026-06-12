@@ -33,6 +33,7 @@ function wireEvaluationForm() {
             <label>${comp.name} (${comp.weight}%)</label>
             <div class="score-inputs">
               <select class="score-select" data-comp="${comp.id}" ${existingEval?.finalized ? 'disabled' : ''}>
+                <option value="" disabled ${!rule?.score ? 'selected' : ''}>-- Kies score --</option>
                 <option value="1" ${rule?.score == 1 ? 'selected' : ''}>1 - Onvoldoende</option>
                 <option value="2" ${rule?.score == 2 ? 'selected' : ''}>2 - Matig</option>
                 <option value="3" ${rule?.score == 3 ? 'selected' : ''}>3 - Voldoende</option>
@@ -84,7 +85,9 @@ function wireEvaluationForm() {
       const rows = container.querySelectorAll('.eval-row');
       for (const row of rows) {
         const compId = parseInt(row.dataset.compId);
-        const score = parseInt(row.querySelector('.score-select')?.value);
+        const scoreValue = row.querySelector('.score-select')?.value;
+        if (!scoreValue) continue;
+        const score = parseInt(scoreValue);
         const feedback = row.querySelector('.feedback-input')?.value || null;
         // Vind regel-ID voor deze competentie
         const rule = evaluation.rules?.find(r => r.competency_id === compId);
