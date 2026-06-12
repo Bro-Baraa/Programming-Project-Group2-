@@ -383,6 +383,7 @@ class InternshipLifecycle:
             agreement = internship.agreement
             agreement.file_path = str(filepath)
             agreement.status = "Ingediend"
+            agreement.insurance_verified = False
             agreement.uploaded_at = self._now()
         else:
             agreement = Agreement(
