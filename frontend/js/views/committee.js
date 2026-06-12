@@ -170,8 +170,8 @@ async function doReview(internshipId, decision, teacherId = null, mentorId = nul
   try {
     await ProposalsAPI.review(internshipId, decision, feedback, teacherId, mentorId);
     showToast(`Voorstel ${decision.toLowerCase()}!`, 'success');
-    // Gegevens verversen
-    allInternships = await InternshipsAPI.list();
+    // Gegevens verversen (paginatie-safe via app.js helper)
+    allInternships = await loadAllInternships();
     renderCommitteeProposals();
   } catch (error) {
     showToast(error.message, 'error');
@@ -295,7 +295,7 @@ async function validateAgreement(internshipId, status, insuranceVerified) {
     await AgreementsAPI.validate(internshipId, status, insuranceVerified);
     showToast(`Overeenkomst gemarkeerd als ${status.toLowerCase()}!`, 'success');
     // Refresh data
-    allInternships = await InternshipsAPI.list();
+    allInternships = await loadAllInternships();
     renderCommitteeAgreements();
     // Refresh detail panel
     showAgreementDetailPanel(internshipId);

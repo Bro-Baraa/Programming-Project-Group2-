@@ -331,6 +331,20 @@ const _competencyViews = new Set([
   'evaluatie', 'teacher-evaluatie', 'mentor-evaluatie', 'competenties', 'eindoverzicht'
 ]);
 
+// Haalt alle stages op via paginatie (geen 50-item limiet)
+async function loadAllInternships() {
+  const all = [];
+  let skip = 0;
+  const limit = 200;
+  while (true) {
+    const batch = await InternshipsAPI.list(null, skip, limit);
+    all.push(...batch);
+    if (batch.length < limit) break;
+    skip += limit;
+  }
+  return all;
+}
+
 async function renderView() {
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
@@ -371,15 +385,7 @@ async function renderView() {
 
     // Laad alle stages zichtbaar voor gebruiker (alleen bij eerste render of als leeg)
     if (!_allInternshipsLoaded || allInternships.length === 0) {
-      allInternships = [];
-      let skip = 0;
-      const limit = 200;
-      while (true) {
-        const batch = await InternshipsAPI.list(null, skip, limit);
-        allInternships.push(...batch);
-        if (batch.length < limit) break;
-        skip += limit;
-      }
+      allInternships = await loadAllInternships();
       _allInternshipsLoaded = true;
     }
 
@@ -551,7 +557,7 @@ async function refreshInternshipData() {
     _allInternshipsLoaded = false;
     _lastInternshipDataId = null;
 
-    allInternships = await InternshipsAPI.list();
+    allInternships = await loadAllInternships();
     _allInternshipsLoaded = true;
     currentInternship = getSelectedInternship();
 
