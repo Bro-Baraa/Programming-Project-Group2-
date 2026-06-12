@@ -25,7 +25,7 @@ primary_region = 'lhr'
 
 [env]
   DATABASE_PATH = '/app/stage_monitoring.db'
-  SECRET_KEY = 'flyio-demo-secret-key-change-me'
+  # SECRET_KEY must be set as a Fly secret: fly secrets set SECRET_KEY=$(openssl rand -hex 32)
   FRONTEND_ORIGINS = '*'
   PYTHONPATH = '/app/backend'
 
