@@ -172,9 +172,12 @@ const AuthAPI = {
 };
 
 const InternshipsAPI = {
-  list(status = null) {
-    const params = status ? `?status=${encodeURIComponent(status)}` : '';
-    return apiRequest(`/internships${params}`);
+  list(status = null, skip = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    params.append('skip', String(skip));
+    params.append('limit', String(limit));
+    return apiRequest(`/internships?${params.toString()}`);
   },
 
   get(id) {
