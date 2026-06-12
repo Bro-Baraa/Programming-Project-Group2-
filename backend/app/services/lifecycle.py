@@ -365,12 +365,18 @@ class InternshipLifecycle:
         self.config.agreements_dir.mkdir(parents=True, exist_ok=True)
 
         MAX_SIZE = 5 * 1024 * 1024
-        content = file_stream.read()
-        if len(content) > MAX_SIZE:
-            raise HTTPException(
-                status_code=413,
-                detail="File too large. Maximum size is 5 MB.",
-            )
+        content = bytearray()
+        chunk = file_stream.read(8192)
+        while chunk:
+            content.extend(chunk)
+            if len(content) > MAX_SIZE:
+                if hasattr(file_stream, "close") and callable(file_stream.close):
+                    file_stream.close()
+                raise HTTPException(
+                    status_code=413,
+                    detail="File too large. Maximum size is 5 MB.",
+                )
+            chunk = file_stream.read(8192)
 
         try:
             with open(filepath, "wb") as buffer:
