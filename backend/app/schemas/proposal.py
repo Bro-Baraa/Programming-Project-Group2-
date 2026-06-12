@@ -13,12 +13,27 @@ class ProposalCreate(ProposalBase):
     pass
 
 
+from pydantic import field_validator
+
+
 class ProposalUpdate(BaseModel):
     description: Optional[str] = None
     status: Optional[str] = None
     feedback: Optional[str] = None
     teacher_id: Optional[int] = None
     mentor_id: Optional[int] = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in {
+            "Goedgekeurd",
+            "Afgekeurd",
+            "Aanpassingen Vereist",
+            "In Beoordeling",
+        }:
+            raise ValueError(f"Invalid proposal status: {v}")
+        return v
 
 
 class ProposalResponse(ProposalBase):
