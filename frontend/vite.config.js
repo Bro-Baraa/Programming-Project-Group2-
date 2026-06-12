@@ -10,7 +10,7 @@ export default defineConfig({
         changeOrigin: true,
       }
     },
-    open: true
+    open: false
   },
   build: {
     outDir: 'dist',

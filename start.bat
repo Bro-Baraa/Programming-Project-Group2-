@@ -49,7 +49,18 @@ if "%HELP%"=="true" (
   echo Testaccounts:
   echo   admin@school.be      / demo123
   echo   docent1@school.be    / docent123
+  echo   docent2@school.be    / demo123
   echo   student1@school.be   / student123
+  echo   student2@school.be   / demo123
+  echo   commissie1@school.be / commissie123
+  echo   commissie2@school.be / demo123
+  echo   mentor1@school.be    / mentor123
+  echo   b.janssens@techcorp.be     / mentor123
+  echo   s.devries@dataflow.be      / mentor123
+  echo   p.maes@securenet.be        / mentor123
+  echo   n.kowalski@innovatelab.be  / mentor123
+  echo   d.ongena@mobilefirst.be    / mentor123
+  echo   r.decock@gamestudiox.be    / mentor123
   echo.
   pause
   exit /b 0
@@ -102,12 +113,17 @@ if not exist "%PROJECT_DIR%\backend\.env" (
   if exist "%PROJECT_DIR%\backend\.env.example" (
     echo [INFO] backend\.env aanmaken uit .env.example...
     for /f "tokens=*" %%l in ('%PYTHON_RUNNER% -c "import secrets; print(secrets.token_hex(32))"') do set "RANDOM_KEY=%%l"
-    for /f "tokens=*" %%l in ('%PYTHON_RUNNER% -c "import os; print(os.urandom(32).hex())"') do set "RANDOM_KEY=%%l"
     if "!RANDOM_KEY!"=="" (
       set "RANDOM_KEY=%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%%RANDOM%"
     )
     copy /y "%PROJECT_DIR%\backend\.env.example" "%PROJECT_DIR%\backend\.env" >nul
-    powershell -Command "(Get-Content '%PROJECT_DIR%\backend\.env') -replace 'SECRET_KEY=.*', 'SECRET_KEY=!RANDOM_KEY!' | Set-Content '%PROJECT_DIR%\backend\.env'"
+    where powershell >nul 2>&1
+    if !errorlevel! == 0 (
+      powershell -Command "(Get-Content '%PROJECT_DIR%\backend\.env') -replace 'SECRET_KEY=.*', 'SECRET_KEY=!RANDOM_KEY!' | Set-Content '%PROJECT_DIR%\backend\.env'"
+    ) else (
+      echo [WAARSCHUWING] PowerShell niet gevonden, .env heeft default SECRET_KEY.
+      echo [INFO] Wijzig SECRET_KEY handmatig in backend\.env voor productie.
+    )
     echo [OK] .env aangemaakt met willekeurige SECRET_KEY
   ) else (
     echo [WAARSCHUWING] .env.example niet gevonden. Sommige functies werken mogelijk niet.
@@ -132,12 +148,10 @@ if "%USE_UV%"=="true" (
     uv venv
   )
   set "PYTHON_RUNNER=uv run -- python"
-  set "INIT_RUNNER=uv run -- python"
   set "PIP_RUNNER=uv run -- pip"
 ) else (
   if exist "%PROJECT_DIR%\backend\.venv\Scripts\python.exe" (
     set "PYTHON_RUNNER=%PROJECT_DIR%\backend\.venv\Scripts\python.exe"
-    set "INIT_RUNNER=%PROJECT_DIR%\backend\.venv\Scripts\python.exe"
     set "PIP_RUNNER=%PROJECT_DIR%\backend\.venv\Scripts\pip.exe"
   )
 )
@@ -194,22 +208,13 @@ if not exist "%DB_FILE%" (
     echo [WAARSCHUWING] Tabellen aanmaken mislukt. Modellen zijn mogelijk nog niet importeerbaar.
   )
   echo [INFO] Database vullen met demodata...
-  %INIT_RUNNER% seed_loader.py
+  %PYTHON_RUNNER% seed_loader.py
   echo [OK] Database gevuld
 ) else (
-  %PYTHON_RUNNER% -c "
-import sqlite3, sys
-conn = sqlite3.connect('%DB_FILE%')
-cursor = conn.cursor()
-cursor.execute('SELECT COUNT(*) FROM users')
-count = cursor.fetchone()[0]
-conn.close()
-if count == 0:
-    sys.exit(1)
-" >nul 2>&1
+  %PYTHON_RUNNER% -c "import sqlite3,sys;conn=sqlite3.connect('%DB_FILE%');c=conn.cursor();c.execute('SELECT COUNT(*) FROM users');sys.exit(0 if c.fetchone()[0]>0 else 1);conn.close()" >nul 2>&1
   if !errorlevel! neq 0 (
     echo [INFO] Database leeg. Vullen...
-    %INIT_RUNNER% seed_loader.py
+    %PYTHON_RUNNER% seed_loader.py
     echo [OK] Database gevuld
   )
 )
@@ -218,18 +223,13 @@ REM ── Poort opruimen ──────────────────
 if "%FRONTEND_ONLY%"=="false" (
   echo [INFO] Poort %BACKEND_PORT% controleren...
   for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%BACKEND_PORT%" ^| findstr "LISTENING"') do (
-    echo [INFO] Oude backend PID %%a afsluiten...
-    taskkill /F /PID %%a >nul 2>&1
-    timeout /t 1 /nobreak >nul
+    echo [INFO] Oude backend PID %%a afsluiten... & taskkill /F /PID %%a >nul 2>&1 & timeout /t 1 /nobreak >nul
   )
 )
-
 if "%BACKEND_ONLY%"=="false" (
   echo [INFO] Poort %FRONTEND_PORT% controleren...
   for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%FRONTEND_PORT%" ^| findstr "LISTENING"') do (
-    echo [INFO] Oude frontend PID %%a afsluiten...
-    taskkill /F /PID %%a >nul 2>&1
-    timeout /t 1 /nobreak >nul
+    echo [INFO] Oude frontend PID %%a afsluiten... & taskkill /F /PID %%a >nul 2>&1 & timeout /t 1 /nobreak >nul
   )
 )
 
@@ -237,7 +237,7 @@ REM ── Backend starten ─────────────────�
 if "%FRONTEND_ONLY%"=="false" (
   echo [START] Backend starten op http://localhost:%BACKEND_PORT%
   cd /d "%PROJECT_DIR%\backend"
-  start "Backend API" cmd /c "%PYTHON_RUNNER% -m uvicorn app.main:app --reload --port %BACKEND_PORT% --host 0.0.0.0"
+  start /B "Backend API" cmd /c "%PYTHON_RUNNER% -m uvicorn app.main:app --reload --port %BACKEND_PORT% --host 0.0.0.0"
   timeout /t 2 /nobreak >nul
 )
 
@@ -245,7 +245,7 @@ REM ── Frontend starten ─────────────────�
 if "%BACKEND_ONLY%"=="false" (
   echo [START] Frontend starten op http://localhost:%FRONTEND_PORT%
   cd /d "%PROJECT_DIR%\frontend"
-  start "Frontend Dev" cmd /c "npm run dev"
+  start /B "Frontend Dev" cmd /c "npm run dev"
   timeout /t 2 /nobreak >nul
 )
 
@@ -261,12 +261,21 @@ if "%BACKEND_ONLY%"=="false" (
   echo   Frontend:  http://localhost:%FRONTEND_PORT%
 )
 echo.
-echo Testaccounts:
+echo Testaccounts (14 accounts):
 echo   admin@school.be      / demo123
 echo   docent1@school.be    / docent123
-echo   mentor1@school.be    / mentor123
+echo   docent2@school.be    / demo123
 echo   student1@school.be   / student123
+echo   student2@school.be   / demo123
 echo   commissie1@school.be / commissie123
+echo   commissie2@school.be / demo123
+echo   mentor1@school.be    / mentor123
+echo   b.janssens@techcorp.be     / mentor123
+echo   s.devries@dataflow.be      / mentor123
+echo   p.maes@securenet.be        / mentor123
+echo   n.kowalski@innovatelab.be  / mentor123
+echo   d.ongena@mobilefirst.be    / mentor123
+echo   r.decock@gamestudiox.be    / mentor123
 echo.
 echo Druk op een toets om te stoppen...
 echo ========================================================
@@ -277,12 +286,12 @@ echo.
 echo [INFO] Afsluiten...
 if "%FRONTEND_ONLY%"=="false" (
   for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%BACKEND_PORT%" ^| findstr "LISTENING"') do (
-    taskkill /F /PID %%a >nul 2>&1
+    taskkill /PID %%a >nul 2>&1 & timeout /t 1 /nobreak >nul & taskkill /F /PID %%a >nul 2>&1
   )
 )
 if "%BACKEND_ONLY%"=="false" (
   for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":%FRONTEND_PORT%" ^| findstr "LISTENING"') do (
-    taskkill /F /PID %%a >nul 2>&1
+    taskkill /PID %%a >nul 2>&1 & timeout /t 1 /nobreak >nul & taskkill /F /PID %%a >nul 2>&1
   )
 )
 echo [OK] Gestopt.

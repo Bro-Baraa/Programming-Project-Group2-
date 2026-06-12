@@ -164,4 +164,13 @@ def generate_final_report_pdf(
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
     pdf.output(tmp.name)
     tmp.close()
-    return Path(tmp.name), report.student
+
+    # ── Cleanup: verwijder temp file na download ──
+    # FileResponse stuurt het bestand, daarna kunnen we opruimen.
+    # We gebruiken een atexit handler voor veiligheid.
+    import atexit
+
+    _pdf_path = Path(tmp.name)
+    atexit.register(lambda p=_pdf_path: p.unlink() if p.exists() else None)
+
+    return _pdf_path, report.student

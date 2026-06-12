@@ -125,6 +125,21 @@ app.include_router(me, prefix="/api")
 app.include_router(audit, prefix="/api")
 
 
+# ── Graceful shutdown handler ──────────────────────────────────────────
+# Sluit database connecties netjes af bij SIGTERM/SIGINT
+# Belangrijk voor Windows (Ctrl+C) en Docker containers
+
+@app.on_event("shutdown")
+def shutdown_event():
+    logger = logging.getLogger(__name__)
+    logger.info("[SHUTDOWN] Server stopt, database connecties sluiten...")
+    try:
+        engine.dispose()
+        logger.info("[SHUTDOWN] Database connecties netjes afgesloten")
+    except Exception as e:
+        logger.warning("[SHUTDOWN] Fout bij afsluiten database: %s", e)
+
+
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy"}

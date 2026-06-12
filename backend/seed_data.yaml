@@ -87,6 +87,13 @@ users:
     role: mentor
     is_active: true
 
+  - email: mentor1@school.be
+    password: mentor123
+    first_name: Mentor
+    last_name: Eén
+    role: mentor
+    is_active: true
+
   # --- Committee ---
   - email: commissie1@school.be
     password: commissie123
