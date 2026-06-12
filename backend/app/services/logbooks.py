@@ -72,6 +72,11 @@ def update_logbook(
 
     if current_user.role == "student":
         ensure_internship_access(current_user, internship)
+        if logbook.status in ("submitted", "approved") or logbook.mentor_validated:
+            raise HTTPException(
+                status_code=403,
+                detail="Cannot edit a submitted or validated logbook",
+            )
         if update.mentor_validated is not None:
             raise HTTPException(
                 status_code=403, detail="Cannot change mentor validation"
