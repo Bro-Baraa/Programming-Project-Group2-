@@ -838,6 +838,100 @@ class TestFeedback:
         assert data["from_user_id"] == test_teacher.id
         assert data["to_user_id"] == test_student.id
 
+    def test_list_feedback(
+        self,
+        client,
+        auth_headers_teacher,
+        auth_headers_student,
+        sample_internship,
+        test_student,
+        test_teacher,
+    ):
+        """Test listing feedback for an internship."""
+        internship_id = sample_internship.id
+
+        # Create two feedback items
+        for msg in ["First feedback", "Second feedback"]:
+            client.post(
+                f"/api/internships/{internship_id}/feedback",
+                json={"message": msg, "to_user_id": test_student.id},
+                headers=auth_headers_teacher,
+            )
+
+        # Student can list feedback
+        response = client.get(
+            f"/api/internships/{internship_id}/feedback",
+            headers=auth_headers_student,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        messages = [item["message"] for item in data]
+        assert "First feedback" in messages
+        assert "Second feedback" in messages
+        assert data[0]["from_user_id"] == test_teacher.id
+        assert data[0]["to_user_id"] == test_student.id
+
+    def test_list_feedback_empty(
+        self, client, auth_headers_student, sample_internship
+    ):
+        """Empty list when no feedback exists."""
+        response = client.get(
+            f"/api/internships/{sample_internship.id}/feedback",
+            headers=auth_headers_student,
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data == []
+
+    def test_list_feedback_unauthorized(
+        self, client, db, auth_headers_student, test_student
+    ):
+        """Student cannot list feedback for another student's internship."""
+        from app.auth import get_password_hash
+        from app.models import User, Internship, Company, Proposal
+
+        other_student = User(
+            email="other_student@test.com",
+            password_hash=get_password_hash("other123"),
+            first_name="Other",
+            last_name="Student",
+            role="student",
+            is_active=True,
+        )
+        db.add(other_student)
+        db.flush()
+
+        company = Company(
+            name="Other Corp",
+            contact_person="Other",
+            contact_email="other@corp.com",
+        )
+        db.add(company)
+        db.flush()
+
+        internship = Internship(
+            student_id=other_student.id,
+            company_id=company.id,
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=30),
+            status="Lopend",
+        )
+        db.add(internship)
+        db.flush()
+
+        proposal = Proposal(
+            internship_id=internship.id, description="Other", status="Goedgekeurd"
+        )
+        db.add(proposal)
+        db.commit()
+
+        response = client.get(
+            f"/api/internships/{internship.id}/feedback",
+            headers=auth_headers_student,
+        )
+        assert response.status_code == 403
+
 
 class TestEvaluations:
     """Test evaluation CRUD and finalization."""
@@ -957,6 +1051,10 @@ class TestEvaluations:
         assert data["finalized"] is True
         assert data["finalized_at"] is not None
         assert data["evaluator_id"] == test_teacher.id
+        # Assert weighted score fields are present and correct
+        assert data["total_weight"] == 100.0
+        assert data["achieved_weight"] == 80.0
+        assert data["weighted_score"] == 80.0
 
     def test_cannot_finalize_twice(
         self, client, auth_headers_teacher, created_evaluation, db

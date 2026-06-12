@@ -99,6 +99,14 @@ def generate_final_report_pdf(
             pdf.cell(w, 8, h, border=1, fill=True, align="C")
         pdf.ln()
 
+        def _text_height(pdf, width, text, line_height):
+            text = _safe(text)
+            if not text:
+                return line_height
+            text_width = pdf.get_string_width(text)
+            lines = max(1, int(text_width / width) + 1)
+            return lines * line_height
+
         pdf.set_font("Helvetica", "", 9)
         for rule in report.final_evaluation.rules:
             competency = rule.competency
@@ -112,8 +120,8 @@ def generate_final_report_pdf(
             start_y = pdf.get_y()
             line_height = 6
 
-            desc_h = pdf.get_string_height(col_w[3], _safe(desc))
-            feedback_h = pdf.get_string_height(col_w[4], _safe(feedback))
+            desc_h = _text_height(pdf, col_w[3], _safe(desc), line_height)
+            feedback_h = _text_height(pdf, col_w[4], _safe(feedback), line_height)
             row_h = max(8, desc_h, feedback_h)
 
             pdf.set_xy(start_x, start_y)
