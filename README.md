@@ -152,11 +152,13 @@ python init_admin.py
 Programming-Project-Group2-/
 ├── frontend/                     # Frontend applicatie (statische HTML/JS)
 │   ├── index.html               # Hoofdpagina met alle UI-templates
-│   ├── app.js                   # Kernlogica: views, formulieren, API-calls
-│   ├── api-client.js            # Herbruikbare API-client modules
 │   ├── styles.css               # Gedeelde stijlen
-│   ├── table-cards.js           # Tabel-kaart component
-│   ├── ui-helpers.js            # UI utility functies
+│   ├── js/
+│   │   ├── app.js                   # Kernlogica: views, formulieren, API-calls
+│   │   ├── api-client.js            # Herbruikbare API-client modules
+│   │   ├── table-cards.js           # Tabel-kaart component
+│   │   ├── ui-helpers.js            # UI utility functies
+│   │   └── views/                   # Rolgebonden views
 │   └── README.md                # Frontend-specifieke documentatie
 ├── backend/                      # FastAPI Backend
 │   ├── app/
