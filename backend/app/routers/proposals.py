@@ -18,9 +18,41 @@ from app.auth import get_current_active_user, require_committee, require_student
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 from app.services.audit import log_event
+from app.services.notifications import notify
 from typing import List
 
 router = APIRouter(prefix="/internships", tags=["proposals"])
+
+# Shared configuration
+_LIFECYCLE_CONFIG = LifecycleConfig(agreements_dir=Path("uploads/agreements"))
+
+
+def _notify_committee(db: Session, current_user: User, internship_id: int, message: str) -> None:
+    """Notify all active committee members about a proposal event."""
+    committee_members = (
+        db.query(User)
+        .filter(
+            User.role == "committee",
+            User.is_active == True,
+        )
+        .all()
+    )
+    student_name = f"{current_user.first_name} {current_user.last_name}"
+    full_message = f"{student_name} {message}"
+    for member in committee_members:
+        notify(
+            db,
+            user_id=member.id,
+            message=full_message,
+            internship_id=internship_id,
+            link_view="voorstellen",
+        )
+    db.commit()
+
+
+def _get_lifecycle(db: Session) -> InternshipLifecycle:
+    """Return a configured InternshipLifecycle instance."""
+    return InternshipLifecycle(db, _LIFECYCLE_CONFIG)
 
 
 @router.post(
@@ -39,10 +71,7 @@ def create_proposal_endpoint(
     Use this when an internship was created by staff/admin and the student
     still needs to submit the actual proposal description.
     """
-    lifecycle = InternshipLifecycle(
-        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
-    )
-    result = lifecycle.create_proposal(
+    result = _get_lifecycle(db).create_proposal(
         internship_id=internship_id,
         actor=current_user,
         description=data.description,
@@ -91,10 +120,7 @@ def update_proposal_endpoint(
     - Afgekeurd: Proposal rejected
     - Aanpassingen Vereist: Feedback required, student must revise
     """
-    lifecycle = InternshipLifecycle(
-        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
-    )
-    result = lifecycle.review_proposal(
+    result = _get_lifecycle(db).review_proposal(
         internship_id=internship_id,
         actor=current_user,
         decision=update_data.status,
@@ -121,10 +147,7 @@ def edit_proposal_endpoint(
     current_user: User = Depends(require_student),
 ):
     """Student edits proposal before it has been reviewed."""
-    lifecycle = InternshipLifecycle(
-        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
-    )
-    result = lifecycle.edit_proposal(
+    result = _get_lifecycle(db).edit_proposal(
         internship_id=internship_id,
         actor=current_user,
         description=data.description,
@@ -144,6 +167,7 @@ def edit_proposal_endpoint(
         entity_id=internship_id,
         detail="Voorstel bewerkt",
     )
+    _notify_committee(db, current_user, internship_id, "heeft het stagevoorstel bewerkt.")
     return result.internship.proposal
 
 
@@ -155,10 +179,7 @@ def resubmit_proposal_endpoint(
     current_user: User = Depends(require_student),
 ):
     """Student resubmits proposal after changes requested."""
-    lifecycle = InternshipLifecycle(
-        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
-    )
-    result = lifecycle.resubmit_proposal(
+    result = _get_lifecycle(db).resubmit_proposal(
         internship_id=internship_id,
         actor=current_user,
         new_description=data.new_description,
@@ -216,10 +237,7 @@ def withdraw_proposal_endpoint(
     current_user: User = Depends(require_student),
 ):
     """Student withdraws (deletes) their internship before it is reviewed."""
-    lifecycle = InternshipLifecycle(
-        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
-    )
-    result = lifecycle.withdraw_proposal(
+    result = _get_lifecycle(db).withdraw_proposal(
         internship_id=internship_id,
         actor=current_user,
     )
@@ -231,4 +249,5 @@ def withdraw_proposal_endpoint(
         entity_id=internship_id,
         detail="Voorstel ingetrokken",
     )
+    _notify_committee(db, current_user, internship_id, "heeft het stagevoorstel ingetrokken.")
     return {"detail": "Voorstel succesvol ingetrokken"}
