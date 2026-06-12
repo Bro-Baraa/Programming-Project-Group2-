@@ -4,8 +4,31 @@ async function renderMentorLogbooks() {
 
   if (!currentInternship) {
     tbody.innerHTML = '<tr><td colspan="6">Selecteer een stage via het navigatiemenu.</td></tr>';
+    // Remove stage context card if no internship selected
+    const existingCtx = document.getElementById('mentor-stage-context');
+    if (existingCtx) existingCtx.remove();
     return;
   }
+
+  // Render stage-context card above the logbook table (US-24)
+  const table = document.getElementById('mentor-logbooks-table');
+  let stageCtx = document.getElementById('mentor-stage-context');
+  if (!stageCtx) {
+    stageCtx = document.createElement('div');
+    stageCtx.id = 'mentor-stage-context';
+    table.parentNode.insertBefore(stageCtx, table);
+  }
+  const companyName = currentInternship.company_name || currentInternship.company?.name || 'Onbekend';
+  const assignment = currentInternship.assignment_description || '-';
+  const startDate = currentInternship.start_date || '-';
+  const endDate = currentInternship.end_date || '-';
+  stageCtx.className = 'stage-context card';
+  stageCtx.innerHTML = `
+    <h3>Stage-informatie</h3>
+    <p><strong>Bedrijf:</strong> ${escapeHtml(companyName)}</p>
+    <p><strong>Opdracht:</strong> ${escapeHtml(assignment)}</p>
+    <p><strong>Periode:</strong> ${escapeHtml(startDate)} t/m ${escapeHtml(endDate)}</p>
+  `;
 
   // Berekend weekoverzicht lokaal vanuit currentInternship + currentLogbooks
   const start = currentInternship.start_date ? new Date(currentInternship.start_date) : null;
