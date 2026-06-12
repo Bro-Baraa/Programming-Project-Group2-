@@ -213,6 +213,10 @@ def update_internship(
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
 
+    ensure_internship_access(
+        current_user, internship, "Not authorized to update this internship"
+    )
+
     if update.teacher_id is not None:
         internship.teacher_id = update.teacher_id
     if update.mentor_id is not None:
