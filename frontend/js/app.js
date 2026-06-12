@@ -606,6 +606,94 @@ async function wireRoleInteractions(role, view) {
 
   const handler = handlers[role]?.[view];
   if (handler) await handler();
+
+  // QoL-verbetering: voeg zoeken/filteren/sorteren toe aan de grote tabellen.
+  // Dit gebeurt nadat de handler de tabel met rijen heeft gevuld.
+  enhanceViewTables(role, view);
+}
+
+// ============================================
+// Tabel-verbeteringen koppelen (zoeken / filteren / sorteren)
+// --------------------------------------------
+// Roept enhanceTable() aan (uit js/table-utils.js) voor de juiste tabel,
+// afhankelijk van welke rol en welke view actief is.
+// De gebruikers- en audit-tabel hebben al server-side zoeken/filteren,
+// dus daar maken we enkel de kolommen sorteerbaar.
+// ============================================
+function enhanceViewTables(role, view) {
+  // Commissie: stagevoorstellen beoordelen
+  if (role === "committee" && view === "voorstellen") {
+    enhanceTable(document.getElementById("proposals-table"), {
+      search: true,
+      searchPlaceholder: "Zoek op student, bedrijf of status...",
+      filterColumn: 3,            // kolom "Status"
+      filterLabel: "Alle statussen",
+      sort: true,
+    });
+  }
+
+  // Commissie: overeenkomsten beoordelen
+  if (role === "committee" && view === "overeenkomsten") {
+    enhanceTable(document.getElementById("agreements-table"), {
+      search: true,
+      searchPlaceholder: "Zoek op student of bedrijf...",
+      filterColumn: 3,            // kolom "Overeenkomst Status"
+      filterLabel: "Alle overeenkomst-statussen",
+      sort: true,
+      skipSortColumns: [5],       // kolom "Actie" niet sorteren
+    });
+  }
+
+  // Commissie: overzicht van alle stages
+  if (role === "committee" && view === "overzicht") {
+    enhanceTable(document.getElementById("committee-overview-table"), {
+      search: true,
+      searchPlaceholder: "Zoek op student of bedrijf...",
+      filterColumn: 3,            // kolom "Status"
+      filterLabel: "Alle statussen",
+      sort: true,
+    });
+  }
+
+  // Admin: overzicht van overeenkomsten
+  if (role === "admin" && view === "overeenkomsten") {
+    enhanceTable(document.getElementById("admin-agreements-table"), {
+      search: true,
+      searchPlaceholder: "Zoek op student of status...",
+      filterColumn: 2,            // kolom "Overeenkomst Status"
+      filterLabel: "Alle overeenkomst-statussen",
+      sort: true,
+      skipSortColumns: [4],       // kolom "Actie" niet sorteren
+    });
+  }
+
+  // Admin: gebruikersbeheer (zoeken/filteren bestaat al -> enkel sorteren)
+  if (role === "admin" && view === "gebruikers") {
+    enhanceTable(document.getElementById("users-table"), {
+      sort: true,
+      skipSortColumns: [4],       // kolom "Acties" niet sorteren
+    });
+
+    // De zoekbalk hier is server-side en zocht enkel na een klik op "Zoeken".
+    // We maken hem "live": terwijl je typt klikken we automatisch op de
+    // zoekknop. debounce() (uit table-cards.js) wacht even na het laatste
+    // teken, zodat we niet bij elke toetsaanslag de server bevragen.
+    const userSearch = document.getElementById("user-search");
+    const userSearchBtn = document.getElementById("user-search-btn");
+    if (userSearch && userSearchBtn && !userSearch.dataset.liveSearch) {
+      userSearch.dataset.liveSearch = "true";   // maar één keer koppelen
+      userSearch.addEventListener("input", debounce(function () {
+        userSearchBtn.click();
+      }, 300));
+    }
+  }
+
+  // Admin: audit log (zoeken/filteren bestaat al -> enkel sorteren)
+  if (role === "admin" && view === "auditlog") {
+    enhanceTable(document.getElementById("audit-table"), {
+      sort: true,
+    });
+  }
 }
 
 // ============================================
