@@ -269,6 +269,14 @@ async function renderStudentDashboard() {
     }
 
     // ── Student already has an internship: show proposal details ──
+    // Ensure full internship details (proposal fields are missing from list response)
+    if (currentInternship && !currentInternship.proposal?.description) {
+      try {
+        currentInternship = await InternshipsAPI.get(currentInternship.id);
+      } catch {
+        // keep existing data if fetch fails
+      }
+    }
     const proposal = currentInternship.proposal;
     const company = currentInternship.company || {};
     const isChangesRequired = currentInternship.status === 'Aanpassingen Vereist';
