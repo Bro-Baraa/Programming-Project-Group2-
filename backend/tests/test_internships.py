@@ -872,9 +872,7 @@ class TestFeedback:
         assert data[0]["from_user_id"] == test_teacher.id
         assert data[0]["to_user_id"] == test_student.id
 
-    def test_list_feedback_empty(
-        self, client, auth_headers_student, sample_internship
-    ):
+    def test_list_feedback_empty(self, client, auth_headers_student, sample_internship):
         """Empty list when no feedback exists."""
         response = client.get(
             f"/api/internships/{sample_internship.id}/feedback",

@@ -32,7 +32,9 @@ class TestGetNotifications:
         db.commit()
         return notifications
 
-    def test_get_notifications(self, client, auth_headers_student, sample_notifications):
+    def test_get_notifications(
+        self, client, auth_headers_student, sample_notifications
+    ):
         """User can list their own notifications."""
         response = client.get("/api/notifications", headers=auth_headers_student)
         assert response.status_code == 200
@@ -92,9 +94,7 @@ class TestMarkAsRead:
         db.refresh(n)
         return n
 
-    def test_mark_single_read(
-        self, client, auth_headers_student, unread_notification
-    ):
+    def test_mark_single_read(self, client, auth_headers_student, unread_notification):
         """User can mark their own notification as read."""
         response = client.patch(
             f"/api/notifications/{unread_notification.id}/read",
@@ -133,9 +133,7 @@ class TestMarkAsRead:
 
     def test_mark_read_no_auth(self, client, unread_notification):
         """Unauthenticated requests are rejected."""
-        response = client.patch(
-            f"/api/notifications/{unread_notification.id}/read"
-        )
+        response = client.patch(f"/api/notifications/{unread_notification.id}/read")
         assert response.status_code == 401
 
 
@@ -167,9 +165,7 @@ class TestMarkAllAsRead:
         db.commit()
         return notifications
 
-    def test_mark_all_read(
-        self, client, auth_headers_student, mixed_notifications
-    ):
+    def test_mark_all_read(self, client, auth_headers_student, mixed_notifications):
         """User can mark all unread notifications as read at once."""
         response = client.patch(
             "/api/notifications/read-all", headers=auth_headers_student

@@ -87,9 +87,7 @@ class TestListAuditLogs:
 
     def test_filter_partial_match(self, client, auth_headers_admin, sample_logs):
         """Action filter supports partial match (ilike)."""
-        response = client.get(
-            "/api/audit?action=proposal", headers=auth_headers_admin
-        )
+        response = client.get("/api/audit?action=proposal", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -97,9 +95,7 @@ class TestListAuditLogs:
 
     def test_pagination(self, client, auth_headers_admin, sample_logs):
         """Pagination works via skip and limit."""
-        response = client.get(
-            "/api/audit?skip=1&limit=1", headers=auth_headers_admin
-        )
+        response = client.get("/api/audit?skip=1&limit=1", headers=auth_headers_admin)
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1

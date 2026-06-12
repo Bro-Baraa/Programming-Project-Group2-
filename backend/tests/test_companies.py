@@ -65,7 +65,9 @@ class TestCreateCompany:
             "contact_person": "Bob",
             "contact_email": "bob@newcorp.com",
         }
-        response = client.post("/api/companies", json=data, headers=auth_headers_teacher)
+        response = client.post(
+            "/api/companies", json=data, headers=auth_headers_teacher
+        )
         assert response.status_code == 201
         result = response.json()
         assert result["name"] == "New Corp"
@@ -82,7 +84,9 @@ class TestCreateCompany:
             "contact_email": "mentor@corp.com",
             "mentor_id": test_mentor.id,
         }
-        response = client.post("/api/companies", json=data, headers=auth_headers_teacher)
+        response = client.post(
+            "/api/companies", json=data, headers=auth_headers_teacher
+        )
         assert response.status_code == 201
         result = response.json()
         assert result["mentor_id"] == test_mentor.id
@@ -95,7 +99,9 @@ class TestCreateCompany:
             "contact_email": "bad@corp.com",
             "mentor_id": 99999,
         }
-        response = client.post("/api/companies", json=data, headers=auth_headers_teacher)
+        response = client.post(
+            "/api/companies", json=data, headers=auth_headers_teacher
+        )
         assert response.status_code == 404
         assert "Mentor not found" in response.json()["detail"]
 
@@ -109,7 +115,9 @@ class TestCreateCompany:
             "contact_email": "bad@corp.com",
             "mentor_id": test_student.id,
         }
-        response = client.post("/api/companies", json=data, headers=auth_headers_teacher)
+        response = client.post(
+            "/api/companies", json=data, headers=auth_headers_teacher
+        )
         assert response.status_code == 400
         assert "User is not a mentor" in response.json()["detail"]
 
@@ -279,14 +287,10 @@ class TestDeleteCompany:
 
     def test_delete_company_not_found(self, client, auth_headers_admin):
         """404 for non-existent company."""
-        response = client.delete(
-            "/api/companies/99999", headers=auth_headers_admin
-        )
+        response = client.delete("/api/companies/99999", headers=auth_headers_admin)
         assert response.status_code == 404
 
-    def test_teacher_cannot_delete_company(
-        self, client, auth_headers_teacher, db
-    ):
+    def test_teacher_cannot_delete_company(self, client, auth_headers_teacher, db):
         """Teachers cannot delete companies (admin only)."""
         company = Company(
             name="Protected Corp",

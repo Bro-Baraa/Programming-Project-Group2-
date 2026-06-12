@@ -479,6 +479,7 @@ class TestValidateAgreement:
         assert internship.agreement.status == "Onvolledig"
         # ── Verify student can re-upload from this state ──
         from io import BytesIO
+
         lifecycle.upload_agreement(
             internship_id=internship.id,
             actor=db.query(User).filter(User.id == internship.student_id).first(),

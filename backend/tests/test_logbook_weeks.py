@@ -35,7 +35,9 @@ class TestWeekOverview:
         db.refresh(internship)
         return internship
 
-    def test_week_overview_empty(self, client, auth_headers_student, internship_with_dates):
+    def test_week_overview_empty(
+        self, client, auth_headers_student, internship_with_dates
+    ):
         """Week overview shows all weeks as missing when no logbooks."""
         response = client.get(
             f"/api/internships/{internship_with_dates.id}/logbooks/weeks",

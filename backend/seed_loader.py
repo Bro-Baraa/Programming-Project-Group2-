@@ -283,7 +283,9 @@ def create_logbooks_for_internship(
             "tasks": f"Dag {day_offset + 1}: Werk aan {company.sector} project.",
             "reflection": f"Dag {day_offset + 1}: {'Sterke' if day_offset % 2 == 0 else 'Stabiele'} prestaties.",
             "issues": (
-                "Geen problemen" if day_offset % 3 != 0 else "Technische uitdaging, opgelost."
+                "Geen problemen"
+                if day_offset % 3 != 0
+                else "Technische uitdaging, opgelost."
             ),
             "status": "submitted" if is_sub else "draft",
             "mentor_validated": is_val,

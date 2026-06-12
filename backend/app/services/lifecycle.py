@@ -168,8 +168,9 @@ class InternshipLifecycle:
         self.db.commit()
         self.db.refresh(internship)
 
+        student_name = f"{actor.first_name} {actor.last_name}"
         self._notify_committee(
-            f"{actor.first_name} {actor.last_name} heeft een nieuw stagevoorstel ingediend.",
+            f"{student_name} heeft een nieuw stagevoorstel ingediend.",
             "voorstellen",
             internship.id,
         )

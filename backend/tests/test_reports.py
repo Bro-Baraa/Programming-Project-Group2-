@@ -313,9 +313,7 @@ class TestAgreementStatusReport:
         data = response.json()
         # Teacher only sees their own internships
         assert len(data) == 4
-        assert all(
-            item["student"]["email"] == "student@test.com" for item in data
-        )
+        assert all(item["student"]["email"] == "student@test.com" for item in data)
 
     def test_agreement_status_report_student_rejected(
         self, client, auth_headers_student
