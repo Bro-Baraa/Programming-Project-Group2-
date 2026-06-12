@@ -1,7 +1,7 @@
 """Evaluation schemas."""
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional, List
+from typing import Optional, List, Literal
 from datetime import datetime
 from .user import UserResponse
 from .competency import CompetencyResponse
@@ -33,7 +33,7 @@ class EvaluationRuleResponse(EvaluationRuleBase):
 
 
 class EvaluationBase(BaseModel):
-    eval_type: str  # tussentijds, final
+    eval_type: Literal["tussentijds", "final"]
     comments: Optional[str] = None
 
 

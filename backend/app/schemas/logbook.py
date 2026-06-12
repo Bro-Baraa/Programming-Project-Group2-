@@ -1,7 +1,7 @@
 """Logbook schemas."""
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
 
 
@@ -22,7 +22,7 @@ class LogbookUpdate(BaseModel):
     tasks: Optional[str] = None
     reflection: Optional[str] = None
     issues: Optional[str] = None
-    status: Optional[str] = None  # draft, submitted
+    status: Optional[Literal["draft", "submitted"]] = None
     mentor_validated: Optional[bool] = None
     mentor_feedback: Optional[str] = None
 
