@@ -604,7 +604,7 @@ Programming-Project-Group2-/
 │   │   ├── routers/                 # API endpoints (17 routers)
 │   │   ├── schemas/                 # Pydantic schema's (13 bestanden)
 │   │   └── services/               # Business logic (17 services)
-│   ├── tests/                       # pytest testsuite (11 testbestanden)
+│   ├── tests/                       # pytest testsuite (10 testbestanden)
 │   ├── uploads/agreements/          # PDF uploads
 │   ├── seed_data.yaml               # Testdata
 │   ├── seed_loader.py               # YAML-based seeding
