@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional
 from datetime import datetime, date
 from .user import UserResponse
@@ -27,7 +27,7 @@ class InternshipCreate(BaseModel):
     contact_person: str = Field(
         ..., description="Naam van de contactpersoon/begeleider bij het bedrijf"
     )
-    contact_email: str = Field(
+    contact_email: EmailStr = Field(
         ..., description="E-mailadres van de contactpersoon/begeleider"
     )
     start_date: date = Field(..., description="Startdatum van de stage")
