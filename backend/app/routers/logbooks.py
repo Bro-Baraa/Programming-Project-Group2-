@@ -13,6 +13,7 @@ from app.schemas import (
     LogbookCreate,
     LogbookUpdate,
     LogbookDayStatus,
+    LogbookWeekStatus,
 )
 from app.auth import get_current_active_user, require_student
 from app.services.common import ensure_internship_access
@@ -218,3 +219,70 @@ def submit_logbook(
         detail=f"Logboek {log_label} definitief ingediend",
     )
     return logbook
+
+
+@router.get("/{internship_id}/logbooks/weeks", response_model=List[LogbookWeekStatus])
+def get_week_overview(
+    internship_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """US-08: Get status of all weeks for the internship period"""
+    internship = db.query(Internship).filter(Internship.id == internship_id).first()
+    if not internship:
+        raise HTTPException(status_code=404, detail="Internship not found")
+
+    ensure_internship_access(current_user, internship)
+
+    if not internship.start_date or not internship.end_date:
+        raise HTTPException(status_code=400, detail="Internship dates not set")
+
+    total_days = (internship.end_date - internship.start_date).days + 1
+    if total_days < 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Stageperiode is te kort of einddatum ligt voor startdatum",
+        )
+
+    # Calculate total weeks (using ceiling division)
+    total_weeks = (total_days + 6) // 7
+
+    # Get existing logbooks
+    logbooks = db.query(Logbook).filter(Logbook.internship_id == internship_id).all()
+    logbook_map = {}
+    for lb in logbooks:
+        # If week_number is set, use it; otherwise compute it from entry_date
+        week_num = lb.week_number
+        if not week_num and lb.entry_date:
+            days_diff = (lb.entry_date - internship.start_date).days
+            week_num = (days_diff // 7) + 1
+        
+        if week_num:
+            logbook_map[week_num] = lb
+
+    result = []
+    for week in range(1, total_weeks + 1):
+        if week in logbook_map:
+            lb = logbook_map[week]
+            result.append(
+                LogbookWeekStatus(
+                    week_number=week,
+                    logbook_id=lb.id,
+                    status=lb.status,
+                    mentor_validated=lb.mentor_validated,
+                    mentor_feedback=lb.mentor_feedback,
+                )
+            )
+        else:
+            result.append(
+                LogbookWeekStatus(
+                    week_number=week,
+                    logbook_id=None,
+                    status="missing",
+                    mentor_validated=False,
+                    mentor_feedback=None,
+                )
+            )
+
+    return result
+

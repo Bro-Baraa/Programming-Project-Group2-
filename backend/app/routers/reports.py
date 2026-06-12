@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Internship
 from app.schemas import DashboardStats, AgreementStatusItem, FinalReportItem
-from app.auth import get_current_active_user, require_any_staff
+from app.auth import get_current_active_user, require_any_staff, require_role
 from app.services import reports as _reports
 from app.services.report_pdf import generate_final_report_pdf
 
@@ -79,10 +79,10 @@ def get_final_report_pdf(
 @router.get("/reports/export/csv")
 def export_internships_csv(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_staff),
+    current_user: User = Depends(require_role(["teacher", "committee", "admin"])),
 ):
 
-    internships = db.query(Internship).all()
+    internships = _reports._apply_role_filter(db.query(Internship), current_user).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -116,13 +116,13 @@ def export_internships_csv(
 @router.get("/reports/export/excel")
 def export_internships_excel(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_any_staff),
+    current_user: User = Depends(require_role(["teacher", "committee", "admin"])),
 ):
 
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-    internships = db.query(Internship).all()
+    internships = _reports._apply_role_filter(db.query(Internship), current_user).all()
 
     wb = Workbook()
     ws = wb.active

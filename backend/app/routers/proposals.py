@@ -254,6 +254,6 @@ def withdraw_proposal_endpoint(
         detail="Voorstel ingetrokken",
     )
     _notify_committee(
-        db, current_user, internship_id, "heeft het stagevoorstel ingetrokken."
+        db, current_user, None, "heeft het stagevoorstel ingetrokken."
     )
     return {"detail": "Voorstel succesvol ingetrokken"}
