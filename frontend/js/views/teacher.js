@@ -52,10 +52,47 @@ function wireEvaluationForm() {
   const finalizeBtn = document.getElementById('finalize-eval');
 
   // Scores opslaan (maakt evaluatie aan indien nodig)
+  async function saveScores() {
+    const evalType = document.getElementById('eval-type')?.value || 'tussentijds';
+
+    // Stap 1: Evaluatie aanmaken (indien geen concept)
+    let evaluation = currentEvaluations.find(e => !e.finalized && e.eval_type === evalType);
+    if (!evaluation) {
+      evaluation = await InternshipsAPI.createEvaluation(currentInternship.id, {
+        eval_type: evalType,
+        comments: document.getElementById('eval-comments')?.value || null
+      });
+      currentEvaluations.push(evaluation);
+    }
+
+    // Stap 2: Update general comments
+    const comments = document.getElementById('eval-comments')?.value || null;
+    if (comments !== null && comments !== (evaluation.comments || '')) {
+      await EvaluationsAPI.update(evaluation.id, { comments });
+    }
+
+    // Stap 3: Werk elke regel bij met score, feedback en omschrijving
+    const rows = container.querySelectorAll('.eval-row');
+    for (const row of rows) {
+      const compId = parseInt(row.dataset.compId);
+      const scoreValue = row.querySelector('.score-select')?.value;
+      if (!scoreValue) continue;
+      const score = parseInt(scoreValue);
+      const feedback = row.querySelector('.feedback-input')?.value || null;
+      // Vind regel-ID voor deze competentie
+      const rule = evaluation.rules?.find(r => r.competency_id === compId);
+      if (rule) {
+        await EvaluationRulesAPI.update(evaluation.id, rule.id, {
+          score,
+          evaluator_feedback: feedback
+        });
+      }
+    }
+  }
+
   evalForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const submitBtn = evalForm.querySelector('button[type="submit"]');
-    const evalType = document.getElementById('eval-type')?.value || 'tussentijds';
 
     if (!currentInternship) {
       showToast('Geen stage geselecteerd', 'error');
@@ -65,40 +102,7 @@ function wireEvaluationForm() {
     showLoading(submitBtn, 'Opslaan...');
 
     try {
-      // Stap 1: Evaluatie aanmaken (indien geen concept)
-      let evaluation = currentEvaluations.find(e => !e.finalized && e.eval_type === evalType);
-      if (!evaluation) {
-        evaluation = await InternshipsAPI.createEvaluation(currentInternship.id, {
-          eval_type: evalType,
-          comments: document.getElementById('eval-comments')?.value || null
-        });
-        currentEvaluations.push(evaluation);
-      }
-
-      // Stap 2: Update general comments
-      const comments = document.getElementById('eval-comments')?.value || null;
-      if (comments !== null && comments !== (evaluation.comments || '')) {
-        await EvaluationsAPI.update(evaluation.id, { comments });
-      }
-
-      // Stap 3: Werk elke regel bij met score, feedback en omschrijving
-      const rows = container.querySelectorAll('.eval-row');
-      for (const row of rows) {
-        const compId = parseInt(row.dataset.compId);
-        const scoreValue = row.querySelector('.score-select')?.value;
-        if (!scoreValue) continue;
-        const score = parseInt(scoreValue);
-        const feedback = row.querySelector('.feedback-input')?.value || null;
-        // Vind regel-ID voor deze competentie
-        const rule = evaluation.rules?.find(r => r.competency_id === compId);
-        if (rule) {
-          await EvaluationRulesAPI.update(evaluation.id, rule.id, {
-            score,
-            evaluator_feedback: feedback
-          });
-        }
-      }
-
+      await saveScores();
       hideLoading(submitBtn);
       showToast('Evaluatie opgeslagen!', 'success');
     } catch (error) {
@@ -125,9 +129,13 @@ function wireEvaluationForm() {
       return;
     }
 
-    // Eerst huidige scores opslaan
-    const submitBtn = evalForm.querySelector('button[type="submit"]');
-    if (submitBtn) submitBtn.click();
+    // Eerst huidige scores opslaan (awaited before finalizing)
+    try {
+      await saveScores();
+    } catch (error) {
+      showToast(error.message, 'error');
+      return;
+    }
 
     // Daarna evaluatie zoeken en finaliseren
     const evalType = document.getElementById('eval-type')?.value || 'tussentijds';
