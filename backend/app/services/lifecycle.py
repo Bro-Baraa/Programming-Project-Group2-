@@ -32,7 +32,7 @@ _TRANSITIONS: dict[str, set[str]] = {
     "Aanpassingen Vereist": {"In Beoordeling"},
     "Goedgekeurd": {"Overeenkomst Ingediend"},
     "Overeenkomst Ingediend": {"Lopend", "Overeenkomst Ingediend"},
-    "Lopend": {"Afgerond"},
+    "Lopend": {"Afgerond", "Overeenkomst Ingediend"},
     "Afgerond": set(),  # terminal state
 }
 
@@ -708,10 +708,11 @@ class InternshipLifecycle:
                     internship_id=internship.id,
                     link_view="logboek",
                 )
-        elif agreement_status == "Onvolledig" and internship.status == "Lopend":
-            # Revert internship status so student can re-upload
-            self._assert_transition(internship.status, "Overeenkomst Ingediend")
-            internship.status = "Overeenkomst Ingediend"
+        elif agreement_status == "Onvolledig":
+            # Revert internship status so student can re-upload (only if already running)
+            if internship.status == "Lopend":
+                self._assert_transition(internship.status, "Overeenkomst Ingediend")
+                internship.status = "Overeenkomst Ingediend"
             # ── Notify student their agreement is incomplete and needs to be re-uploaded ──
             notify(
                 self.db,

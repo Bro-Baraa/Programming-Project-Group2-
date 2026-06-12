@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from fastapi import HTTPException
 
-from app.models import Agreement, Company, Internship, Proposal, User
+from app.models import Agreement, Company, Internship, Notification, Proposal, User
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 
 
@@ -433,7 +433,7 @@ class TestValidateAgreement:
         assert internship.agreement.insurance_verified is True
         assert internship.agreement.validated_at is not None
 
-    def test_committee_marks_onvolledig(
+    def test_committee_marks_onvolledig_notifies_student(
         self, db, uploaded_agreement, test_committee, config
     ):
         lifecycle = InternshipLifecycle(db, config)
@@ -445,6 +445,48 @@ class TestValidateAgreement:
         internship = result.internship
         assert internship.status == "Overeenkomst Ingediend"  # unchanged
         assert internship.agreement.status == "Onvolledig"
+        # ── Verify the student is notified ──
+        notification = (
+            db.query(Notification)
+            .filter(
+                Notification.user_id == internship.student_id,
+                Notification.message.ilike("%onvolledig%"),
+            )
+            .first()
+        )
+        assert notification is not None
+
+    def test_committee_marks_onvolledig_from_lopend_reverts_status(
+        self, db, uploaded_agreement, test_committee, config
+    ):
+        """Marking Onvolledig from Lopend reverts status and allows re-upload."""
+        lifecycle = InternshipLifecycle(db, config)
+        # First validate to Lopend
+        lifecycle.validate_agreement(
+            internship_id=uploaded_agreement.id,
+            actor=test_committee,
+            insurance_verified=True,
+            agreement_status="Gevalideerd",
+        )
+        # Now mark as Onvolledig — should revert to Overeenkomst Ingediend
+        result = lifecycle.validate_agreement(
+            internship_id=uploaded_agreement.id,
+            actor=test_committee,
+            agreement_status="Onvolledig",
+        )
+        internship = result.internship
+        assert internship.status == "Overeenkomst Ingediend"
+        assert internship.agreement.status == "Onvolledig"
+        # ── Verify student can re-upload from this state ──
+        from io import BytesIO
+        lifecycle.upload_agreement(
+            internship_id=internship.id,
+            actor=db.query(User).filter(User.id == internship.student_id).first(),
+            file_stream=BytesIO(b"%PDF-1.4 fake2"),
+            filename="agreement_v2.pdf",
+            content_type="application/pdf",
+        )
+        assert internship.agreement.status == "Ingediend"
 
     def test_invalid_status_raises_400(
         self, db, uploaded_agreement, test_committee, config
