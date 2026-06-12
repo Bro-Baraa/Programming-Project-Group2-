@@ -331,4 +331,5 @@ Maakt een `dist/` map. De backend serveert deze automatisch.
 - PDFs worden opgeslagen in `uploads/agreements/`
 - JWT tokens verlopen na 24 uur
 - SQLite is de standaard database (geen setup nodig). Voor PostgreSQL/MySQL: pas `SQLALCHEMY_DATABASE_URL` in `app/database.py` aan.
+- Database migraties worden beheerd met Alembic. Zie `backend/alembic/README` voor het migratiewerkflow.
 - Alle belangrijke acties worden gelogd in de `audit_logs` tabel en zijn raadpleegbaar via `GET /audit` (enkel admin). Zie `backend/README.md` voor de volledige lijst van events.
