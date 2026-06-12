@@ -21,13 +21,12 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
-    role = Column(String, nullable=False)  # student, teacher, committee, mentor, admin
+    role = Column(String, nullable=False)
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
     internships_as_student = relationship(
         "Internship", foreign_keys="Internship.student_id", back_populates="student"
     )
@@ -83,12 +82,9 @@ class Internship(Base):
     )
     start_date = Column(Date, nullable=True)
     end_date = Column(Date, nullable=True)
-    status = Column(
-        String, default="Ingediend"
-    )  # Ingediend, In Beoordeling, Goedgekeurd, Afgekeurd, Aanpassingen Vereist, Overeenkomst Ingediend, Lopend, Afgerond
+    status = Column(String, default="Ingediend")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
     student = relationship(
         "User", foreign_keys=[student_id], back_populates="internships_as_student"
     )
@@ -148,9 +144,7 @@ class Proposal(Base):
         Integer, ForeignKey("internships.id"), nullable=False, unique=True
     )
     description = Column(Text, nullable=False)
-    status = Column(
-        String, default="Ingediend"
-    )  # Ingediend, In Beoordeling, Goedgekeurd, Afgekeurd, Aanpassingen Vereist
+    status = Column(String, default="Ingediend")
     feedback = Column(Text, nullable=True)
     submitted_at = Column(DateTime(timezone=True), server_default=func.now())
     revision_count = Column(Integer, default=0)
@@ -192,9 +186,7 @@ class Agreement(Base):
     )
     file_path = Column(String, nullable=True)
     insurance_verified = Column(Boolean, default=False)
-    status = Column(
-        String, default="Niet Ingediend"
-    )  # Niet Ingediend, Ingediend, Gevalideerd, Onvolledig
+    status = Column(String, default="Niet Ingediend")
     uploaded_at = Column(DateTime(timezone=True), nullable=True)
     validated_at = Column(DateTime(timezone=True), nullable=True)
 
@@ -206,7 +198,7 @@ class Document(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False)
-    doc_type = Column(String, nullable=False)  # agreement, evaluation, other
+    doc_type = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -218,12 +210,12 @@ class Logbook(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False)
-    week_number = Column(Integer, nullable=True)  # legacy; kept for backward compat
-    entry_date = Column(Date, nullable=True)      # daily logbook date
+    week_number = Column(Integer, nullable=True)
+    entry_date = Column(Date, nullable=True)
     tasks = Column(Text, nullable=True)
     reflection = Column(Text, nullable=True)
     issues = Column(Text, nullable=True)
-    status = Column(String, default="draft")  # draft, submitted
+    status = Column(String, default="draft")
     mentor_validated = Column(Boolean, default=False)
     mentor_feedback = Column(Text, nullable=True)
     submitted_at = Column(DateTime(timezone=True), nullable=True)
@@ -270,8 +262,8 @@ class Evaluation(Base):
     id = Column(Integer, primary_key=True, index=True)
     internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False)
     evaluator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    eval_type = Column(String, nullable=False)  # tussentijds, final
-    status = Column(String, default="concept")  # concept, afgerond
+    eval_type = Column(String, nullable=False)
+    status = Column(String, default="concept")
     comments = Column(Text, nullable=True)
     finalized = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -297,7 +289,7 @@ class EvaluationRule(Base):
     id = Column(Integer, primary_key=True, index=True)
     evaluation_id = Column(Integer, ForeignKey("evaluations.id"), nullable=False)
     competency_id = Column(Integer, ForeignKey("competencies.id"), nullable=False)
-    score = Column(Integer, nullable=True)  # 1-5
+    score = Column(Integer, nullable=True)
     weight_snapshot = Column(Float, nullable=True)
     student_description = Column(Text, nullable=True)
     evaluator_feedback = Column(Text, nullable=True)
@@ -307,25 +299,13 @@ class EvaluationRule(Base):
 
 
 class Notification(Base):
-    """
-    Stores in-app notifications for users.
-    A notification is created whenever an action impacts another user
-    (e.g. proposal approved, logbook submitted, agreement uploaded).
-    """
-
     __tablename__ = "notifications"
 
     id = Column(Integer, primary_key=True, index=True)
-    # The user who should receive this notification
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    # Short human-readable message shown in the bell dropdown
     message = Column(Text, nullable=False)
-    # Optional link back to the relevant internship so the user can navigate directly
     internship_id = Column(Integer, ForeignKey("internships.id"), nullable=True)
-    # Optional view to navigate to when the notification is clicked
-    # e.g. "voorstellen", "logboek", "overeenkomsten", "dashboard"
     link_view = Column(String, nullable=True)
-    # Whether the user has seen/dismissed the notification
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -357,17 +337,13 @@ class AuditLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    user_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True
-    )  # nullable: system events
-    user_email = Column(String, nullable=True)  # snapshot so log survives user deletion
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    user_email = Column(String, nullable=True)
     user_role = Column(String, nullable=True)
-    action = Column(
-        String, nullable=False
-    )  # e.g. "login", "proposal.submit", "agreement.validate"
-    entity_type = Column(String, nullable=True)  # e.g. "internship", "user", "proposal"
-    entity_id = Column(Integer, nullable=True)  # PK of the affected record
-    detail = Column(Text, nullable=True)  # human-readable extra context
+    action = Column(String, nullable=False)
+    entity_type = Column(String, nullable=True)
+    entity_id = Column(Integer, nullable=True)
+    detail = Column(Text, nullable=True)
     ip_address = Column(String, nullable=True)
 
     user = relationship("User", foreign_keys=[user_id], back_populates="audit_logs")

@@ -1,6 +1,5 @@
 // Stage Monitoring Tool
 
-// Configuratie
 // Role waarden moeten overeenkomen met backend User.role
 const roleViews = {
   student: ["dashboard", "voorstel", "logboek", "overeenkomst", "evaluaties"],
@@ -57,7 +56,6 @@ const templates = {
   "admin-auditlog": "admin-auditlog-template",
 };
 
-// Toestand
 let allInternships = [];
 let selectedInternshipId = null;
 let currentCompetencies = [];
@@ -66,34 +64,25 @@ let currentEvaluations = [];
 let currentFeedback = [];
 let _renderGeneration = 0;
 
-// Data cache: avoid reloading on every tab switch
 let _allInternshipsLoaded = false;
 let _lastInternshipDataId = null;
 let _lastCompetencyLoad = 0;
-const _CACHE_TTL_MS = 30_000; // 30 seconds
+const _CACHE_TTL_MS = 30_000;
 
-// Geeft de geselecteerde stage terug
 function getSelectedInternship() {
   return allInternships.find(i => i.id == selectedInternshipId) || allInternships[0] || null;
 }
 
-// Header tonen/verbergen
 function toggleHeaderVisibility(show) {
   const topbar = document.querySelector('.topbar');
   if (topbar) topbar.style.display = show ? 'flex' : 'none';
 }
 
-// Back-compat alias
 let currentInternship = null;
-
-// Hulpfuncties (formatDate, getStatusClass, showToast, showLoading, hideLoading)
-// zijn verplaatst naar `js/ui-helpers.js` om dit bestand overzichtelijk te houden.
 
 const app = document.getElementById("app");
 const navPanel = document.getElementById("nav-panel");
 const content = document.getElementById("content");
-
-// Authenticatie
 
 function updateUIForUser(user) {
   const userInfo = document.getElementById('user-info');
@@ -106,7 +95,6 @@ function updateUIForUser(user) {
     userRole.textContent = roleDisplayNames[user.role] || user.role;
   }
 
-  // Start the notification bell now that we know who is logged in
   initNotifications();
 }
 
@@ -119,7 +107,6 @@ async function handleLogin(e) {
   const submitBtn = e.target.querySelector('button[type="submit"]');
   const errorEl = document.getElementById('login-error');
 
-  // Vorige fout wissen
   if (errorEl) {
     errorEl.textContent = '';
     errorEl.classList.remove('show');
@@ -133,8 +120,6 @@ async function handleLogin(e) {
     const data = await AuthAPI.login(email, password);
     hideLoading(submitBtn);
     showToast(`Welkom, ${data.user.first_name}!`, 'success');
-
-    // Doorsturen naar hoofdapp
     window.location.href = 'index.html';
   } catch (error) {
     console.error('[DEBUG] Login error in handleLogin:', error.message);
@@ -151,14 +136,11 @@ async function handleLogin(e) {
 }
 
 function handleLogout() {
-  // Stop polling for notifications before clearing the session
   destroyNotifications();
   AuthAPI.logout();
   showToast('Uitgelogd', 'info');
   window.location.href = 'index.html?view=login';
 }
-
-// Weergave
 
 function renderLogin() {
   app.className = 'login-layout';
@@ -272,10 +254,8 @@ async function renderMainApp() {
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
 
-  // Tabs vullen
   const viewTabs = document.getElementById('view-tabs');
   viewTabs.textContent = '';
-  // ARIA: markeer als tablist
   viewTabs.setAttribute('role', 'tablist');
   views.forEach((view) => {
     const li = document.createElement('li');
@@ -285,7 +265,6 @@ async function renderMainApp() {
     const iconName = tabIcons[view];
     const icon = iconName ? iconHtml(iconName, 16, { class: 'icon-img tab-icon' }) + ' ' : '';
     btn.innerHTML = icon + view.charAt(0).toUpperCase() + view.slice(1);
-    // ARIA: maak tab toetsenbord-bedienbaar
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-selected', 'false');
     btn.setAttribute('tabindex', '-1');
@@ -297,7 +276,6 @@ async function renderMainApp() {
       renderView();
     });
 
-    // Pijltjestoetsen navigatie voor tabs
     btn.addEventListener('keydown', (e) => {
       const key = e.key;
       const tabs = Array.from(viewTabs.querySelectorAll('[role="tab"]'));
@@ -329,21 +307,17 @@ async function renderMainApp() {
   renderView();
 }
 
-// Track first render so we only animate entry on initial load
 let _firstRender = true;
 
-// Views die stage-specifieke data nodig hebben
 const _internshipViews = new Set([
   'dashboard', 'voorstel', 'logboek', 'overeenkomst', 'evaluaties',
   'opvolging', 'validatie', 'eindoverzicht', 'teacher-evaluatie', 'mentor-evaluatie'
 ]);
 
-// Views die competenties nodig hebben
 const _competencyViews = new Set([
   'evaluatie', 'teacher-evaluatie', 'mentor-evaluatie', 'competenties', 'eindoverzicht'
 ]);
 
-// Haalt alle stages op via paginatie (geen 50-item limiet)
 async function loadAllInternships() {
   const all = [];
   let skip = 0;
@@ -361,14 +335,12 @@ async function renderView() {
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
 
-  // Bepaal view vanuit URL of standaard
   let urlParams = new URLSearchParams(window.location.search);
   let view = urlParams.get('view');
   if (!view || !views.includes(view)) {
     view = views[0] || '';
   }
 
-  // Actieve tab markeren
   document.querySelectorAll('.nav-tab').forEach(tab => {
     const isActive = tab.dataset.view === view;
     tab.classList.toggle('active', isActive);
@@ -390,27 +362,20 @@ async function renderView() {
   const gen = ++_renderGeneration;
 
   try {
-    // Geselecteerde stage uit URL
     urlParams = new URLSearchParams(window.location.search);
     const internshipParam = urlParams.get('internship');
     if (internshipParam) selectedInternshipId = parseInt(internshipParam);
 
-    // Laad alle stages zichtbaar voor gebruiker (alleen bij eerste render of als leeg)
     if (!_allInternshipsLoaded || allInternships.length === 0) {
       allInternships = await loadAllInternships();
       _allInternshipsLoaded = true;
     }
 
-    // Stale render check
     if (gen !== _renderGeneration) return;
 
-    // Vul stage-selector (voor meerdere rollen)
     populateInternshipSelector(role);
-
-    // Stel huidige stage in (back-compat)
     currentInternship = getSelectedInternship();
 
-    // Laad stage-specifieke data ALLEEN als deze view het nodig heeft EN als de stage gewijzigd is
     const needsInternshipData = _internshipViews.has(view);
     const internshipChanged = currentInternship?.id !== _lastInternshipDataId;
     if (needsInternshipData && currentInternship) {
@@ -422,17 +387,14 @@ async function renderView() {
         ]);
         _lastInternshipDataId = currentInternship.id;
       }
-      // else: hergebruik cached data
     } else {
       currentLogbooks = [];
       currentEvaluations = [];
       currentFeedback = [];
     }
 
-    // Stale render check
     if (gen !== _renderGeneration) return;
 
-    // Laad competenties ALLEEN als deze view het nodig heeft (met TTL cache)
     const needsCompetencies = _competencyViews.has(view);
     const now = Date.now();
     if (needsCompetencies && (currentCompetencies.length === 0 || (now - _lastCompetencyLoad) > _CACHE_TTL_MS)) {
@@ -442,22 +404,18 @@ async function renderView() {
       currentCompetencies = [];
     }
 
-    // Stale render check
     if (gen !== _renderGeneration) return;
 
-    // Template renderen
     content.textContent = '';
     const tpl = document.getElementById(templateId);
     if (tpl) {
       content.appendChild(tpl.content.cloneNode(true));
       content.classList.add('content-fade-in');
-      // Stagger panel reveals
       const panels = content.querySelectorAll('.panel, .grid');
       panels.forEach((el, i) => {
         el.classList.add('reveal-stagger');
         el.style.setProperty('--panel-i', i);
       });
-      // Clean up animation class after it completes
       content.addEventListener('animationend', () => {
         content.classList.remove('content-fade-in');
       }, { once: true });
@@ -465,7 +423,6 @@ async function renderView() {
         _firstRender = false;
       }
       await wireRoleInteractions(role, view);
-      // Rebuild table cards after data is rendered (so cards contain actual data, not "Laden...")
       if (typeof removeTableCards === 'function' && typeof buildTableCards === 'function') {
         removeTableCards();
         if (window.innerWidth <= 720) {
@@ -474,17 +431,14 @@ async function renderView() {
       }
     }
 
-    // Stale render check
     if (gen !== _renderGeneration) return;
 
-    // Focus management: zet focus op de eerste heading in de nieuwe view
     const firstHeading = content.querySelector('h2');
     if (firstHeading) {
       firstHeading.setAttribute('tabindex', '-1');
       firstHeading.focus({ preventScroll: true });
     }
 
-    // Als er geen stage is voor een view die dat wel nodig heeft, toon empty state
     if (needsInternshipData && !currentInternship && !content.querySelector('.error-message')) {
       const emptyDiv = document.createElement('div');
       emptyDiv.className = 'panel card info-message';
@@ -496,7 +450,6 @@ async function renderView() {
       content.replaceChildren(emptyDiv);
     }
 
-    // Vervang overgebleven <img> icon tags door inline SVGs (templates, static HTML)
     inlineIconsInContainer(content);
   } catch (error) {
     if (gen !== _renderGeneration) return;
@@ -507,7 +460,6 @@ async function renderView() {
   }
 }
 
-// Stage-selector vullen
 function populateInternshipSelector(role) {
   const wrapper = document.getElementById('internship-selector-wrapper');
   const select = document.getElementById('internship-select');
@@ -518,7 +470,6 @@ function populateInternshipSelector(role) {
     return;
   }
 
-  // Toon selector voor niet-studenten of als er meerdere stages zijn
   const showSelector = allInternships.length > 1 || role !== 'student';
   if (!showSelector) {
     wrapper.style.display = 'none';
@@ -538,12 +489,10 @@ function populateInternshipSelector(role) {
     select.appendChild(option);
   });
 
-  // Voorselectie vanuit URL of eerste item
   const targetId = selectedInternshipId || allInternships[0]?.id;
   if (targetId) select.value = targetId;
 }
 
-// Afhandeling selectie wijziging
 function handleInternshipChange() {
   const select = document.getElementById('internship-select');
   if (!select) return;
@@ -553,19 +502,15 @@ function handleInternshipChange() {
   selectedInternshipId = newId;
   currentInternship = getSelectedInternship();
 
-  // URL bijwerken zonder reload
   const url = new URL(window.location.href);
   url.searchParams.set('internship', newId);
   window.history.replaceState({}, '', url);
 
-  // Huidige view vernieuwen met nieuwe data
   renderView();
 }
 
-// Vernieuw stagegegevens vanaf API
 async function refreshInternshipData() {
   try {
-    // Reset cache flags zodat volgende renderView() altijd fresh data laadt
     _allInternshipsLoaded = false;
     _lastInternshipDataId = null;
 
@@ -573,11 +518,9 @@ async function refreshInternshipData() {
     _allInternshipsLoaded = true;
     currentInternship = getSelectedInternship();
 
-    // Update selector if visible
     const role = AuthAPI.getRole();
     populateInternshipSelector(role);
 
-    // Alleen data laden als er een stage is
     if (currentInternship) {
       [currentLogbooks, currentEvaluations, currentFeedback] = await Promise.all([
         InternshipsAPI.getLogbooks(currentInternship.id),
@@ -594,10 +537,6 @@ async function refreshInternshipData() {
     console.error('Failed to refresh internship data:', error);
   }
 }
-
-// ============================================
-// Rol interacties
-// ============================================
 
 async function wireRoleInteractions(role, view) {
   const handlers = {
@@ -633,88 +572,68 @@ async function wireRoleInteractions(role, view) {
   const handler = handlers[role]?.[view];
   if (handler) await handler();
 
-  // QoL-verbetering: voeg zoeken/filteren/sorteren toe aan de grote tabellen.
-  // Dit gebeurt nadat de handler de tabel met rijen heeft gevuld.
   enhanceViewTables(role, view);
 }
 
-// ============================================
-// Tabel-verbeteringen koppelen (zoeken / filteren / sorteren)
-// --------------------------------------------
-// Roept enhanceTable() aan (uit js/table-utils.js) voor de juiste tabel,
-// afhankelijk van welke rol en welke view actief is.
-// De gebruikers- en audit-tabel hebben al server-side zoeken/filteren,
-// dus daar maken we enkel de kolommen sorteerbaar.
-// ============================================
 function enhanceViewTables(role, view) {
-  // Commissie: stagevoorstellen beoordelen
   if (role === "committee" && view === "voorstellen") {
     enhanceTable(document.getElementById("proposals-table"), {
       search: true,
       searchPlaceholder: "Zoek op student, bedrijf of status...",
-      filterColumn: 3,            // kolom "Status"
+      filterColumn: 3,
       filterLabel: "Alle statussen",
       sort: true,
     });
   }
 
-  // Commissie: overeenkomsten beoordelen
   if (role === "committee" && view === "overeenkomsten") {
     enhanceTable(document.getElementById("agreements-table"), {
       search: true,
       searchPlaceholder: "Zoek op student of bedrijf...",
-      filterColumn: 3,            // kolom "Overeenkomst Status"
+      filterColumn: 3,
       filterLabel: "Alle overeenkomst-statussen",
       sort: true,
-      skipSortColumns: [5],       // kolom "Actie" niet sorteren
+      skipSortColumns: [5],
     });
   }
 
-  // Commissie: overzicht van alle stages
   if (role === "committee" && view === "overzicht") {
     enhanceTable(document.getElementById("committee-overview-table"), {
       search: true,
       searchPlaceholder: "Zoek op student of bedrijf...",
-      filterColumn: 3,            // kolom "Status"
+      filterColumn: 3,
       filterLabel: "Alle statussen",
       sort: true,
     });
   }
 
-  // Admin: overzicht van overeenkomsten
   if (role === "admin" && view === "overeenkomsten") {
     enhanceTable(document.getElementById("admin-agreements-table"), {
       search: true,
       searchPlaceholder: "Zoek op student of status...",
-      filterColumn: 2,            // kolom "Overeenkomst Status"
+      filterColumn: 2,
       filterLabel: "Alle overeenkomst-statussen",
       sort: true,
-      skipSortColumns: [4],       // kolom "Actie" niet sorteren
+      skipSortColumns: [4],
     });
   }
 
-  // Admin: gebruikersbeheer (zoeken/filteren bestaat al -> enkel sorteren)
   if (role === "admin" && view === "gebruikers") {
     enhanceTable(document.getElementById("users-table"), {
       sort: true,
-      skipSortColumns: [4],       // kolom "Acties" niet sorteren
+      skipSortColumns: [4],
     });
 
-    // De zoekbalk hier is server-side en zocht enkel na een klik op "Zoeken".
-    // We maken hem "live": terwijl je typt klikken we automatisch op de
-    // zoekknop. debounce() (uit table-cards.js) wacht even na het laatste
-    // teken, zodat we niet bij elke toetsaanslag de server bevragen.
     const userSearch = document.getElementById("user-search");
     const userSearchBtn = document.getElementById("user-search-btn");
     if (userSearch && userSearchBtn && !userSearch.dataset.liveSearch) {
-      userSearch.dataset.liveSearch = "true";   // maar één keer koppelen
+      userSearch.dataset.liveSearch = "true";
       userSearch.addEventListener("input", debounce(function () {
         userSearchBtn.click();
       }, 300));
     }
   }
 
-  // Admin: audit log (zoeken/filteren bestaat al -> enkel sorteren)
   if (role === "admin" && view === "auditlog") {
     enhanceTable(document.getElementById("audit-table"), {
       sort: true,
@@ -722,9 +641,6 @@ function enhanceViewTables(role, view) {
   }
 }
 
-// ============================================
-
-// Gedeelde helper voor rapporttabellen
 function formatReportRows(rules) {
   return rules.map(r => {
     const name = escapeHtml(r.competency?.name || 'Onbekend');
@@ -741,10 +657,6 @@ function formatReportRows(rules) {
   }).join('');
 }
 
-// ============================================
-// Initialisatie
-// ============================================
-
 function init() {
   const urlParams = new URLSearchParams(window.location.search);
   const view = urlParams.get('view');
@@ -756,18 +668,9 @@ function init() {
     renderMainApp();
   }
   
-  // Gebeurtenisluisteraars
-  // (tab clicks worden verbonden in renderMainApp)
-
-  
   document.getElementById('internship-select')?.addEventListener('change', handleInternshipChange);
-  
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
-
-  // Inline icons in static page elements (top bar, nav, etc.)
   inlineIconsInContainer(document.body);
 }
-
-// Table-card helper functies zijn verplaatst naar `js/table-cards.js`.
 
 init();
