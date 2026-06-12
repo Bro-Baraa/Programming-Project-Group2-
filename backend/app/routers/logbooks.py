@@ -1,8 +1,10 @@
 """Logbook endpoints."""
 
+from datetime import timedelta
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.database import get_db
 from app.models import Internship, Logbook, User
@@ -10,7 +12,7 @@ from app.schemas import (
     LogbookResponse,
     LogbookCreate,
     LogbookUpdate,
-    LogbookWeekStatus,
+    LogbookDayStatus,
 )
 from app.auth import get_current_active_user, require_student
 from app.services.common import ensure_internship_access
@@ -41,13 +43,13 @@ def list_logbooks(
     return logbooks
 
 
-@router.get("/{internship_id}/logbooks/weeks", response_model=List[LogbookWeekStatus])
-def get_week_overview(
+@router.get("/{internship_id}/logbooks/days", response_model=List[LogbookDayStatus])
+def get_day_overview(
     internship_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """US-05, US-08: Get status of all weeks for the internship period"""
+    """US-05, US-08: Get status of all days for the internship period"""
     internship = db.query(Internship).filter(Internship.id == internship_id).first()
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
@@ -57,11 +59,10 @@ def get_week_overview(
     if not internship.start_date or not internship.end_date:
         raise HTTPException(status_code=400, detail="Internship dates not set")
 
-    # Calculate total weeks (handles year boundaries correctly)
-    total_days = (internship.end_date - internship.start_date).days
-    total_weeks = (total_days // 7) + 1
+    # Calculate total days (handles year boundaries correctly)
+    total_days = (internship.end_date - internship.start_date).days + 1
 
-    if total_weeks < 1:
+    if total_days < 1:
         raise HTTPException(
             status_code=400,
             detail="Stageperiode is te kort of einddatum ligt voor startdatum",
@@ -69,15 +70,24 @@ def get_week_overview(
 
     # Get existing logbooks
     logbooks = db.query(Logbook).filter(Logbook.internship_id == internship_id).all()
-    logbook_map = {lb.week_number: lb for lb in logbooks}
+    logbook_map = {}
+    for lb in logbooks:
+        key = lb.entry_date or (
+            internship.start_date + timedelta(days=(lb.week_number - 1) * 7)
+            if lb.week_number else None
+        )
+        if key:
+            logbook_map[key] = lb
 
     result = []
-    for week in range(1, total_weeks + 1):
-        if week in logbook_map:
-            lb = logbook_map[week]
+    for day in range(total_days):
+        entry_date = internship.start_date + timedelta(days=day)
+        if entry_date in logbook_map:
+            lb = logbook_map[entry_date]
             result.append(
-                LogbookWeekStatus(
-                    week_number=week,
+                LogbookDayStatus(
+                    day_offset=day,
+                    entry_date=entry_date,
                     logbook_id=lb.id,
                     status=lb.status,
                     mentor_validated=lb.mentor_validated,
@@ -86,8 +96,9 @@ def get_week_overview(
             )
         else:
             result.append(
-                LogbookWeekStatus(
-                    week_number=week,
+                LogbookDayStatus(
+                    day_offset=day,
+                    entry_date=entry_date,
                     logbook_id=None,
                     status="missing",
                     mentor_validated=False,
@@ -104,7 +115,7 @@ def create_logbook(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_student),
 ):
-    """US-05: Create a new logbook entry for a week"""
+    """US-05: Create a new daily logbook entry"""
     internship = db.query(Internship).filter(Internship.id == internship_id).first()
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
@@ -116,7 +127,7 @@ def create_logbook(
         user=current_user,
         entity_type="internship",
         entity_id=internship_id,
-        detail=f"Logboek week {data.week_number} aangemaakt",
+        detail=f"Logboek {data.entry_date} aangemaakt",
     )
     return result
 
@@ -177,11 +188,12 @@ def submit_logbook(
         if internship.student
         else "Een student"
     )
+    log_label = logbook.entry_date.strftime("%d/%m/%Y") if logbook.entry_date else f"dag {logbook.week_number}"
     if internship.mentor_id:
         notify(
             db,
             user_id=internship.mentor_id,
-            message=f"{student_name} heeft logboek week {logbook.week_number} ingediend.",
+            message=f"{student_name} heeft logboek {log_label} ingediend.",
             internship_id=internship.id,
             link_view="validatie",
         )
@@ -189,7 +201,7 @@ def submit_logbook(
         notify(
             db,
             user_id=internship.teacher_id,
-            message=f"{student_name} heeft logboek week {logbook.week_number} ingediend.",
+            message=f"{student_name} heeft logboek {log_label} ingediend.",
             internship_id=internship.id,
             link_view="logboek",
         )
@@ -201,6 +213,6 @@ def submit_logbook(
         user=current_user,
         entity_type="internship",
         entity_id=logbook.internship_id,
-        detail=f"Logboek week {logbook.week_number} definitief ingediend",
+        detail=f"Logboek {log_label} definitief ingediend",
     )
     return logbook

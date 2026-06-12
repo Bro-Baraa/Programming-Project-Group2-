@@ -4,13 +4,11 @@ async function renderMentorLogbooks() {
 
   if (!currentInternship) {
     tbody.innerHTML = '<tr><td colspan="6">Selecteer een stage via het navigatiemenu.</td></tr>';
-    // Remove stage context card if no internship selected
     const existingCtx = document.getElementById('mentor-stage-context');
     if (existingCtx) existingCtx.remove();
     return;
   }
 
-  // Render stage-context card above the logbook table (US-24)
   const table = document.getElementById('mentor-logbooks-table');
   let stageCtx = document.getElementById('mentor-stage-context');
   if (!stageCtx) {
@@ -30,23 +28,35 @@ async function renderMentorLogbooks() {
     <p><strong>Periode:</strong> ${escapeHtml(startDate)} t/m ${escapeHtml(endDate)}</p>
   `;
 
-  // Berekend weekoverzicht lokaal vanuit currentInternship + currentLogbooks
   const start = currentInternship.start_date ? new Date(currentInternship.start_date) : null;
   const end = currentInternship.end_date ? new Date(currentInternship.end_date) : null;
-  let totalWeeks = 0;
-  if (start && end && end > start) {
-    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-    totalWeeks = Math.max(1, Math.floor(days / 7) + 1);
+  let totalDays = 0;
+  if (start && end && end >= start) {
+    totalDays = Math.floor((end - start) / (1000 * 60 * 60 * 24)) + 1;
   }
 
-  const logbookMap = new Map(currentLogbooks.map(lb => [lb.week_number, lb]));
+  const logbookMap = new Map();
+  for (const lb of currentLogbooks) {
+    if (lb.entry_date) {
+      logbookMap.set(lb.entry_date, lb);
+    } else if (lb.week_number && start) {
+      const computed = new Date(start);
+      computed.setDate(computed.getDate() + (lb.week_number - 1) * 7);
+      logbookMap.set(computed.toISOString().split('T')[0], lb);
+    }
+  }
+
   const rows = [];
-  for (let w = 1; w <= totalWeeks; w++) {
-    const lb = logbookMap.get(w);
+  for (let d = 0; d < totalDays; d++) {
+    const dayDate = new Date(start);
+    dayDate.setDate(dayDate.getDate() + d);
+    const dateStr = dayDate.toISOString().split('T')[0];
+    const lb = logbookMap.get(dateStr);
+    const dayLabel = `${dayDate.getDate()}/${dayDate.getMonth() + 1}`;
     if (!lb) {
       rows.push(`
         <tr class="missing-row">
-          <td>${w}</td>
+          <td>${dayLabel}</td>
           <td colspan="3"><span class="status-pill status-warn">Ontbrekend</span></td>
           <td>-</td>
           <td>-</td>
@@ -64,12 +74,12 @@ async function renderMentorLogbooks() {
 
       rows.push(`
         <tr data-logbook-id="${lb.id}">
-          <td>${w}</td>
+          <td>${dayLabel}</td>
           <td>${escapeHtml(lb.tasks || '-')}</td>
           <td>${escapeHtml(lb.reflection || '-')}</td>
           <td><span class="status-pill ${getStatusClass(lb.status)}">${lb.status === 'submitted' ? 'Ingediend' : 'Concept'}</span></td>
           <td>
-            <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze week..." style="width:100%; min-width:160px; font-size:0.85rem;">${escapeHtml(lb.mentor_feedback || '')}</textarea>
+            <textarea class="mentor-feedback-input" data-id="${lb.id}" rows="2" placeholder="Feedback voor deze dag..." style="width:100%; min-width:160px; font-size:0.85rem;">${escapeHtml(lb.mentor_feedback || '')}</textarea>
             <button class="btn small save-feedback-btn" data-id="${lb.id}" style="margin-top:0.25rem;">${iconHtml('check-circle', 14)} Opslaan</button>
           </td>
           <td>${actionCell}</td>
@@ -79,7 +89,6 @@ async function renderMentorLogbooks() {
   }
   tbody.innerHTML = rows.join('') || '<tr><td colspan="6">Geen logboeken gevonden voor deze stage.</td></tr>';
 
-  // Validatieknoppen verbinden
   tbody.querySelectorAll('.validate-logbook-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const logbookId = parseInt(btn.dataset.id);
@@ -91,7 +100,6 @@ async function renderMentorLogbooks() {
         });
         hideLoading(btn);
         showToast('Logboek gevalideerd!', 'success');
-        // Vernieuw logboeken
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
         renderMentorLogbooks();
       } catch (error) {
@@ -101,7 +109,6 @@ async function renderMentorLogbooks() {
     });
   });
 
-  // Feedback opslaan knoppen verbinden
   tbody.querySelectorAll('.save-feedback-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const logbookId = parseInt(btn.dataset.id);

@@ -218,7 +218,8 @@ class Logbook(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False)
-    week_number = Column(Integer, nullable=False)
+    week_number = Column(Integer, nullable=True)  # legacy; kept for backward compat
+    entry_date = Column(Date, nullable=True)      # daily logbook date
     tasks = Column(Text, nullable=True)
     reflection = Column(Text, nullable=True)
     issues = Column(Text, nullable=True)

@@ -1,6 +1,6 @@
 """Logbook service layer."""
 
-from datetime import datetime, UTC
+from datetime import date as dt_date, datetime, timedelta, UTC
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -10,13 +10,20 @@ from .common import ensure_internship_access
 from .notifications import notify
 
 
+def _log_label(logbook: Logbook) -> str:
+    """Return a human-readable label for a logbook entry."""
+    if logbook.entry_date:
+        return logbook.entry_date.strftime("%d/%m/%Y")
+    return f"dag {logbook.week_number}" if logbook.week_number else "onbekend"
+
+
 def create_logbook(
     db: Session,
     internship: Internship,
     current_user,
     data: LogbookCreate,
 ) -> Logbook:
-    """Create a weekly logbook entry for a student-owned internship."""
+    """Create a daily logbook entry for a student-owned internship."""
     ensure_internship_access(current_user, internship)
 
     if internship.student_id != current_user.id:
@@ -28,14 +35,23 @@ def create_logbook(
             detail="Can only create logbooks for ongoing or completed internships",
         )
 
-    if data.week_number < 1:
-        raise HTTPException(status_code=400, detail="Week number must be at least 1")
+    # Determine entry_date
+    if data.entry_date:
+        entry_date = data.entry_date
+    elif data.week_number:
+        entry_date = internship.start_date + timedelta(days=(data.week_number - 1) * 7) if internship.start_date else None
+    else:
+        raise HTTPException(status_code=400, detail="entry_date or week_number is required")
+
+    if entry_date and internship.start_date and internship.end_date:
+        if entry_date < internship.start_date or entry_date > internship.end_date:
+            raise HTTPException(status_code=400, detail="Logbook date must be within the internship period")
 
     existing = (
         db.query(Logbook)
         .filter(
             Logbook.internship_id == internship.id,
-            Logbook.week_number == data.week_number,
+            Logbook.entry_date == entry_date,
         )
         .first()
     )
@@ -43,11 +59,12 @@ def create_logbook(
     if existing:
         raise HTTPException(
             status_code=400,
-            detail=f"Logbook for week {data.week_number} already exists",
+            detail=f"Logbook for {entry_date} already exists",
         )
 
     logbook = Logbook(
         internship_id=internship.id,
+        entry_date=entry_date,
         week_number=data.week_number,
         tasks=data.tasks,
         reflection=data.reflection,
@@ -96,7 +113,7 @@ def update_logbook(
                 notify(
                     db,
                     user_id=internship.student_id,
-                    message=f"Je logboek van week {logbook.week_number} is goedgekeurd door je mentor.",
+                    message=f"Je logboek van {_log_label(logbook)} is goedgekeurd door je mentor.",
                     internship_id=internship.id,
                     link_view="logboek",  # sends student to their logbook view
                 )
@@ -107,7 +124,7 @@ def update_logbook(
                 notify(
                     db,
                     user_id=internship.student_id,
-                    message=f"Je mentor heeft feedback gegeven op logboek week {logbook.week_number}.",
+                    message=f"Je mentor heeft feedback gegeven op logboek {_log_label(logbook)}.",
                     internship_id=internship.id,
                     link_view="logboek",
                 )

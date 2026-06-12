@@ -55,7 +55,7 @@ from .logbook import (
     LogbookCreate,
     LogbookUpdate,
     LogbookResponse,
-    LogbookWeekStatus,
+    LogbookDayStatus,
 )
 from .competency import (
     CompetencyProfileBase,
@@ -135,7 +135,7 @@ __all__ = [
     "LogbookCreate",
     "LogbookUpdate",
     "LogbookResponse",
-    "LogbookWeekStatus",
+    "LogbookDayStatus",
     # Competency
     "CompetencyProfileBase",
     "CompetencyProfileCreate",

@@ -251,10 +251,10 @@ def create_agreement(db: Session, internship_id: int, data: dict) -> Agreement:
     )
 
 
-def create_logbook(db: Session, internship_id: int, week: int, data: dict) -> Logbook:
+def create_logbook(db: Session, internship_id: int, entry_date, data: dict) -> Logbook:
     logbook = Logbook(
         internship_id=internship_id,
-        week_number=week,
+        entry_date=entry_date,
         tasks=data.get("tasks"),
         reflection=data.get("reflection"),
         issues=data.get("issues"),
@@ -271,25 +271,26 @@ def create_logbook(db: Session, internship_id: int, week: int, data: dict) -> Lo
 def create_logbooks_for_internship(
     db: Session, internship: Internship, logbook_config: dict, company: Company
 ) -> int:
-    total_days = (internship.end_date - internship.start_date).days
-    count = min(logbook_config["count"], max(1, (total_days // 7) + 1))
+    total_days = (internship.end_date - internship.start_date).days + 1
+    count = min(logbook_config["count"], max(1, total_days))
     all_sub = logbook_config.get("all_submitted", False)
     all_val = logbook_config.get("all_validated", False)
-    for week in range(1, count + 1):
-        is_sub = all_sub or week <= count // 2
-        is_val = is_sub and (all_val or week <= count // 3)
+    for day_offset in range(count):
+        entry_date = internship.start_date + timedelta(days=day_offset)
+        is_sub = all_sub or day_offset <= count // 2
+        is_val = is_sub and (all_val or day_offset <= count // 3)
         lb_data = {
-            "tasks": f"Week {week}: Werk aan {company.sector} project.",
-            "reflection": f"Week {week}: {'Sterke' if week % 2 == 0 else 'Stabiele'} prestaties.",
+            "tasks": f"Dag {day_offset + 1}: Werk aan {company.sector} project.",
+            "reflection": f"Dag {day_offset + 1}: {'Sterke' if day_offset % 2 == 0 else 'Stabiele'} prestaties.",
             "issues": (
-                "Geen problemen" if week % 3 != 0 else "Technische uitdaging, opgelost."
+                "Geen problemen" if day_offset % 3 != 0 else "Technische uitdaging, opgelost."
             ),
             "status": "submitted" if is_sub else "draft",
             "mentor_validated": is_val,
             "mentor_feedback": "Goed werk" if is_val else None,
-            "submitted_at": -count + week if is_sub else None,
+            "submitted_at": -count + day_offset if is_sub else None,
         }
-        create_logbook(db, internship.id, week, lb_data)
+        create_logbook(db, internship.id, entry_date, lb_data)
     return count
 
 

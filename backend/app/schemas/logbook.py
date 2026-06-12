@@ -2,12 +2,15 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, Literal
-from datetime import datetime
+from datetime import date, datetime
 
 
 class LogbookBase(BaseModel):
-    week_number: int = Field(
-        ge=1, description="Internship-relative week number (week 1, 2, 3, ...)"
+    week_number: Optional[int] = Field(
+        None, ge=1, description="Internship-relative week number (legacy, optional)"
+    )
+    entry_date: Optional[date] = Field(
+        None, description="Date for this daily logbook entry"
     )
     tasks: Optional[str] = None
     reflection: Optional[str] = None
@@ -25,6 +28,7 @@ class LogbookUpdate(BaseModel):
     status: Optional[Literal["draft", "submitted"]] = None
     mentor_validated: Optional[bool] = None
     mentor_feedback: Optional[str] = None
+    entry_date: Optional[date] = None
 
 
 class LogbookResponse(LogbookBase):
@@ -39,10 +43,11 @@ class LogbookResponse(LogbookBase):
     created_at: datetime
 
 
-class LogbookWeekStatus(BaseModel):
-    """Status for a specific week (for displaying all weeks)"""
+class LogbookDayStatus(BaseModel):
+    """Status for a specific day (for displaying all days)"""
 
-    week_number: int
+    day_offset: int
+    entry_date: Optional[date] = None
     logbook_id: Optional[int] = None
     status: str  # missing, draft, submitted
     mentor_validated: bool = False
