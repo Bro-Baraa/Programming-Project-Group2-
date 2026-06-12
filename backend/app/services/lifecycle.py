@@ -364,9 +364,17 @@ class InternshipLifecycle:
         filepath = self.config.agreements_dir / safe_name
         self.config.agreements_dir.mkdir(parents=True, exist_ok=True)
 
+        MAX_SIZE = 5 * 1024 * 1024
+        content = file_stream.read()
+        if len(content) > MAX_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail="File too large. Maximum size is 5 MB.",
+            )
+
         try:
             with open(filepath, "wb") as buffer:
-                shutil.copyfileobj(file_stream, buffer)
+                buffer.write(content)
         finally:
             if hasattr(file_stream, "close") and callable(file_stream.close):
                 file_stream.close()
