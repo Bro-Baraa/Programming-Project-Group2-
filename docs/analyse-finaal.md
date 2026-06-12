@@ -598,12 +598,12 @@ Programming-Project-Group2-/
 │   ├── app/
 │   │   ├── main.py                  # FastAPI entrypoint + middleware
 │   │   ├── database.py              # SQLAlchemy setup
-│   │   ├── models.py                # Database-modellen (16 tabellen)
+│   │   ├── models.py                # Database-modellen (15 tabellen)
 │   │   ├── auth.py                  # JWT + wachtwoord hashing
 │   │   ├── dependencies.py          # Gedeelde FastAPI dependencies
-│   │   ├── routers/                 # API endpoints (18 routers)
+│   │   ├── routers/                 # API endpoints (17 routers)
 │   │   ├── schemas/                 # Pydantic schema's (13 bestanden)
-│   │   └── services/               # Business logic (18 services)
+│   │   └── services/               # Business logic (17 services)
 │   ├── tests/                       # pytest testsuite (11 testbestanden)
 │   ├── uploads/agreements/          # PDF uploads
 │   ├── seed_data.yaml               # Testdata
@@ -639,7 +639,7 @@ Tijdens de ontwikkeling zijn er een aantal wijzigingen doorgevoerd ten opzichte 
 | Notificaties | E-mail service | In-app notificaties (polling) | E-mail was te complex voor scope; in-app voldoet |
 | Auth | JWT (access/refresh) | JWT access token (24u) | Vereenvoudiging; refresh tokens niet nodig |
 | Rollen | 6 rollen (incl. aparte Admin en Administratie) | 5 rollen (Admin en Administratie samengevoegd) | Vereenvoudiging zonder functieverlies |
-| Datamodel | 11 tabellen | 16 tabellen | Extra tabellen voor audit, notificaties, feedback, versiegeschiedenis |
+| Datamodel | 11 tabellen | 15 tabellen | Extra tabellen voor audit, notificaties, feedback, versiegeschiedenis |
 
 De belangrijkste afwijking is de keuze voor vanilla JavaScript in plaats van React. Dit bleek in de praktijk voldoende voor de vereiste functionaliteit en bespaarde het team de leercurve van een framework. De overige afwijkingen zijn vereenvoudigingen (auth, rollen) of uitbreidingen (datamodel) die het systeem beter maakten.
 

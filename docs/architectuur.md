@@ -177,41 +177,41 @@ Altijd controleren:
 ## API Overzicht (voor Frontend Developers)
 
 ### Authenticatie
-- `POST /auth/login` - Inloggen
-- `POST /auth/register` - Nieuwe gebruiker (alleen admin)
-- `GET /auth/me` - Wie ben ik?
+- `POST /api/auth/login` - Inloggen
+- `POST /api/auth/register` - Nieuwe gebruiker (alleen admin)
+- `GET /api/auth/me` - Wie ben ik?
 
 ### Stages
-- `GET /internships` - Lijst (automatisch gefilterd per rol)
-- `POST /internships` - Nieuwe stage
-- `GET /internships/{id}` - Details
-- `PATCH /internships/{id}` - Wijzigen (staff only)
+- `GET /api/internships` - Lijst (automatisch gefilterd per rol)
+- `POST /api/internships` - Nieuwe stage
+- `GET /api/internships/{id}` - Details
+- `PATCH /api/internships/{id}` - Wijzigen (staff only)
 
 ### Voorstellen
-- `GET /internships/{id}/proposal` - Zien
-- `PATCH /internships/{id}/proposal` - Beoordelen (commissie)
+- `GET /api/internships/{id}/proposal` - Zien
+- `PATCH /api/internships/{id}/proposal` - Beoordelen (commissie)
 
 ### Overeenkomsten
-- `POST /internships/{id}/agreement` - Upload PDF
+- `POST /api/internships/{id}/agreement` - Upload PDF
 
 ### Logboeken
-- `GET /internships/{id}/logbooks` - Wekelijkse logboeken
-- `POST /internships/{id}/logbooks` - Nieuw logboek
+- `GET /api/internships/{id}/logbooks` - Wekelijkse logboeken
+- `POST /api/internships/{id}/logbooks` - Nieuw logboek
 
 ### Evaluaties
-- `GET /internships/{id}/evaluations` - Lijst
-- `POST /internships/{id}/evaluations` - Start evaluatie (docent)
+- `GET /api/internships/{id}/evaluations` - Lijst
+- `POST /api/internships/{id}/evaluations` - Start evaluatie (docent)
 - `PATCH .../rules/{id}` - Score invoeren
 - `POST .../finalize` - Afronden
 
 ### Competenties (Admin)
-- `GET /competencies` - Lijst
-- `POST /competencies` - Toevoegen
-- `DELETE /competencies/{id}` - Verwijderen
+- `GET /api/competencies` - Lijst
+- `POST /api/competencies` - Toevoegen
+- `DELETE /api/competencies/{id}` - Verwijderen
 
 ### Rapporten
-- `GET /internships/stats/dashboard` - Dashboard cijfers
-- `GET /internships/reports/final` - Eindrapporten
+- `GET /api/internships/stats/dashboard` - Dashboard cijfers
+- `GET /api/internships/{id}/final-report` - Eindrapporten
 
 ---
 

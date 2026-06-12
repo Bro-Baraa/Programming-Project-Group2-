@@ -173,6 +173,7 @@ Programming-Project-Group2-/
 │   ├── init_admin.py            # Eerste keer setup
 │   ├── seed.py                  # Testdata seeding (alias → seed_loader.py)
 │   ├── seed_loader.py            # Testdata seeding (YAML-backed, core)
+│   ├── docker_main.py           # Docker entrypoint (FastAPI + static files)
 │   ├── requirements.txt         # Python dependencies
 │   ├── .env.example             # Template voor env-variabelen
 │   └── pytest.ini               # Testconfiguratie
@@ -184,7 +185,6 @@ Programming-Project-Group2-/
 │   ├── Dockerfile               # Docker build (single container)
 │   └── docker-entrypoint.sh     # Docker startup script
 ├── docker-compose.yml            # Docker Compose config
-├── docker_main.py                # Docker entrypoint (FastAPI + static files)
 ├── fly.toml                      # Fly.io deploy config
 ├── start.sh                      # Start backend + frontend tegelijk (Unix)
 ├── start.bat                     # Start backend + frontend tegelijk (Windows)
@@ -226,11 +226,15 @@ Kopieer `backend/.env.example` naar `backend/.env` en pas aan:
 SECRET_KEY=een-willekeurige-string-hier
 DATABASE_PATH=stage_monitoring.db
 FRONTEND_ORIGINS=http://localhost:8080
+API_PORT=8001
+DISABLE_DOCS=false
 ```
 
 - `SECRET_KEY` — Vereist voor JWT tokens. **Wijzig voor productie!**
 - `DATABASE_PATH` — Pad naar SQLite database (standaard: `stage_monitoring.db`)
 - `FRONTEND_ORIGINS` — Comma-separated lijst van toegestane frontend URLs voor CORS. Gebruik `*` voor development (niet aanbevolen voor productie).
+- `API_PORT` — Poort waarop de backend luistert (standaard: `8001`).
+- `DISABLE_DOCS` — Stel in op `true` om Swagger UI en OpenAPI schema uit te schakelen in productie.
 
 ---
 
