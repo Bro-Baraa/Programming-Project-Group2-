@@ -616,7 +616,9 @@ Programming-Project-Group2-/
 │   ├── user-stories-overzicht.md    # Status per user story
 │   ├── feature-todo.md              # Feature checklist
 │   └── analyses/                    # Individuele analyses per teamlid
-├── Dockerfile                        # Single-container build
+├── docker/                           # Docker configuratie en startup scripts
+│   ├── Dockerfile                   # Single-container build
+│   └── docker-entrypoint.sh         # Docker startup script
 ├── docker-compose.yml                # Docker Compose configuratie
 ├── fly.toml                          # Fly.io deployment configuratie
 ├── start.sh / start.bat             # Cross-platform startscripts

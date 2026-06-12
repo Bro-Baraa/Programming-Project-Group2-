@@ -180,9 +180,10 @@ Programming-Project-Group2-/
 │   ├── architectuur.md          # Backend-architectuur
 │   ├── feature-todo.md          # Ontbrekende features
 │   └── analyses/                # Groepsanalyses
-├── Dockerfile                    # Docker build (single container)
+├── docker/                       # Docker configuratie en startup scripts
+│   ├── Dockerfile               # Docker build (single container)
+│   └── docker-entrypoint.sh     # Docker startup script
 ├── docker-compose.yml            # Docker Compose config
-├── docker-entrypoint.sh          # Docker startup script
 ├── docker_main.py                # Docker entrypoint (FastAPI + static files)
 ├── fly.toml                      # Fly.io deploy config
 ├── start.sh                      # Start backend + frontend tegelijk (Unix)
