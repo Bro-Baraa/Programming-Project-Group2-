@@ -101,6 +101,13 @@ def update_evaluation(
     evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
+
+    from app.services.common import ensure_internship_access
+
+    ensure_internship_access(
+        current_user, evaluation.internship, "Not authorized to update this evaluation"
+    )
+
     if evaluation.finalized:
         raise HTTPException(
             status_code=400, detail="Cannot update finalized evaluation"
