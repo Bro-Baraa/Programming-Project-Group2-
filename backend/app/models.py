@@ -8,6 +8,7 @@ from sqlalchemy import (
     ForeignKey,
     Text,
     Float,
+    CheckConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -246,6 +247,10 @@ class CompetencyProfile(Base):
 class Competency(Base):
     __tablename__ = "competencies"
 
+    __table_args__ = (
+        CheckConstraint("weight > 0", name="ck_competency_weight_positive"),
+    )
+
     id = Column(Integer, primary_key=True, index=True)
     profile_id = Column(Integer, ForeignKey("competency_profiles.id"), nullable=False)
     name = Column(String, nullable=False)
@@ -280,6 +285,13 @@ class Evaluation(Base):
 
 class EvaluationRule(Base):
     __tablename__ = "evaluation_rules"
+
+    __table_args__ = (
+        CheckConstraint(
+            "score IS NULL OR (score >= 1 AND score <= 5)",
+            name="ck_evaluation_rule_score_range",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     evaluation_id = Column(Integer, ForeignKey("evaluations.id"), nullable=False)
