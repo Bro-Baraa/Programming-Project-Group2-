@@ -182,7 +182,7 @@ async function renderTeacherFinalReport() {
     const totalWeight = scoredRules.reduce((sum, r) => sum + r.competency.weight, 0);
     const weightedSum = scoredRules.reduce((sum, r) => sum + (r.score * r.competency.weight), 0);
     if (totalWeight > 0) {
-      weightedScore = (weightedSum / totalWeight / 20).toFixed(2);
+      weightedScore = (weightedSum / totalWeight).toFixed(2);
     }
   }
 
