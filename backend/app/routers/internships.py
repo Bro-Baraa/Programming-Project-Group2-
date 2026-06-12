@@ -218,8 +218,18 @@ def update_internship(
     )
 
     if update.teacher_id is not None:
+        teacher = db.query(User).filter(User.id == update.teacher_id).first()
+        if not teacher:
+            raise HTTPException(status_code=400, detail="Docent niet gevonden")
+        if teacher.role != "teacher":
+            raise HTTPException(status_code=400, detail="Gebruiker is geen docent")
         internship.teacher_id = update.teacher_id
     if update.mentor_id is not None:
+        mentor = db.query(User).filter(User.id == update.mentor_id).first()
+        if not mentor:
+            raise HTTPException(status_code=400, detail="Mentor niet gevonden")
+        if mentor.role != "mentor":
+            raise HTTPException(status_code=400, detail="Gebruiker is geen mentor")
         internship.mentor_id = update.mentor_id
     if update.company_id is not None:
         internship.company_id = update.company_id
