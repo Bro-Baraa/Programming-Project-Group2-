@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime, date
 from .user import UserResponse
@@ -42,6 +42,14 @@ class InternshipCreate(BaseModel):
         None, description="ID van de stagementor van het bedrijf"
     )
 
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, v: date, info) -> date:
+        start = info.data.get("start_date")
+        if start is not None and v < start:
+            raise ValueError("Einddatum moet na startdatum liggen")
+        return v
+
 
 class InternshipUpdate(BaseModel):
     teacher_id: Optional[int] = None
@@ -50,6 +58,16 @@ class InternshipUpdate(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
     status: Optional[str] = None
+
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, v: Optional[date], info) -> Optional[date]:
+        if v is None:
+            return v
+        start = info.data.get("start_date")
+        if start is not None and v < start:
+            raise ValueError("Einddatum moet na startdatum liggen")
+        return v
 
 
 class InternshipResponse(BaseModel):

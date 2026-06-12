@@ -61,6 +61,12 @@ def get_week_overview(
     total_days = (internship.end_date - internship.start_date).days
     total_weeks = (total_days // 7) + 1
 
+    if total_weeks < 1:
+        raise HTTPException(
+            status_code=400,
+            detail="Stageperiode is te kort of einddatum ligt voor startdatum",
+        )
+
     # Get existing logbooks
     logbooks = db.query(Logbook).filter(Logbook.internship_id == internship_id).all()
     logbook_map = {lb.week_number: lb for lb in logbooks}

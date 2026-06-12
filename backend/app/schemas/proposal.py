@@ -77,6 +77,16 @@ class EditProposalRequest(BaseModel):
     start_date: Optional[date] = None
     end_date: Optional[date] = None
 
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, v: Optional[date], info) -> Optional[date]:
+        if v is None:
+            return v
+        start = info.data.get("start_date")
+        if start is not None and v < start:
+            raise ValueError("Einddatum moet na startdatum liggen")
+        return v
+
 
 class ResubmitRequest(BaseModel):
     """Student resubmits proposal after changes requested.
@@ -91,3 +101,13 @@ class ResubmitRequest(BaseModel):
     contact_email: Optional[str] = None
     start_date: Optional[date] = None
     end_date: Optional[date] = None
+
+    @field_validator("end_date")
+    @classmethod
+    def validate_end_date(cls, v: Optional[date], info) -> Optional[date]:
+        if v is None:
+            return v
+        start = info.data.get("start_date")
+        if start is not None and v < start:
+            raise ValueError("Einddatum moet na startdatum liggen")
+        return v
