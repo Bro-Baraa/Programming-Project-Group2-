@@ -79,7 +79,7 @@ _last_cleanup = time.time()
 async def rate_limit(request: Request, call_next):
     global _last_cleanup
     path = request.url.path
-    if path in ("/auth/login", "/auth/register", "/health"):
+    if path in ("/api/auth/login", "/api/auth/register", "/api/health"):
         ip = request.client.host if request.client else "unknown"
         now = time.time()
 
