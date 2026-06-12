@@ -27,3 +27,11 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Sensitive local files
+backend/.env
+**/.env
+backend/*.db
+*.db
+backend/uploads/
+uploads/
