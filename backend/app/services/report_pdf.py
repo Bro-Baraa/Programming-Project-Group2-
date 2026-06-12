@@ -112,12 +112,8 @@ def generate_final_report_pdf(
             start_y = pdf.get_y()
             line_height = 6
 
-            pdf.set_xy(0, 0)
-            pdf.multi_cell(col_w[3], line_height, _safe(desc), border=0)
-            desc_h = pdf.get_y()
-            pdf.set_xy(0, 0)
-            pdf.multi_cell(col_w[4], line_height, _safe(feedback), border=0)
-            feedback_h = pdf.get_y()
+            desc_h = pdf.get_string_height(col_w[3], _safe(desc))
+            feedback_h = pdf.get_string_height(col_w[4], _safe(feedback))
             row_h = max(8, desc_h, feedback_h)
 
             pdf.set_xy(start_x, start_y)
