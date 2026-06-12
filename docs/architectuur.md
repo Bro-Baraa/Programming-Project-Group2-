@@ -17,7 +17,7 @@ Wij gebruiken **FastAPI** (een modern Python framework).
 
 Onze backend is opgebouwd uit 5 lagen. Elk laag heeft een specifieke taak:
 
-### Laag 1: Database 
+### Laag 1: Database
 **Bestanden:** `models.py`, `database.py`
 
 Dit is waar alle gegevens worden bewaard:
@@ -26,7 +26,7 @@ Dit is waar alle gegevens worden bewaard:
 - Bedrijven waar studenten stage lopen
 - Logboeken, evaluaties, en feedback
 
-**Belangrijke concept:** 
+**Belangrijke concept:**
 - Een **Internship** (stage) is het centrale object. Alles hangt eraan vast: het voorstel, de overeenkomst, logboeken, evaluaties.
 - Relaties leggen vast wie wat mag zien (bijv. een student ziet alleen zijn eigen stages).
 
@@ -48,7 +48,7 @@ Dit systeem controleert wie er mag inloggen en wat ze mogen doen:
 - Ingelogde gebruikers krijgen een **JWT token** (een soort toegangsbewijs)
 - Rollen bepalen de rechten: student, docent, commissie, mentor, of admin
 
-**Veiligheidsprincipe:** 
+**Veiligheidsprincipe:**
 Niet iedereen mag alles zien. Een student ziet alleen zijn eigen stages. Een docent ziet alleen de stages waarvoor hij verantwoordelijk is. Alleen commissieleden en admins zien alles.
 
 ### Laag 4: Routers
@@ -87,7 +87,7 @@ Stel: een student wil een nieuwe stage indienen. Dit gebeurt stap voor stap:
 
 3. **Authenticatie controleert:** Is de gebruiker ingelogd? Is het een student?
 
-4. **Router verwerkt:** 
+4. **Router verwerkt:**
    - Maakt een bedrijfrecord aan
    - Maakt een stage-record aan (gekoppeld aan het bedrijf en de student)
    - Maakt een voorstelrecord aan
@@ -135,7 +135,7 @@ Een stage doorloopt verschillende fasen:
 5. **Lopend** → Stage is actief
 6. **Afgerond** → Stage is klaar, evaluaties definitief
 
-### Kernentiteit: de Stage 
+### Kernentiteit: de Stage
 
 De Stage is het middelpunt. Alles hangt eraan vast:
 - Het heeft één **voorstel** (proposal)

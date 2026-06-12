@@ -1,10 +1,5 @@
-"""Stage lifecycle deep module.
+"""Stage lifecycle service."""
 
-Enige bron van waarheid voor statusovergangen, rol-gebaseerde toegang,
-aggregaat-persistentie, en side effects (bestandsuploads, timestamps).
-"""
-
-import shutil
 from dataclasses import dataclass
 from datetime import date, datetime, UTC
 from pathlib import Path
@@ -23,9 +18,11 @@ from app.models import (
     User,
 )
 from app.services.notifications import notify
-from app.services.common import get_active_competency_profile
+from app.services.common import (
+    ensure_internship_access,
+    get_active_competency_profile,
+)
 
-# ── Internal: legal status transitions ──
 _TRANSITIONS: dict[str, set[str]] = {
     "Ingediend": {"In Beoordeling"},
     "In Beoordeling": {"Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist"},
@@ -37,47 +34,17 @@ _TRANSITIONS: dict[str, set[str]] = {
 }
 
 
-# ── Configuration ──
-
-
 @dataclass(frozen=True)
 class LifecycleConfig:
-    """Immutable runtime configuration injected once at module creation."""
 
     agreements_dir: Path
 
 
-# ── Return types ──
-
-
-@dataclass(frozen=True)
-class NewInternship:
-    internship: Internship
-
-
-@dataclass(frozen=True)
-class ReviewDecision:
-    internship: Internship
-
-
-@dataclass(frozen=True)
-class AgreementUpload:
-    internship: Internship
-
-
-# ── Deep Module ──
-
-
 class InternshipLifecycle:
-    """Encapsulates every legal status transition for the Internship aggregate."""
 
     def __init__(self, db: Session, config: LifecycleConfig) -> None:
         self.db = db
         self.config = config
-
-    # ------------------------------------------------------------------
-    # Private helpers
-    # ------------------------------------------------------------------
 
     def _get_internship_or_404(self, internship_id: int) -> Internship:
         internship = (
@@ -90,24 +57,8 @@ class InternshipLifecycle:
             )
         return internship
 
-    @staticmethod
-    def _can_access_internship(user: User, internship: Internship) -> bool:
-        if user.role in {"committee", "admin"}:
-            return True
-        if user.role == "student":
-            return internship.student_id == user.id
-        if user.role == "mentor":
-            return internship.mentor_id == user.id
-        if user.role == "teacher":
-            return internship.teacher_id == user.id
-        return False
-
     def _assert_access(self, user: User, internship: Internship) -> None:
-        if not self._can_access_internship(user, internship):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized",
-            )
+        ensure_internship_access(user, internship)
 
     def _assert_role(self, user: User, allowed: set[str]) -> None:
         if user.role not in allowed:
@@ -127,16 +78,27 @@ class InternshipLifecycle:
                 ),
             )
 
+    def _notify_committee(
+        self, message: str, link_view: str, internship_id=None
+    ) -> None:
+        for member in (
+            self.db.query(User)
+            .filter(User.role == "committee", User.is_active == True)
+            .all()
+        ):
+            notify(
+                self.db,
+                user_id=member.id,
+                message=message,
+                internship_id=internship_id,
+                link_view=link_view,
+            )
+
     @staticmethod
     def _now() -> datetime:
         return datetime.now(UTC)
 
-    # ------------------------------------------------------------------
-    # Hot-path operations
-    # ------------------------------------------------------------------
-
     def _validate_supervisor(self, user_id: Optional[int], expected_role: str) -> None:
-        """Valideert dat de gerefereerde gebruiker bestaat en de verwachte rol heeft."""
         if user_id is None:
             return
         user = self.db.query(User).filter(User.id == user_id).first()
@@ -165,8 +127,7 @@ class InternshipLifecycle:
         description: str,
         teacher_id: Optional[int] = None,
         mentor_id: Optional[int] = None,
-    ) -> NewInternship:
-        """Student maakt een nieuwe Stage + Bedrijf + Voorstel aan."""
+    ) -> Internship:
         self._assert_role(actor, {"student"})
 
         self._validate_supervisor(teacher_id, "teacher")
@@ -182,7 +143,6 @@ class InternshipLifecycle:
         self.db.add(company)
         self.db.flush()
 
-        # ── Capture the active competency profile at creation time ──
         active_profile = get_active_competency_profile(self.db)
 
         internship = Internship(
@@ -208,28 +168,12 @@ class InternshipLifecycle:
         self.db.commit()
         self.db.refresh(internship)
 
-        # ── Notify all committee members that a new proposal was submitted ──
-        from app.models import User as UserModel
-
-        committee_members = (
-            self.db.query(UserModel)
-            .filter(
-                UserModel.role == "committee",
-                UserModel.is_active == True,
-            )
-            .all()
+        self._notify_committee(
+            f"{actor.first_name} {actor.last_name} heeft een nieuw stagevoorstel ingediend.",
+            "voorstellen",
+            internship.id,
         )
-        student_name = f"{actor.first_name} {actor.last_name}"
-        for member in committee_members:
-            notify(
-                self.db,
-                user_id=member.id,
-                message=f"{student_name} heeft een nieuw stagevoorstel ingediend.",
-                internship_id=internship.id,
-                link_view="voorstellen",  # sends committee to the proposals review tab
-            )
 
-        # ── Notify the mentor when assigned to an internship ──
         if mentor_id:
             notify(
                 self.db,
@@ -241,7 +185,7 @@ class InternshipLifecycle:
 
         self.db.commit()
 
-        return NewInternship(internship=internship)
+        return internship
 
     def review_proposal(
         self,
@@ -252,8 +196,7 @@ class InternshipLifecycle:
         feedback: Optional[str] = None,
         teacher_id: Optional[int] = None,
         mentor_id: Optional[int] = None,
-    ) -> ReviewDecision:
-        """Commissie beoordeelt een voorstel."""
+    ) -> Internship:
         self._assert_role(actor, {"committee", "admin"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -292,7 +235,6 @@ class InternshipLifecycle:
         if feedback is not None:
             internship.proposal.feedback = feedback
 
-        # ── Notify the student of the committee's decision ──
         messages = {
             "In Beoordeling": "Je stagevoorstel wordt beoordeeld door de commissie.",
             "Goedgekeurd": "Gefeliciteerd! Je stagevoorstel is goedgekeurd.",
@@ -305,10 +247,9 @@ class InternshipLifecycle:
                 user_id=internship.student_id,
                 message=messages[decision],
                 internship_id=internship.id,
-                link_view="voorstel",  # sends student to their proposal view
+                link_view="voorstel",
             )
 
-        # ── Notify the teacher when assigned to an internship ──
         if decision == "Goedgekeurd" and teacher_id:
             student_name = (
                 f"{internship.student.first_name} {internship.student.last_name}"
@@ -321,7 +262,6 @@ class InternshipLifecycle:
                 link_view="logboek",
             )
 
-        # ── Notify the mentor when assigned at approval ──
         if decision == "Goedgekeurd" and mentor_id:
             notify(
                 self.db,
@@ -333,7 +273,7 @@ class InternshipLifecycle:
 
         self.db.commit()
         self.db.refresh(internship)
-        return ReviewDecision(internship=internship)
+        return internship
 
     def upload_agreement(
         self,
@@ -343,8 +283,7 @@ class InternshipLifecycle:
         file_stream: BinaryIO,
         filename: str,
         content_type: str,
-    ) -> AgreementUpload:
-        """Student uploadt een PDF overeenkomst."""
+    ) -> Internship:
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -402,40 +341,20 @@ class InternshipLifecycle:
 
         internship.status = "Overeenkomst Ingediend"
 
-        # ── Notify all committee members that an agreement was uploaded ──
         # We notify via a simple approach: store one notification per committee member.
-        # For now we import User here to avoid circular imports at module level.
-        from app.models import User as UserModel
-
-        committee_members = (
-            self.db.query(UserModel)
-            .filter(
-                UserModel.role == "committee",
-                UserModel.is_active == True,
-            )
-            .all()
+        self._notify_committee(
+            (
+                f"{internship.student.first_name} {internship.student.last_name} heeft een stageovereenkomst geüpload."
+                if internship.student
+                else "Een student heeft een stageovereenkomst geüpload."
+            ),
+            "overeenkomsten",
+            internship.id,
         )
-        student_name = (
-            f"{internship.student.first_name} {internship.student.last_name}"
-            if internship.student
-            else "Een student"
-        )
-        for member in committee_members:
-            notify(
-                self.db,
-                user_id=member.id,
-                message=f"{student_name} heeft een stageovereenkomst geüpload.",
-                internship_id=internship.id,
-                link_view="overeenkomsten",  # sends committee to the agreements tab
-            )
 
         self.db.commit()
         self.db.refresh(internship)
-        return AgreementUpload(internship=internship)
-
-    # ------------------------------------------------------------------
-    # Secondary operations
-    # ------------------------------------------------------------------
+        return internship
 
     def edit_proposal(
         self,
@@ -450,8 +369,7 @@ class InternshipLifecycle:
         contact_email: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-    ) -> ReviewDecision:
-        """Student wijzigt hun voorstel terwijl status nog 'Ingediend' is."""
+    ) -> Internship:
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -506,7 +424,7 @@ class InternshipLifecycle:
 
         self.db.commit()
         self.db.refresh(internship)
-        return ReviewDecision(internship=internship)
+        return internship
 
     def create_proposal(
         self,
@@ -514,8 +432,7 @@ class InternshipLifecycle:
         internship_id: int,
         actor: User,
         description: str,
-    ) -> ReviewDecision:
-        """Student maakt een voorstel aan voor een bestaande stage."""
+    ) -> Internship:
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -539,7 +456,7 @@ class InternshipLifecycle:
 
         self.db.commit()
         self.db.refresh(internship)
-        return ReviewDecision(internship=internship)
+        return internship
 
     def resubmit_proposal(
         self,
@@ -554,8 +471,7 @@ class InternshipLifecycle:
         contact_email: Optional[str] = None,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-    ) -> ReviewDecision:
-        """Student dient opnieuw in na 'Aanpassingen Vereist'."""
+    ) -> Internship:
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -619,29 +535,14 @@ class InternshipLifecycle:
         self.db.commit()
         self.db.refresh(internship)
 
-        # ── Notify committee that the student resubmitted after requested changes ──
-        from app.models import User as UserModel
-
-        committee_members = (
-            self.db.query(UserModel)
-            .filter(
-                UserModel.role == "committee",
-                UserModel.is_active == True,
-            )
-            .all()
+        self._notify_committee(
+            f"{actor.first_name} {actor.last_name} heeft zijn/haar stagevoorstel opnieuw ingediend na aanpassingen.",
+            "voorstellen",
+            internship.id,
         )
-        student_name = f"{actor.first_name} {actor.last_name}"
-        for member in committee_members:
-            notify(
-                self.db,
-                user_id=member.id,
-                message=f"{student_name} heeft zijn/haar stagevoorstel opnieuw ingediend na aanpassingen.",
-                internship_id=internship.id,
-                link_view="voorstellen",  # sends committee to the proposals review tab
-            )
         self.db.commit()
 
-        return ReviewDecision(internship=internship)
+        return internship
 
     def withdraw_proposal(
         self,
@@ -649,8 +550,7 @@ class InternshipLifecycle:
         internship_id: int,
         actor: User,
     ) -> Internship:
-        """Student trekt (verwijdert) hun stage in voordat het beoordeeld is.
-        Alleen toegestaan als status 'Ingediend' is."""
+
         self._assert_role(actor, {"student"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -673,8 +573,7 @@ class InternshipLifecycle:
         actor: User,
         insurance_verified: Optional[bool] = None,
         agreement_status: str,
-    ) -> AgreementUpload:
-        """Commissie/admin valideert een overeenkomst."""
+    ) -> Internship:
         self._assert_role(actor, {"committee", "admin"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -706,15 +605,13 @@ class InternshipLifecycle:
             self._assert_transition(internship.status, "Lopend")
             agreement.validated_at = self._now()
             internship.status = "Lopend"
-            # ── Notify student their agreement is validated and stage is now active ──
             notify(
                 self.db,
                 user_id=internship.student_id,
                 message="Je stageovereenkomst is gevalideerd. Je stage is nu actief!",
                 internship_id=internship.id,
-                link_view="overeenkomst",  # sends student to their agreement view
+                link_view="overeenkomst",
             )
-            # ── Notify the mentor that the stage is now active ──
             if internship.mentor_id:
                 notify(
                     self.db,
@@ -728,22 +625,17 @@ class InternshipLifecycle:
             if internship.status == "Lopend":
                 self._assert_transition(internship.status, "Overeenkomst Ingediend")
                 internship.status = "Overeenkomst Ingediend"
-            # ── Notify student their agreement is incomplete and needs to be re-uploaded ──
             notify(
                 self.db,
                 user_id=internship.student_id,
                 message="Je stageovereenkomst is onvolledig. Gelieve een nieuwe versie te uploaden.",
                 internship_id=internship.id,
-                link_view="overeenkomst",  # sends student to their agreement view to re-upload
+                link_view="overeenkomst",
             )
 
         self.db.commit()
         self.db.refresh(internship)
-        return AgreementUpload(internship=internship)
-
-    # ------------------------------------------------------------------
-    # Completion
-    # ------------------------------------------------------------------
+        return internship
 
     def complete_internship(
         self,
@@ -751,8 +643,7 @@ class InternshipLifecycle:
         internship_id: int,
         actor: User,
     ) -> Internship:
-        """Teacher or admin marks an ongoing internship as completed.
-        Only allowed when status is 'Lopend'."""
+
         self._assert_role(actor, {"teacher", "committee", "admin"})
 
         internship = self._get_internship_or_404(internship_id)
@@ -761,7 +652,6 @@ class InternshipLifecycle:
         self._assert_transition(internship.status, "Afgerond")
         internship.status = "Afgerond"
 
-        # ── Notify the student that their internship is completed ──
         notify(
             self.db,
             user_id=internship.student_id,
@@ -769,7 +659,6 @@ class InternshipLifecycle:
             internship_id=internship.id,
             link_view="dashboard",
         )
-        # ── Notify the mentor that the internship is completed ──
         if internship.mentor_id:
             notify(
                 self.db,
@@ -783,10 +672,6 @@ class InternshipLifecycle:
         self.db.refresh(internship)
         return internship
 
-    # ------------------------------------------------------------------
-    # Admin override
-    # ------------------------------------------------------------------
-
     def force_status(
         self,
         *,
@@ -795,7 +680,6 @@ class InternshipLifecycle:
         new_status: str,
         reason: str,
     ) -> Internship:
-        """Alleen admin. Slaat transitie-validatie over."""
         self._assert_role(actor, {"admin"})
 
         internship = self._get_internship_or_404(internship_id)

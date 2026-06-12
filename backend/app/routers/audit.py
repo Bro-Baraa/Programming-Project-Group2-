@@ -1,4 +1,4 @@
-"""US-30: Audit log endpoints — enkel voor admins."""
+"""Audit log endpoints (admin only)."""
 
 from typing import List, Optional, Annotated
 
@@ -31,7 +31,7 @@ def list_audit_logs(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
 ):
-    """US-30: Admin haalt de volledige audit log op (gepagineerd, filterbaar)."""
+
     query = db.query(AuditLog)
 
     if action:

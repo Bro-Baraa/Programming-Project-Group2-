@@ -1,4 +1,4 @@
-"""Overeenkomst endpoints."""
+"""Agreement endpoints."""
 
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -27,10 +27,7 @@ def upload_agreement_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_student),
 ):
-    """US-04: Student uploadt stageovereenkomst (enkel PDF).
 
-    Alleen toegestaan als het voorstel goedgekeurd is.
-    """
     lifecycle = InternshipLifecycle(
         db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
     )
@@ -49,11 +46,11 @@ def upload_agreement_endpoint(
         entity_id=internship_id,
         detail="Overeenkomst geüpload",
     )
-    return result.internship.agreement
+    return result.agreement
 
 
 def _get_internship_with_agreement(db: Session, internship_id: int) -> Internship:
-    """Haalt stage op met overeenkomst eager-loaded, of geeft 404."""
+
     internship = (
         db.query(Internship)
         .options(
@@ -73,7 +70,7 @@ def get_agreement(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Haalt overeenkomst details op"""
+
     internship = _get_internship_with_agreement(db, internship_id)
     ensure_internship_access(current_user, internship)
     if not internship.agreement:
@@ -87,7 +84,7 @@ def download_agreement(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Downloadt de geüploade overeenkomst PDF."""
+
     internship = _get_internship_with_agreement(db, internship_id)
     ensure_internship_access(current_user, internship)
     if not internship.agreement:
@@ -111,10 +108,7 @@ def validate_agreement_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_committee_or_admin),
 ):
-    """US-13, US-26: Commissie/admin valideert overeenkomst.
 
-    Status: Gevalideerd of Onvolledig.
-    """
     lifecycle = InternshipLifecycle(
         db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
     )
@@ -132,4 +126,4 @@ def validate_agreement_endpoint(
         entity_id=internship_id,
         detail=f"Overeenkomst gevalideerd: {update.status}",
     )
-    return result.internship.agreement
+    return result.agreement

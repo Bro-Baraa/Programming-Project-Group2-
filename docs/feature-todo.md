@@ -32,8 +32,8 @@ Geen features meer ontbrekend. Alle requirements uit `analyse-finaal.md` zijn ge
 ## Prioriteit: Hoog
 
 ### 1. Audit Logging
-**Status:** ✅ Volledig geïmplementeerd  
-**Requirement:** *"Alle statuswijzigingen, evaluaties en documentacties worden geaudit (tijdstip + actor)"*  
+**Status:** ✅ Volledig geïmplementeerd
+**Requirement:** *"Alle statuswijzigingen, evaluaties en documentacties worden geaudit (tijdstip + actor)"*
 **Gerelateerde user stories:** [US-29](#user-stories-overzicht)
 
 **Implementatie bewijs:**
@@ -53,7 +53,7 @@ Geen features meer ontbrekend. Alle requirements uit `analyse-finaal.md` zijn ge
 ---
 
 ### 2. Notificatiesysteem
-**Status:** ✅ Volledig geïmplementeerd  
+**Status:** ✅ Volledig geïmplementeerd
 **Requirements:** [US-20](#user-stories-overzicht), [US-29](#user-stories-overzicht)
 
 **Implementatie bewijs:**
@@ -93,8 +93,8 @@ Geen features meer ontbrekend. Alle requirements uit `analyse-finaal.md` zijn ge
 ## Prioriteit: Medium
 
 ### 3. Versiegeschiedenis voor Proposals
-**Status:** ✅ Volledig geïmplementeerd  
-**Requirement:** *"Student kan aanpassen en opnieuw indienen"* bij status "Aanpassingen vereist"  
+**Status:** ✅ Volledig geïmplementeerd
+**Requirement:** *"Student kan aanpassen en opnieuw indienen"* bij status "Aanpassingen vereist"
 **Gerelateerde user stories:** [US-01](#user-stories-overzicht), [US-11](#user-stories-overzicht)
 
 **Implementatie bewijs:**
@@ -118,8 +118,8 @@ Geen features meer ontbrekend. Alle requirements uit `analyse-finaal.md` zijn ge
 ## Prioriteit: Laag
 
 ### 4. Export Functionaliteit (CSV)
-**Status:** ✅ Geïmplementeerd  
-**Requirement:** *"rapportages exporteren zodat data bruikbaar is voor rapportering"*  
+**Status:** ✅ Geïmplementeerd
+**Requirement:** *"rapportages exporteren zodat data bruikbaar is voor rapportering"*
 **Gerelateerde user stories:** [US-28](#user-stories-overzicht)
 
 **Huidige stand:**

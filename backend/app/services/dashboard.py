@@ -89,21 +89,23 @@ def get_me_dashboard(db: Session, current_user: User) -> MeDashboardResponse:
         latest = max(evaluations, key=lambda ev: ev.created_at) if evaluations else None
         recent = sorted(feedbacks, key=lambda f: f.created_at, reverse=True)[:3]
 
-        items.append(InternshipDashboardItem(
-            internship=InternshipListResponse.model_validate(i),
-            proposal_status=i.proposal.status if i.proposal else None,
-            agreement_status=i.agreement.status if i.agreement else None,
-            agreement_uploaded=i.agreement is not None,
-            total_weeks=total_weeks,
-            logbooks_submitted=submitted,
-            logbooks_missing=missing,
-            logbooks_draft=draft,
-            next_due_week=next_due_week,
-            evaluations_count=eval_count,
-            evaluations_finalized=finalized,
-            latest_evaluation_status=latest.status if latest else None,
-            recent_feedback=[FeedbackResponse.model_validate(f) for f in recent],
-        ))
+        items.append(
+            InternshipDashboardItem(
+                internship=InternshipListResponse.model_validate(i),
+                proposal_status=i.proposal.status if i.proposal else None,
+                agreement_status=i.agreement.status if i.agreement else None,
+                agreement_uploaded=i.agreement is not None,
+                total_weeks=total_weeks,
+                logbooks_submitted=submitted,
+                logbooks_missing=missing,
+                logbooks_draft=draft,
+                next_due_week=next_due_week,
+                evaluations_count=eval_count,
+                evaluations_finalized=finalized,
+                latest_evaluation_status=latest.status if latest else None,
+                recent_feedback=[FeedbackResponse.model_validate(f) for f in recent],
+            )
+        )
 
     alerts = []
     for item in items:
@@ -111,54 +113,90 @@ def get_me_dashboard(db: Session, current_user: User) -> MeDashboardResponse:
         student_name = f"{i.student.first_name} {i.student.last_name}"
 
         def _alert(severity, message, url=None, entity_type="internship"):
-            alerts.append(DashboardAlert(
-                severity=severity,
-                message=message,
-                action_url=url,
-                entity_type=entity_type,
-                entity_id=i.id,
-            ))
+            alerts.append(
+                DashboardAlert(
+                    severity=severity,
+                    message=message,
+                    action_url=url,
+                    entity_type=entity_type,
+                    entity_id=i.id,
+                )
+            )
 
         if role == "student":
             if i.status == "Aanpassingen Vereist":
-                _alert("warning", "Je stagevoorstel heeft aanpassingen nodig. Bekijk de feedback en dien opnieuw in.", "?view=voorstel")
+                _alert(
+                    "warning",
+                    "Je stagevoorstel heeft aanpassingen nodig. Bekijk de feedback en dien opnieuw in.",
+                    "?view=voorstel",
+                )
             if i.status == "Goedgekeurd" and not item.agreement_uploaded:
-                _alert("warning", "Je stage is goedgekeurd. Upload je ondertekende overeenkomst.", "?view=overeenkomst")
+                _alert(
+                    "warning",
+                    "Je stage is goedgekeurd. Upload je ondertekende overeenkomst.",
+                    "?view=overeenkomst",
+                )
             if item.next_due_week and i.status == "Lopend":
-                _alert("info", f"Week {item.next_due_week} logboek nog niet ingevuld.", "?view=logboek", "logbook")
+                _alert(
+                    "info",
+                    f"Week {item.next_due_week} logboek nog niet ingevuld.",
+                    "?view=logboek",
+                    "logbook",
+                )
 
         if role == "teacher":
             pending = item.logbooks_submitted - item.evaluations_count
             if item.logbooks_submitted > 0 and pending > 0:
-                _alert("info", f"{pending} logboek(en) in afwachting van evaluatie bij {student_name}.")
+                _alert(
+                    "info",
+                    f"{pending} logboek(en) in afwachting van evaluatie bij {student_name}.",
+                )
 
         if role in ("committee", "admin"):
             if i.status == "In Beoordeling":
-                _alert("warning", f"Voorstel van {student_name} wacht op beoordeling.", "?view=voorstellen")
+                _alert(
+                    "warning",
+                    f"Voorstel van {student_name} wacht op beoordeling.",
+                    "?view=voorstellen",
+                )
             if item.agreement_status == "Ingediend":
-                _alert("info", f"Overeenkomst van {student_name} wacht op validatie.", "?view=overzicht")
+                _alert(
+                    "info",
+                    f"Overeenkomst van {student_name} wacht op validatie.",
+                    "?view=overzicht",
+                )
 
         if role == "mentor" and item.logbooks_submitted > 0:
-            _alert("info", f"Nieuwe logboeken ingediend door {student_name}.", "?view=validatie")
+            _alert(
+                "info",
+                f"Nieuwe logboeken ingediend door {student_name}.",
+                "?view=validatie",
+            )
 
     alerts.sort(key=lambda a: {"error": 0, "warning": 1, "info": 2}[a.severity])
 
     stats = UserDashboardStats()
     if items:
+
         def _count(pred):
             return sum(1 for item in items if pred(item))
 
         stats.total_internships = len(items)
-        stats.pending_approval = _count(lambda x: x.internship.status == "In Beoordeling")
+        stats.pending_approval = _count(
+            lambda x: x.internship.status == "In Beoordeling"
+        )
         stats.approved = _count(lambda x: x.internship.status == "Goedgekeurd")
         stats.rejected = _count(lambda x: x.internship.status == "Afgekeurd")
         stats.ongoing = _count(lambda x: x.internship.status == "Lopend")
         stats.completed = _count(lambda x: x.internship.status == "Afgerond")
         stats.agreements_received = _count(lambda x: x.agreement_uploaded)
         stats.agreements_pending = _count(
-            lambda x: x.internship.status in ("Goedgekeurd", "Overeenkomst Ingediend") and not x.agreement_uploaded
+            lambda x: x.internship.status in ("Goedgekeurd", "Overeenkomst Ingediend")
+            and not x.agreement_uploaded
         )
-        stats.agreements_validated = _count(lambda x: x.agreement_status == "Gevalideerd")
+        stats.agreements_validated = _count(
+            lambda x: x.agreement_status == "Gevalideerd"
+        )
 
     return MeDashboardResponse(
         user=UserResponse.model_validate(current_user),

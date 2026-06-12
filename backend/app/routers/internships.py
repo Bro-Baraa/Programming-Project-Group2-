@@ -1,4 +1,4 @@
-"""Kern stage endpoints."""
+"""Internship endpoints."""
 
 from datetime import date
 from pathlib import Path
@@ -81,7 +81,7 @@ def list_internships(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Lijst stages op met rol-gebaseerde filtering, paginatie, zoeken en sortering."""
+
     status_filter = None
     if status:
         statuses = [s.strip() for s in status.split(",")]
@@ -152,7 +152,7 @@ def create_internship(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_student),
 ):
-    """US-01: Student dient een nieuw stagevoorstel in."""
+
     lifecycle = InternshipLifecycle(db, _CONFIG)
     result = lifecycle.submit_internship(
         actor=current_user,
@@ -172,10 +172,10 @@ def create_internship(
         "internship.create",
         user=current_user,
         entity_type="internship",
-        entity_id=result.internship.id,
+        entity_id=result.id,
         detail="Stage ingediend",
     )
-    return result.internship
+    return result
 
 
 @router.get("/{internship_id}", response_model=InternshipResponse)
@@ -184,7 +184,7 @@ def get_internship(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ):
-    """Haalt gedetailleerde stage-informatie op"""
+
     internship = (
         db.query(Internship)
         .options(*_EAGER_LOADS)
@@ -207,8 +207,7 @@ def update_internship(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_staff),
 ):
-    """Werkt stage meta-details bij - alleen staff (docent, commissie, admin).
-    Statuswijzigingen moeten via de lifecycle endpoints."""
+
     internship = db.query(Internship).filter(Internship.id == internship_id).first()
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")

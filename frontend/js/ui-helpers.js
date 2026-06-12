@@ -169,9 +169,18 @@ function hideLoading(element) {
   element.disabled = false;
 }
 
-// ============================================
-// Shared agreement rendering helpers
-// ============================================
+/** Wrap an async function with loading state and toast-on-error. */
+async function withLoading(element, message, asyncFn) {
+  showLoading(element, message);
+  try {
+    return await asyncFn();
+  } catch (err) {
+    showToast(err.message || err, 'error');
+    throw err;
+  } finally {
+    hideLoading(element);
+  }
+}
 
 function renderAgreementStatusCell(agreementStatus) {
   const statusClass = getStatusClass(agreementStatus);

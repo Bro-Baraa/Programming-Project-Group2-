@@ -1,7 +1,3 @@
-// ============================================
-// Studentweergaven
-// ============================================
-
 function _loadUserDropdown(select, role, label) {
   if (!select) return;
   const roleLabel = label || (role === 'teacher' ? 'docent' : 'mentor');
@@ -221,8 +217,6 @@ async function renderStudentDashboard() {
   async function wireProposalForm() {
     const container = content.querySelector('.panel.card');
     if (!container) return;
-
-    // ── No internship yet: show the original creation form ──
     if (!currentInternship) {
       const form = document.getElementById('proposal-form');
       if (!form) return;
@@ -251,22 +245,14 @@ async function renderStudentDashboard() {
         if (teacherId) data.teacher_id = teacherId;
         if (mentorId) data.mentor_id = mentorId;
 
-        showLoading(submitBtn, 'Indienen...');
-
-        try {
+        await withLoading(submitBtn, 'Indienen...', async () => {
           await InternshipsAPI.create(data);
-          hideLoading(submitBtn);
           showToast('Stagevoorstel succesvol ingediend!', 'success');
           setTimeout(() => window.location.href = '?view=dashboard', 1000);
-        } catch (error) {
-          hideLoading(submitBtn);
-          showToast(error.message, 'error');
-        }
+        });
       });
       return;
     }
-
-    // ── Student already has an internship: show proposal details ──
     // Ensure full internship details (proposal fields are missing from list response)
     if (currentInternship && !currentInternship.proposal?.description) {
       try {
@@ -483,9 +469,7 @@ async function renderStudentDashboard() {
         return;
       }
 
-      showLoading(submitBtn, 'Opslaan...');
-
-      try {
+      await withLoading(submitBtn, 'Opslaan...', async () => {
         await ProposalsAPI.edit(currentInternship.id, {
           description,
           company_name: document.getElementById('edit-company-name').value || undefined,
@@ -496,14 +480,10 @@ async function renderStudentDashboard() {
           start_date: document.getElementById('edit-start-date').value || undefined,
           end_date: document.getElementById('edit-end-date').value || undefined,
         });
-        hideLoading(submitBtn);
         showToast('Wijzigingen opgeslagen!', 'success');
         await refreshInternshipData();
         renderView();
-      } catch (error) {
-        hideLoading(submitBtn);
-        showToast(error.message, 'error');
-      }
+      });
     });
 
     // Wire withdraw button
@@ -536,9 +516,7 @@ async function renderStudentDashboard() {
         return;
       }
 
-      showLoading(submitBtn, 'Indienen...');
-
-      try {
+      await withLoading(submitBtn, 'Indienen...', async () => {
         await ProposalsAPI.resubmit(currentInternship.id, newDescription, {
           company_name: document.getElementById('resubmit-company-name').value || undefined,
           company_address: document.getElementById('resubmit-company-address').value || undefined,
@@ -548,14 +526,10 @@ async function renderStudentDashboard() {
           start_date: document.getElementById('resubmit-start-date').value || undefined,
           end_date: document.getElementById('resubmit-end-date').value || undefined,
         });
-        hideLoading(submitBtn);
         showToast('Voorstel succesvol opnieuw ingediend!', 'success');
         await refreshInternshipData();
         renderView();
-      } catch (error) {
-        hideLoading(submitBtn);
-        showToast(error.message, 'error');
-      }
+      });
     });
 
     // Wire new proposal button
@@ -705,8 +679,6 @@ async function renderStudentDashboard() {
       const d = new Date(str);
       return isNaN(d.getTime()) ? null : d;
     }
-
-    // ── Build day grid ──
     function renderDayGrid() {
       if (!gridEl) return;
       const start = currentInternship.start_date ? _parseDate(currentInternship.start_date) : null;
@@ -771,8 +743,6 @@ async function renderStudentDashboard() {
         gridEl.appendChild(weekRow);
       }
     }
-
-    // ── Open a day in the form ──
     function openDay(dayOffset, dateStr) {
       selectedDayOffset = dayOffset;
       const start = currentInternship.start_date ? _parseDate(currentInternship.start_date) : null;
@@ -813,8 +783,6 @@ async function renderStudentDashboard() {
       selectedDayOffset = null;
       selectedLogbook = null;
     }
-
-    // ── Save as draft ──
     form?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const saveBtn = form.querySelector('button[type="submit"]');
@@ -826,9 +794,7 @@ async function renderStudentDashboard() {
         return;
       }
 
-      showLoading(saveBtn, 'Opslaan...');
-
-      try {
+      await withLoading(saveBtn, 'Opslaan...', async () => {
         const payload = {
           entry_date: entryDate,
           tasks: tasks,
@@ -843,9 +809,7 @@ async function renderStudentDashboard() {
           await InternshipsAPI.createLogbook(currentInternship.id, payload);
         }
 
-        hideLoading(saveBtn);
         showToast('Logboek opgeslagen als concept', 'info');
-
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
         renderDayGrid();
         if (selectedDayOffset !== null) {
@@ -854,13 +818,8 @@ async function renderStudentDashboard() {
           d.setDate(d.getDate() + selectedDayOffset);
           openDay(selectedDayOffset, _dateStr(d));
         }
-      } catch (error) {
-        hideLoading(saveBtn);
-        showToast(error.message, 'error');
-      }
+      });
     });
-
-    // ── Submit ──
     submitBtn?.addEventListener('click', async () => {
       const entryDate = document.getElementById('log-entry-date').value;
       const tasks = document.getElementById('log-tasks').value;
@@ -878,9 +837,7 @@ async function renderStudentDashboard() {
         return;
       }
 
-      showLoading(submitBtn, 'Indienen...');
-
-      try {
+      await withLoading(submitBtn, 'Indienen...', async () => {
         let logbook = selectedLogbook;
         if (!logbook) {
           logbook = await InternshipsAPI.createLogbook(currentInternship.id, {
@@ -893,10 +850,7 @@ async function renderStudentDashboard() {
         }
 
         await InternshipsAPI.submitLogbook(logbook.id);
-
-        hideLoading(submitBtn);
         showToast(`Logboek ${entryDate} ingediend!`, 'success');
-
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
         renderDayGrid();
         if (selectedDayOffset !== null) {
@@ -905,16 +859,9 @@ async function renderStudentDashboard() {
           d.setDate(d.getDate() + selectedDayOffset);
           openDay(selectedDayOffset, _dateStr(d));
         }
-      } catch (error) {
-        hideLoading(submitBtn);
-        showToast(error.message, 'error');
-      }
+      });
     });
-
-    // ── Cancel ──
     cancelBtn?.addEventListener('click', closeForm);
-
-    // ── Initial render ──
     renderDayGrid();
   }
 
@@ -1005,22 +952,14 @@ async function renderStudentDashboard() {
         return;
       }
 
-      showLoading(submitBtn, 'Uploaden...');
-
-      try {
+      await withLoading(submitBtn, 'Uploaden...', async () => {
         await InternshipsAPI.uploadAgreement(currentInternship.id, file);
-        hideLoading(submitBtn);
         showToast('Overeenkomst succesvol geüpload!', 'success');
-
         await refreshInternshipData();
-
         if (statusText) {
           statusText.innerHTML = '<span class="status-pill status-good">Ontvangen</span>';
         }
-      } catch (error) {
-        hideLoading(submitBtn);
-        showToast(error.message, 'error');
-      }
+      });
     });
   }
 
@@ -1072,15 +1011,10 @@ async function renderStudentDashboard() {
 
         const downloadBtn = document.getElementById('student-download-report');
         downloadBtn?.addEventListener('click', async () => {
-          showLoading(downloadBtn);
-          try {
+          await withLoading(downloadBtn, 'Downloaden...', async () => {
             await InternshipsAPI.downloadFinalReport(currentInternship.id);
             showToast('PDF gedownload!', 'success');
-          } catch (error) {
-            showToast(error.message || 'Download mislukt', 'error');
-          } finally {
-            hideLoading(downloadBtn);
-          }
+          });
         });
       }
     }
@@ -1120,8 +1054,7 @@ async function renderStudentDashboard() {
 
       saveBtn.addEventListener('click', async () => {
         const fields = selfEvalForm.querySelectorAll('.student-desc-field');
-        showLoading(saveBtn, 'Opslaan...');
-        try {
+        await withLoading(saveBtn, 'Opslaan...', async () => {
           for (const field of fields) {
             const ruleId = parseInt(field.dataset.ruleId);
             const evalId = parseInt(field.dataset.evalId);
@@ -1130,11 +1063,7 @@ async function renderStudentDashboard() {
           }
           showToast('Beschrijvingen opgeslagen!', 'success');
           await refreshInternshipData();
-        } catch (error) {
-          showToast(error.message, 'error');
-        } finally {
-          hideLoading(saveBtn);
-        }
+        });
       });
     } else {
       // No active evaluation: show a button to create a self-evaluation
@@ -1148,8 +1077,7 @@ async function renderStudentDashboard() {
 
       const startBtn = document.getElementById('btn-start-self-eval');
       startBtn?.addEventListener('click', async () => {
-        showLoading(startBtn, 'Aanmaken...');
-        try {
+        await withLoading(startBtn, 'Aanmaken...', async () => {
           await InternshipsAPI.createEvaluation(currentInternship.id, {
             eval_type: 'tussentijds',
             comments: 'Zelfevaluatie gestart door student'
@@ -1157,10 +1085,7 @@ async function renderStudentDashboard() {
           showToast('Zelfevaluatie aangemaakt!', 'success');
           await refreshInternshipData();
           renderStudentEvaluations();
-        } catch (error) {
-          hideLoading(startBtn);
-          showToast(error.message, 'error');
-        }
+        });
       });
     }
   }

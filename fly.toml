@@ -28,4 +28,3 @@ primary_region = 'lhr'
   # SECRET_KEY must be set as a Fly secret: fly secrets set SECRET_KEY=$(openssl rand -hex 32)
   FRONTEND_ORIGINS = '*'
   PYTHONPATH = '/app/backend'
-

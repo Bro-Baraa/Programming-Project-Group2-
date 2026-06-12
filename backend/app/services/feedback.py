@@ -25,7 +25,9 @@ def create_feedback(
     if not internship:
         raise HTTPException(status_code=404, detail="Internship not found")
 
-    ensure_internship_access(current_user, internship, "Not authorized to post feedback on this internship")
+    ensure_internship_access(
+        current_user, internship, "Not authorized to post feedback on this internship"
+    )
 
     valid_recipients = [
         internship.student_id,

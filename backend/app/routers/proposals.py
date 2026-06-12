@@ -27,7 +27,9 @@ router = APIRouter(prefix="/internships", tags=["proposals"])
 _LIFECYCLE_CONFIG = LifecycleConfig(agreements_dir=Path("uploads/agreements"))
 
 
-def _notify_committee(db: Session, current_user: User, internship_id: int, message: str) -> None:
+def _notify_committee(
+    db: Session, current_user: User, internship_id: int, message: str
+) -> None:
     """Notify all active committee members about a proposal event."""
     committee_members = (
         db.query(User)
@@ -84,7 +86,7 @@ def create_proposal_endpoint(
         entity_id=internship_id,
         detail="Voorstel ingediend",
     )
-    return result.internship.proposal
+    return result.proposal
 
 
 @router.get("/{internship_id}/proposal", response_model=ProposalResponse)
@@ -136,7 +138,7 @@ def update_proposal_endpoint(
         entity_id=internship_id,
         detail=f"Voorstel beoordeeld: {update_data.status}",
     )
-    return result.internship.proposal
+    return result.proposal
 
 
 @router.patch("/{internship_id}/proposal/edit", response_model=ProposalResponse)
@@ -167,8 +169,10 @@ def edit_proposal_endpoint(
         entity_id=internship_id,
         detail="Voorstel bewerkt",
     )
-    _notify_committee(db, current_user, internship_id, "heeft het stagevoorstel bewerkt.")
-    return result.internship.proposal
+    _notify_committee(
+        db, current_user, internship_id, "heeft het stagevoorstel bewerkt."
+    )
+    return result.proposal
 
 
 @router.post("/{internship_id}/resubmit", response_model=ProposalResponse)
@@ -199,7 +203,7 @@ def resubmit_proposal_endpoint(
         entity_id=internship_id,
         detail="Voorstel herindienen",
     )
-    return result.internship.proposal
+    return result.proposal
 
 
 @router.get(
@@ -249,5 +253,7 @@ def withdraw_proposal_endpoint(
         entity_id=internship_id,
         detail="Voorstel ingetrokken",
     )
-    _notify_committee(db, current_user, internship_id, "heeft het stagevoorstel ingetrokken.")
+    _notify_committee(
+        db, current_user, internship_id, "heeft het stagevoorstel ingetrokken."
+    )
     return {"detail": "Voorstel succesvol ingetrokken"}

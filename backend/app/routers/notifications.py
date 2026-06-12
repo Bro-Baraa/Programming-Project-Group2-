@@ -18,9 +18,6 @@ from app.auth import get_current_active_user
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
-# ── Schema ────────────────────────────────────────────────────────────────────
-
-
 class NotificationResponse(BaseModel):
     """What the frontend receives for each notification."""
 
@@ -33,9 +30,6 @@ class NotificationResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
-
-# ── Endpoints ─────────────────────────────────────────────────────────────────
 
 
 @router.get("", response_model=List[NotificationResponse])

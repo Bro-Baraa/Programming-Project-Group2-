@@ -1,162 +1,130 @@
-// ============================================
-// Commissieweergaven
-// ============================================
+function _agreementCell(p) {
+  if (p.status === 'Afgekeurd') return '<span class="hint">-</span>';
+  if (p.agreement_uploaded) return '<span class="status-pill status-good">Ontvangen</span>';
+  return '<span class="status-pill status-warn">Nog niet</span>';
+}
 
 async function renderCommitteeProposals() {
   try {
     const tbody = document.querySelector('#proposals-table tbody');
+    if (!tbody) return;
 
-    if (tbody) {
-      tbody.innerHTML = allInternships.map(p => {
-        let agreementCell;
-        if (p.status === 'Afgekeurd') {
-          agreementCell = '<span class="hint">-</span>';
-        } else if (p.agreement_uploaded) {
-          agreementCell = '<span class="status-pill status-good">Ontvangen</span>';
-        } else {
-          agreementCell = '<span class="status-pill status-warn">Nog niet</span>';
-        }
-        return `
-        <tr data-id="${p.id}" class="proposal-row">
-          <td>${p.student?.first_name || 'Onbekend'} ${p.student?.last_name || ''}</td>
-          <td>${p.company?.name || 'Onbekend'}</td>
-          <td>${new Date(p.created_at).toLocaleDateString('nl-BE')}</td>
-          <td><span class="status-pill ${getStatusClass(p.status)}">${p.status}</span></td>
-          <td>${agreementCell}</td>
-        </tr>
-      `}).join('');
+    tbody.innerHTML = allInternships.map(p => `
+      <tr data-id="${p.id}" class="proposal-row">
+        <td>${p.student?.first_name || 'Onbekend'} ${p.student?.last_name || ''}</td>
+        <td>${p.company?.name || 'Onbekend'}</td>
+        <td>${new Date(p.created_at).toLocaleDateString('nl-BE')}</td>
+        <td><span class="status-pill ${getStatusClass(p.status)}">${p.status}</span></td>
+        <td>${_agreementCell(p)}</td>
+      </tr>
+    `).join('');
 
-      // Klikhandler: selecteer stage en toon detailpaneel
-      tbody.querySelectorAll('.proposal-row').forEach(row => {
-        row.addEventListener('click', () => {
-          const id = parseInt(row.dataset.id);
-          selectProposalForReview(id);
-        });
-      });
-    }
+    tbody.querySelectorAll('.proposal-row').forEach(row => {
+      row.addEventListener('click', () => selectProposalForReview(parseInt(row.dataset.id)));
+    });
 
-    // Als een voorstel via URL is geselecteerd, toon detail
     if (selectedInternshipId) {
       const preselected = allInternships.find(i => i.id == selectedInternshipId);
       if (preselected) selectProposalForReview(preselected.id);
     }
-
   } catch (error) {
     showToast(error.message, 'error');
   }
+}
+
+function _setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function _loadSelect(id, role, emptyLabel) {
+  UsersAPI.list(role).then(users => {
+    const select = document.getElementById(id);
+    if (select) select.innerHTML = `<option value="">${emptyLabel}</option>` +
+      users.map(u => `<option value="${u.id}">${u.first_name} ${u.last_name}</option>`).join('');
+  }).catch(() => {
+    const select = document.getElementById(id);
+    if (select) select.innerHTML = `<option value="">Kon ${role}s niet laden</option>`;
+  });
+}
+
+function _renderReviewActions(internship) {
+  const actionsDiv = document.getElementById('review-actions');
+  if (!actionsDiv) return;
+
+  const status = internship.status;
+  if (status === 'Ingediend' || status === 'Aanpassingen Vereist') {
+    actionsDiv.innerHTML = `<button id="btn-review" class="btn">${iconHtml('search', 14)} In Beoordeling Zetten</button>`;
+    document.getElementById('btn-review')?.addEventListener('click', () => doReview(internship.id, 'In Beoordeling'));
+    return;
+  }
+
+  if (status === 'In Beoordeling') {
+    actionsDiv.innerHTML = `
+      <div class="row full" style="margin-bottom: 0.75rem;">
+        <label>Docent aanduiden (verplicht bij goedkeuring)</label>
+        <select id="approve-teacher-select"><option value="">Laden...</option></select>
+      </div>
+      <div class="row full" style="margin-bottom: 0.75rem;">
+        <label>Mentor aanduiden (optioneel bij goedkeuring)</label>
+        <select id="approve-mentor-select"><option value="">-- Geen mentor --</option></select>
+      </div>
+      <button id="btn-approve" class="btn success">${iconHtml('check-circle', 14)} Goedkeuren</button>
+      <button id="btn-reject" class="btn danger">${iconHtml('x-circle', 14)} Afkeuren</button>
+      <button id="btn-changes" class="btn secondary">${iconHtml('alert-circle', 14)} Aanpassingen Vereist</button>
+    `;
+
+    _loadSelect('approve-teacher-select', 'teacher', '-- Kies een docent --');
+    _loadSelect('approve-mentor-select', 'mentor', '-- Geen mentor --');
+
+    document.getElementById('btn-approve')?.addEventListener('click', () => {
+      const teacherId = parseInt(document.getElementById('approve-teacher-select')?.value);
+      if (!teacherId) {
+        showToast('Duid eerst een docent aan voor goedkeuring', 'warning');
+        return;
+      }
+      const mentorId = document.getElementById('approve-mentor-select')?.value || null;
+      doReview(internship.id, 'Goedgekeurd', teacherId, mentorId ? parseInt(mentorId) : null);
+    });
+    document.getElementById('btn-reject')?.addEventListener('click', () => doReview(internship.id, 'Afkeurd'));
+    document.getElementById('btn-changes')?.addEventListener('click', () => doReview(internship.id, 'Aanpassingen Vereist'));
+    return;
+  }
+
+  actionsDiv.innerHTML = '<p class="hint">Voorstel is al beoordeeld.</p>';
 }
 
 function selectProposalForReview(internshipId) {
   const internship = allInternships.find(i => i.id == internshipId);
   if (!internship) return;
 
-  // URL bijwerken
   selectedInternshipId = internshipId;
   currentInternship = internship;
   const url = new URL(window.location.href);
   url.searchParams.set('internship', internshipId);
   window.history.replaceState({}, '', url);
 
-  // Geselecteerde rij markeren
   document.querySelectorAll('.proposal-row').forEach(r => {
     r.style.background = r.dataset.id == internshipId ? 'rgba(0, 121, 140, 0.1)' : '';
   });
 
-  // Detailpaneel tonen
   const panel = document.getElementById('proposal-detail-panel');
   if (panel) panel.style.display = 'block';
 
-  // Detailinformatie vullen
-  document.getElementById('selected-student-name').textContent =
-    `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`;
-  document.getElementById('selected-company').textContent = internship.company?.name || 'Onbekend';
-  document.getElementById('selected-status').textContent = internship.status;
+  _setText('selected-student-name', `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`);
+  _setText('selected-company', internship.company?.name || 'Onbekend');
+  _setText('selected-status', internship.status);
 
-  // Haal voorstelbeschrijving op en toon
-  document.getElementById('selected-description').textContent = 'Laden...';
+  _setText('selected-description', 'Laden...');
   InternshipsAPI.get(internship.id).then(full => {
-    document.getElementById('selected-description').textContent =
-      full.proposal?.description || 'Geen omschrijving beschikbaar.';
-    // Vul feedback box met bestaande feedback (issue #5)
+    _setText('selected-description', full.proposal?.description || 'Geen omschrijving beschikbaar.');
     const feedbackBox = document.getElementById('feedback-box');
-    if (feedbackBox && full.proposal?.feedback) {
-      feedbackBox.value = full.proposal.feedback;
-    }
+    if (feedbackBox && full.proposal?.feedback) feedbackBox.value = full.proposal.feedback;
   }).catch(() => {
-    document.getElementById('selected-description').textContent = 'Kon omschrijving niet laden.';
+    _setText('selected-description', 'Kon omschrijving niet laden.');
   });
 
-  // Actieknoppen verbinden
-  const actionsDiv = document.getElementById('review-actions');
-  if (actionsDiv) {
-    const status = internship.status;
-    if (status === 'Ingediend' || status === 'Aanpassingen Vereist') {
-      // Eerst "In Beoordeling" zetten
-      actionsDiv.innerHTML = `
-        <button id="btn-review" class="btn">${iconHtml('search', 14)} In Beoordeling Zetten</button>
-      `;
-      document.getElementById('btn-review')?.addEventListener('click', () => doReview(internship.id, 'In Beoordeling'));
-    } else if (status === 'In Beoordeling') {
-      // Dan pas beslissen — docent is verplicht, mentor is optioneel bij goedkeuring
-      actionsDiv.innerHTML = `
-        <div class="row full" style="margin-bottom: 0.75rem;">
-          <label>Docent aanduiden (verplicht bij goedkeuring)</label>
-          <select id="approve-teacher-select">
-            <option value="">Laden...</option>
-          </select>
-        </div>
-        <div class="row full" style="margin-bottom: 0.75rem;">
-          <label>Mentor aanduiden (optioneel bij goedkeuring)</label>
-          <select id="approve-mentor-select">
-            <option value="">-- Geen mentor --</option>
-          </select>
-        </div>
-        <button id="btn-approve" class="btn success">${iconHtml('check-circle', 14)} Goedkeuren</button>
-        <button id="btn-reject" class="btn danger">${iconHtml('x-circle', 14)} Afkeuren</button>
-        <button id="btn-changes" class="btn secondary">${iconHtml('alert-circle', 14)} Aanpassingen Vereist</button>
-      `;
-
-      // Laad docenten in de dropdown
-      UsersAPI.list('teacher').then(teachers => {
-        const select = document.getElementById('approve-teacher-select');
-        if (select) {
-          select.innerHTML = '<option value="">-- Kies een docent --</option>' +
-            teachers.map(t => `<option value="${t.id}">${t.first_name} ${t.last_name}</option>`).join('');
-        }
-      }).catch(() => {
-        const select = document.getElementById('approve-teacher-select');
-        if (select) select.innerHTML = '<option value="">Kon docenten niet laden</option>';
-      });
-
-      // Laad mentors in de dropdown
-      UsersAPI.list('mentor').then(mentors => {
-        const select = document.getElementById('approve-mentor-select');
-        if (select) {
-          select.innerHTML = '<option value="">-- Geen mentor --</option>' +
-            mentors.map(m => `<option value="${m.id}">${m.first_name} ${m.last_name}</option>`).join('');
-        }
-      }).catch(() => {
-        const select = document.getElementById('approve-mentor-select');
-        if (select) select.innerHTML = '<option value="">Kon mentors niet laden</option>';
-      });
-
-      document.getElementById('btn-approve')?.addEventListener('click', () => {
-        const teacherId = parseInt(document.getElementById('approve-teacher-select')?.value);
-        if (!teacherId) {
-          showToast('Duid eerst een docent aan voor goedkeuring', 'warning');
-          return;
-        }
-        // Mentor is optioneel — null als niets gekozen
-        const mentorVal = document.getElementById('approve-mentor-select')?.value;
-        const mentorId = mentorVal ? parseInt(mentorVal) : null;
-        doReview(internship.id, 'Goedgekeurd', teacherId, mentorId);
-      });
-      document.getElementById('btn-reject')?.addEventListener('click', () => doReview(internship.id, 'Afgekeurd'));
-      document.getElementById('btn-changes')?.addEventListener('click', () => doReview(internship.id, 'Aanpassingen Vereist'));
-    } else {
-      actionsDiv.innerHTML = '<p class="hint">Voorstel is al beoordeeld.</p>';
-    }
-  }
+  _renderReviewActions(internship);
 }
 
 async function doReview(internshipId, decision, teacherId = null, mentorId = null) {
@@ -237,10 +205,9 @@ function showAgreementDetailPanel(internshipId) {
   const panel = document.getElementById('agreement-detail-panel');
   if (panel) panel.style.display = 'block';
 
-  document.getElementById('agreement-student-name').textContent =
-    `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`;
-  document.getElementById('agreement-company').textContent = internship.company?.name || 'Onbekend';
-  document.getElementById('agreement-internship-status').textContent = internship.status;
+  _setText('agreement-student-name', `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`);
+  _setText('agreement-company', internship.company?.name || 'Onbekend');
+  _setText('agreement-internship-status', internship.status);
 
   const detailContainer = document.getElementById('agreement-detail-content');
   detailContainer.innerHTML = '<p>Laden...</p>';
@@ -344,7 +311,5 @@ async function renderCommitteeOverview() {
   }
 }
 
-// ============================================
-// Blootstellen aan window voor template onclick-handlers
 window.selectProposalForReview = selectProposalForReview;
 window.doReview = doReview;

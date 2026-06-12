@@ -6,9 +6,20 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect
 from app.database import engine, Base
 from app.routers import (
-    auth, companies, internships, proposals, agreements,
-    logbooks, evaluations, feedback, reports, competencies,
-    users, me, notifications, audit,
+    auth,
+    companies,
+    internships,
+    proposals,
+    agreements,
+    logbooks,
+    evaluations,
+    feedback,
+    reports,
+    competencies,
+    users,
+    me,
+    notifications,
+    audit,
 )
 
 inspector = inspect(engine)
@@ -24,7 +35,9 @@ app = FastAPI(
 )
 
 _origins = os.getenv("FRONTEND_ORIGINS", "*")
-allow_origins = ["*"] if _origins == "*" else [o.strip() for o in _origins.split(",") if o.strip()]
+allow_origins = (
+    ["*"] if _origins == "*" else [o.strip() for o in _origins.split(",") if o.strip()]
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -52,9 +65,20 @@ async def rate_limit(request: Request, call_next):
 
 
 for router in (
-    auth, companies, internships, proposals, agreements,
-    logbooks, evaluations, feedback, reports, competencies,
-    users, me, notifications, audit,
+    auth,
+    companies,
+    internships,
+    proposals,
+    agreements,
+    logbooks,
+    evaluations,
+    feedback,
+    reports,
+    competencies,
+    users,
+    me,
+    notifications,
+    audit,
 ):
     app.include_router(router, prefix="/api")
 

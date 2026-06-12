@@ -92,20 +92,15 @@ async function renderMentorLogbooks() {
   tbody.querySelectorAll('.validate-logbook-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const logbookId = parseInt(btn.dataset.id);
-      showLoading(btn, 'Bezig...');
-      try {
+      await withLoading(btn, 'Bezig...', async () => {
         await apiRequest(`/internships/logbooks/${logbookId}`, {
           method: 'PATCH',
           body: JSON.stringify({ mentor_validated: true })
         });
-        hideLoading(btn);
         showToast('Logboek gevalideerd!', 'success');
         currentLogbooks = await InternshipsAPI.getLogbooks(currentInternship.id);
         renderMentorLogbooks();
-      } catch (error) {
-        hideLoading(btn);
-        showToast(error.message, 'error');
-      }
+      });
     });
   });
 
@@ -114,18 +109,13 @@ async function renderMentorLogbooks() {
       const logbookId = parseInt(btn.dataset.id);
       const textarea = tbody.querySelector(`.mentor-feedback-input[data-id="${logbookId}"]`);
       const feedback = textarea?.value || '';
-      showLoading(btn, 'Bezig...');
-      try {
+      await withLoading(btn, 'Bezig...', async () => {
         await apiRequest(`/internships/logbooks/${logbookId}`, {
           method: 'PATCH',
           body: JSON.stringify({ mentor_feedback: feedback })
         });
-        hideLoading(btn);
         showToast('Feedback opgeslagen!', 'success');
-      } catch (error) {
-        hideLoading(btn);
-        showToast(error.message, 'error');
-      }
+      });
     });
   });
 }

@@ -55,4 +55,3 @@ EXPOSE 8080
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["uvicorn", "docker_main:app", "--host", "0.0.0.0", "--port", "8080"]
-

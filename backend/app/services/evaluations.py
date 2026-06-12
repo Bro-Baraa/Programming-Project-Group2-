@@ -1,38 +1,23 @@
 """Evaluation service layer orchestration."""
 
-from sqlalchemy.orm import Session, joinedload
+from datetime import datetime, UTC
 from fastapi import HTTPException
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
-from app.models import Evaluation, EvaluationRule
+from app.models import Competency, Evaluation, EvaluationRule, Internship
 from app.schemas import (
     EvaluationCreate,
     EvaluationResponse,
     EvaluationWithScoreResponse,
     EvaluationRuleUpdate,
 )
-from .common import get_active_competency_profile
-from .evaluation_access import (
-    ensure_can_access_internship,
-    ensure_rule_update_access,
-    get_evaluation_or_404,
-    get_internship_or_404,
-    get_rule_or_404,
-)
-from .evaluation_lifecycle import (
-    ensure_all_rules_scored,
-    ensure_can_finalize,
-    ensure_final_not_exists,
-    ensure_internship_is_evaluable,
-    mark_finalized,
-    seed_rules_from_active_profile,
-)
-from .evaluation_scoring import calculate_evaluation_score
+from .common import ensure_internship_access, get_active_competency_profile
 
 
 def list_evaluations(db: Session, current_user, internship_id: int) -> List[Evaluation]:
     internship = get_internship_or_404(db, internship_id)
-    ensure_can_access_internship(current_user, internship)
+    ensure_internship_access(current_user, internship)
     return (
         db.query(Evaluation)
         .options(joinedload(Evaluation.rules).joinedload(EvaluationRule.competency))
@@ -45,7 +30,7 @@ def create_evaluation(
     db: Session, current_user, internship_id: int, data: EvaluationCreate
 ) -> Evaluation:
     internship = get_internship_or_404(db, internship_id)
-    ensure_can_access_internship(current_user, internship)
+    ensure_internship_access(current_user, internship)
     ensure_internship_is_evaluable(internship)
     ensure_final_not_exists(db, internship_id, data.eval_type)
 
@@ -73,7 +58,6 @@ def create_evaluation(
     db.add(evaluation)
     db.flush()
 
-    # ── Use the internship's captured competency profile, not the current active one ──
     profile_id = internship.competency_profile_id
     if not profile_id:
         # Fallback: if no profile was captured (legacy internships), use the active one
@@ -95,7 +79,7 @@ def get_evaluation_with_score(
     db: Session, current_user, evaluation_id: int
 ) -> EvaluationWithScoreResponse:
     evaluation = get_evaluation_or_404(db, evaluation_id)
-    ensure_can_access_internship(current_user, evaluation.internship)
+    ensure_internship_access(current_user, evaluation.internship)
     score_data = calculate_evaluation_score(db, evaluation)
 
     return EvaluationWithScoreResponse(
@@ -157,3 +141,165 @@ def finalize_evaluation(
     db.refresh(evaluation)
 
     return evaluation, calculate_evaluation_score(db, evaluation)
+
+
+# ─── Private helpers (inlined from evaluation_access / evaluation_lifecycle / evaluation_scoring)
+
+
+def get_internship_or_404(db: Session, internship_id: int) -> Internship:
+    internship = db.query(Internship).filter(Internship.id == internship_id).first()
+    if not internship:
+        raise HTTPException(status_code=404, detail="Internship not found")
+    return internship
+
+
+def get_evaluation_or_404(db: Session, evaluation_id: int) -> Evaluation:
+    evaluation = (
+        db.query(Evaluation)
+        .options(joinedload(Evaluation.rules).joinedload(EvaluationRule.competency))
+        .filter(Evaluation.id == evaluation_id)
+        .first()
+    )
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="Evaluation not found")
+    return evaluation
+
+
+def get_rule_or_404(db: Session, evaluation_id: int, rule_id: int) -> EvaluationRule:
+    rule = (
+        db.query(EvaluationRule)
+        .filter(
+            EvaluationRule.id == rule_id,
+            EvaluationRule.evaluation_id == evaluation_id,
+        )
+        .first()
+    )
+    if not rule:
+        raise HTTPException(status_code=404, detail="Evaluation rule not found")
+    return rule
+
+
+def ensure_rule_update_access(current_user, internship: Internship) -> None:
+    if current_user.role == "student":
+        ensure_internship_access(current_user, internship)
+    if current_user.role in ["teacher", "mentor"]:
+        ensure_internship_access(
+            current_user, internship, "Not authorized for this internship"
+        )
+
+
+def ensure_internship_is_evaluable(internship) -> None:
+    if internship.status not in ["Lopend", "Afgerond"]:
+        raise HTTPException(
+            status_code=400, detail="Can only evaluate ongoing or completed internships"
+        )
+
+
+def ensure_final_not_exists(db: Session, internship_id: int, eval_type: str) -> None:
+    if eval_type != "final":
+        return
+    existing = (
+        db.query(Evaluation)
+        .filter(
+            Evaluation.internship_id == internship_id, Evaluation.eval_type == "final"
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail="Final evaluation already exists")
+
+
+def seed_rules_from_active_profile(
+    db: Session, evaluation_id: int, profile_id: int
+) -> None:
+    competencies = (
+        db.query(Competency)
+        .filter(Competency.profile_id == profile_id, Competency.active == True)
+        .all()
+    )
+    for competency in competencies:
+        db.add(
+            EvaluationRule(
+                evaluation_id=evaluation_id,
+                competency_id=competency.id,
+                score=None,
+                student_description=None,
+                evaluator_feedback=None,
+            )
+        )
+
+
+def ensure_can_finalize(evaluation: Evaluation, current_user) -> None:
+    if evaluation.finalized:
+        raise HTTPException(status_code=400, detail="Evaluation already finalized")
+    if evaluation.evaluator_id == current_user.id:
+        return
+    if (
+        current_user.role == "teacher"
+        and evaluation.internship.teacher_id == current_user.id
+    ):
+        return
+    raise HTTPException(
+        status_code=403, detail="Only the evaluator or assigned teacher can finalize"
+    )
+
+
+def ensure_all_rules_scored(db: Session, evaluation_id: int) -> None:
+    rules = (
+        db.query(EvaluationRule)
+        .filter(EvaluationRule.evaluation_id == evaluation_id)
+        .all()
+    )
+    missing = [rule.id for rule in rules if rule.score is None]
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot finalize: missing scores for competencies: {missing}",
+        )
+
+
+def mark_finalized(evaluation: Evaluation) -> None:
+    evaluation.finalized = True
+    evaluation.status = "afgerond"
+    evaluation.finalized_at = datetime.now(UTC)
+
+
+def calculate_evaluation_score(db: Session, evaluation: Evaluation) -> dict:
+    rules = (
+        db.query(EvaluationRule)
+        .options(joinedload(EvaluationRule.competency))
+        .filter(EvaluationRule.evaluation_id == evaluation.id)
+        .all()
+    )
+    if not rules:
+        return {"total_weight": 0, "achieved_weight": 0, "weighted_score": None}
+
+    total_weight = 0
+    achieved_weight = 0
+    all_scored = True
+
+    for rule in rules:
+        competency = rule.competency
+        if competency:
+            weight = (
+                rule.weight_snapshot
+                if rule.weight_snapshot is not None
+                else competency.weight
+            )
+            total_weight += weight
+            if rule.score is not None:
+                achieved_weight += (rule.score / 5.0) * weight
+            else:
+                all_scored = False
+
+    weighted_score = (
+        (achieved_weight / total_weight * 100)
+        if total_weight > 0 and all_scored
+        else None
+    )
+
+    return {
+        "total_weight": total_weight,
+        "achieved_weight": achieved_weight,
+        "weighted_score": weighted_score,
+    }

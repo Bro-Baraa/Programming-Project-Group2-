@@ -88,7 +88,7 @@ function updateUIForUser(user) {
   const userInfo = document.getElementById('user-info');
   const userName = document.getElementById('user-name');
   const userRole = document.getElementById('user-role');
-  
+
   if (userInfo && userName && userRole) {
     userInfo.style.display = 'flex';
     userName.textContent = `${user.first_name} ${user.last_name}`;
@@ -147,16 +147,16 @@ function renderLogin() {
   app.textContent = '';
   navPanel.style.display = 'none';
   document.body.classList.add('login-active');
-  
+
   toggleHeaderVisibility(false);
-  
+
   const tpl = document.getElementById('login-template');
   if (tpl) {
     app.appendChild(tpl.content.cloneNode(true));
-    
+
     const form = document.getElementById('login-form');
     form?.addEventListener('submit', handleLogin);
-    
+
     const quickLogin = document.getElementById('quick-login');
     if (quickLogin) {
       quickLogin.textContent = '';
@@ -248,7 +248,7 @@ async function renderMainApp() {
   app.className = 'layout';
   navPanel.style.display = 'block';
   document.body.classList.remove('login-active');
-  
+
   toggleHeaderVisibility(true);
 
   const role = AuthAPI.getRole();
@@ -660,14 +660,14 @@ function formatReportRows(rules) {
 function init() {
   const urlParams = new URLSearchParams(window.location.search);
   const view = urlParams.get('view');
-  
+
   if (view === 'login' || !AuthAPI.isLoggedIn()) {
     renderLogin();
   } else {
     updateUIForUser(AuthAPI.getUser());
     renderMainApp();
   }
-  
+
   document.getElementById('internship-select')?.addEventListener('change', handleInternshipChange);
   document.getElementById('logout-btn')?.addEventListener('click', handleLogout);
   inlineIconsInContainer(document.body);

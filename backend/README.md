@@ -12,7 +12,7 @@ python init_admin.py                   # maakt database + admin user
 uvicorn app.main:app --reload
 ```
 
-API: `http://localhost:8001`  
+API: `http://localhost:8001`
 Docs: `http://localhost:8001/docs`
 
 ### Testdata seeden

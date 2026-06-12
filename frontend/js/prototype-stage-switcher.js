@@ -1,7 +1,7 @@
 // PROTOTYPE — Stage Switcher UI Variations
 // Question: "What is the best UI for switching between multiple stages?"
 // Variants: A=Popover Dropdown, B=Sidebar Context, C=Stage Cards Overview
-// 
+//
 // MOCK DATA — represents a realistic dataset for the app
 const MOCK_STAGES = [
   {

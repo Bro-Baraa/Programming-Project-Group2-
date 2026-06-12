@@ -132,7 +132,7 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
-    """US-27: Admin maakt een nieuwe gebruiker aan."""
+
     # Check for duplicate email
     existing = db.query(User).filter(User.email == data.email).first()
     if existing:
@@ -170,7 +170,7 @@ def update_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
-    """US-27: Admin wijzigt een gebruiker."""
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
@@ -207,7 +207,7 @@ def delete_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
-    """US-27: Admin verwijdert een gebruiker."""
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(

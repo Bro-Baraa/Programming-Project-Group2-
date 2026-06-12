@@ -1,7 +1,3 @@
-// ============================================
-// Admin - Competentiebeheer
-// ============================================
-
 let competencyProfiles = [];
 let selectedProfileId = null;
 let compSearchQuery = '';
@@ -346,8 +342,7 @@ async function renderCompetencyManager() {
     const active = document.getElementById('profile-active').checked;
     const submitBtn = profileForm.querySelector('button[type="submit"]');
 
-    showLoading(submitBtn, 'Aanmaken...');
-    try {
+    await withLoading(submitBtn, 'Aanmaken...', async () => {
       const profile = await CompetencyProfileAPI.create({
         name,
         version: version || '1.0',
@@ -369,13 +364,9 @@ async function renderCompetencyManager() {
       renderCompetencies();
       renderScoreSimulator();
       renderWeightChart();
-      hideLoading(submitBtn);
       showToast(`Profiel "${name}" aangemaakt`, 'success');
       profileForm.reset();
-    } catch (error) {
-      hideLoading(submitBtn);
-      showToast(error.message, 'error');
-    }
+    });
   });
 
   // Initial render
@@ -507,10 +498,6 @@ window.activateCompetency = activateCompetency;
 window.deleteCompetency = deleteCompetency;
 window.activateProfile = activateProfile;
 window.deleteProfile = deleteProfile;
-
-// ============================================
-// Admin - Gebruikersbeheer
-// ============================================
 
 let currentUsers = [];
 let userSearchQuery = '';
@@ -738,10 +725,6 @@ function _renderUserTable() {
 window.handleEditUser = handleEditUser;
 window.changeUserPage = changeUserPage;
 
-// ============================================
-// Admin - Overeenkomsten Overzicht (US-26)
-// ============================================
-
 let currentAgreements = [];
 
 async function renderAdminAgreements() {
@@ -864,10 +847,6 @@ window.showAdminAgreementDetail = showAdminAgreementDetail;
 window.handleEditUser = handleEditUser;
 window.handleDeleteUser = handleDeleteUser;
 window.changeUserPage = changeUserPage;
-
-// ============================================
-// Admin - Audit Log (US-30)
-// ============================================
 
 let auditSkip = 0;
 const auditLimit = 50;

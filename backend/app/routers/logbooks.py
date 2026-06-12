@@ -1,6 +1,6 @@
 """Logbook endpoints."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta, UTC
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -74,7 +74,8 @@ def get_day_overview(
     for lb in logbooks:
         key = lb.entry_date or (
             internship.start_date + timedelta(days=(lb.week_number - 1) * 7)
-            if lb.week_number else None
+            if lb.week_number
+            else None
         )
         if key:
             logbook_map[key] = lb
@@ -175,20 +176,21 @@ def submit_logbook(
         raise HTTPException(status_code=400, detail="Logbook already submitted")
 
     logbook.status = "submitted"
-    from datetime import datetime, UTC
-
     logbook.submitted_at = datetime.now(UTC)
     db.commit()
     db.refresh(logbook)
 
-    # ── Notify the mentor and teacher that a logbook has been submitted ──
     internship = logbook.internship
     student_name = (
         f"{internship.student.first_name} {internship.student.last_name}"
         if internship.student
         else "Een student"
     )
-    log_label = logbook.entry_date.strftime("%d/%m/%Y") if logbook.entry_date else f"dag {logbook.week_number}"
+    log_label = (
+        logbook.entry_date.strftime("%d/%m/%Y")
+        if logbook.entry_date
+        else f"dag {logbook.week_number}"
+    )
     if internship.mentor_id:
         notify(
             db,

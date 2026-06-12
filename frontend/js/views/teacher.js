@@ -99,16 +99,10 @@ function wireEvaluationForm() {
       return;
     }
 
-    showLoading(submitBtn, 'Opslaan...');
-
-    try {
+    await withLoading(submitBtn, 'Opslaan...', async () => {
       await saveScores();
-      hideLoading(submitBtn);
       showToast('Evaluatie opgeslagen!', 'success');
-    } catch (error) {
-      hideLoading(submitBtn);
-      showToast(error.message, 'error');
-    }
+    });
   });
 
   // Evaluatie finaliseren
@@ -146,17 +140,10 @@ function wireEvaluationForm() {
       return;
     }
 
-    showLoading(finalizeBtn, 'Bezig...');
-
-    try {
-      // Backend finalize endpoint: POST /evaluations/{id}/finalize
+    await withLoading(finalizeBtn, 'Bezig...', async () => {
       await apiRequest(`/internships/evaluations/${evaluation.id}/finalize`, { method: 'POST' });
-      hideLoading(finalizeBtn);
       showToast('Evaluatie definitief afgesloten!', 'success');
-    } catch (error) {
-      hideLoading(finalizeBtn);
-      showToast(error.message, 'error');
-    }
+    });
   });
 }
 
@@ -207,34 +194,21 @@ async function renderTeacherFinalReport() {
 
   const downloadBtn = document.getElementById('teacher-download-report');
   downloadBtn?.addEventListener('click', async () => {
-    showLoading(downloadBtn);
-    try {
+    await withLoading(downloadBtn, 'Downloaden...', async () => {
       await InternshipsAPI.downloadFinalReport(currentInternship.id);
       showToast('PDF gedownload!', 'success');
-    } catch (error) {
-      showToast(error.message || 'Download mislukt', 'error');
-    } finally {
-      hideLoading(downloadBtn);
-    }
+    });
   });
 
   const excelBtn = document.getElementById('teacher-download-excel');
   excelBtn?.addEventListener('click', async () => {
-    showLoading(excelBtn);
-    try {
+    await withLoading(excelBtn, 'Downloaden...', async () => {
       await ReportsAPI.exportExcel();
       showToast('Excel gedownload!', 'success');
-    } catch (error) {
-      showToast(error.message || 'Download mislukt', 'error');
-    } finally {
-      hideLoading(excelBtn);
-    }
+    });
   });
 }
 
-// ============================================
-// Docent & Mentor logboekweergaven
-// ============================================
 async function renderTeacherLogbooks() {
   const tbody = document.querySelector('#teacher-logbooks-table tbody');
   if (!tbody) return;

@@ -7,7 +7,7 @@ from fpdf import FPDF
 from sqlalchemy.orm import Session
 
 from app.schemas import UserResponse
-from app.services.report_final import get_final_report
+from app.services.reports import get_final_report
 
 
 class _PDF(FPDF):
@@ -165,9 +165,6 @@ def generate_final_report_pdf(
     pdf.output(tmp.name)
     tmp.close()
 
-    # ── Cleanup: verwijder temp file na download ──
-    # FileResponse stuurt het bestand, daarna kunnen we opruimen.
-    # We gebruiken een atexit handler voor veiligheid.
     import atexit
 
     _pdf_path = Path(tmp.name)

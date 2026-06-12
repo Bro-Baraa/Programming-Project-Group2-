@@ -37,7 +37,6 @@ def create_feedback(
     """US-03, US-07, US-12, US-16, US-20: Create feedback"""
     feedback = create_feedback_svc(db, current_user, internship_id, data)
 
-    # ── Notify the recipient that new feedback has been received ──
     student_name = (
         f"{current_user.first_name} {current_user.last_name}"
         if current_user

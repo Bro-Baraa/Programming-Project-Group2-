@@ -81,7 +81,7 @@ def export_internships_csv(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_staff),
 ):
-    """US-28: Exporteer alle stages als CSV."""
+
     internships = db.query(Internship).all()
 
     output = io.StringIO()
@@ -118,7 +118,7 @@ def export_internships_excel(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_any_staff),
 ):
-    """US-28: Exporteer alle stages als Excel (.xlsx)."""
+
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
@@ -130,15 +130,27 @@ def export_internships_excel(
 
     # Header
     headers = [
-        "Student", "Email", "Bedrijf", "Sector", "Status",
-        "Startdatum", "Einddatum", "Docent", "Mentor",
-        "Voorstel Status", "Overeenkomst Status",
+        "Student",
+        "Email",
+        "Bedrijf",
+        "Sector",
+        "Status",
+        "Startdatum",
+        "Einddatum",
+        "Docent",
+        "Mentor",
+        "Voorstel Status",
+        "Overeenkomst Status",
     ]
     header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="00798C", end_color="00798C", fill_type="solid")
+    header_fill = PatternFill(
+        start_color="00798C", end_color="00798C", fill_type="solid"
+    )
     thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
 
     for col, h in enumerate(headers, 1):
@@ -157,7 +169,9 @@ def export_internships_excel(
 
     # Auto-adjust column widths
     for col in ws.columns:
-        max_length = max((len(str(cell.value)) for cell in col if cell.value is not None), default=0)
+        max_length = max(
+            (len(str(cell.value)) for cell in col if cell.value is not None), default=0
+        )
         adjusted_width = min(max_length + 2, 50)
         ws.column_dimensions[col[0].column_letter].width = adjusted_width
 

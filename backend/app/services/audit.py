@@ -1,4 +1,4 @@
-"""Audit log service — schrijft events naar de audit_logs tabel."""
+"""Audit log service."""
 
 from datetime import datetime, UTC
 from typing import Optional
@@ -19,13 +19,6 @@ def log_event(
     detail: Optional[str] = None,
     request: Optional[Request] = None,
 ) -> AuditLog:
-    """Schrijf een audit event naar de database.
-
-    Gebruik:
-        log_event(db, "proposal.submit", user=current_user,
-                  entity_type="internship", entity_id=internship.id,
-                  detail="Voorstel ingediend", request=request)
-    """
     ip = None
     if request and request.client:
         ip = request.client.host

@@ -1340,10 +1340,6 @@ body.login-active {
 .table-card .status-info { background: var(--info-bg); color: var(--info-text); }
 .table-card .status-bad { background: var(--bad-bg); color: var(--bad-text); }
 
-/* ============================================
-   Competencies Page
-   ============================================ */
-
 .competencies-header {
   display: flex;
   justify-content: space-between;
@@ -1737,10 +1733,6 @@ body.login-active {
     padding: 1rem;
   }
 }
-
-/* ============================================
-   Notification bell
-   ============================================ */
 
 .notif-wrapper {
   position: relative;

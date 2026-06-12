@@ -2,7 +2,7 @@
 
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 
 from app.database import get_db
@@ -16,6 +16,7 @@ from app.schemas import (
     EvaluationWithScoreResponse,
 )
 from app.auth import get_current_active_user, require_teacher, require_any_staff
+from app.services.common import ensure_internship_access
 from app.services.evaluations import (
     create_evaluation as create_evaluation_svc,
     get_evaluation_with_score,
@@ -24,6 +25,7 @@ from app.services.evaluations import (
     finalize_evaluation as finalize_evaluation_svc,
 )
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.notifications import notify
 from app.services.audit import log_event
 
 router = APIRouter(prefix="/internships", tags=["evaluations"])
@@ -56,9 +58,6 @@ def create_evaluation(
         entity_id=internship_id,
         detail=f"Evaluatie aangemaakt: {data.eval_type}",
     )
-
-    # ── Notify the student that a new evaluation is available ──
-    from app.services.notifications import notify
 
     eval_label = (
         "eindevaluatie" if data.eval_type == "final" else "tussentijdse evaluatie"
@@ -101,8 +100,6 @@ def update_evaluation(
     evaluation = db.query(Evaluation).filter(Evaluation.id == evaluation_id).first()
     if not evaluation:
         raise HTTPException(status_code=404, detail="Evaluation not found")
-
-    from app.services.common import ensure_internship_access
 
     ensure_internship_access(
         current_user, evaluation.internship, "Not authorized to update this evaluation"
@@ -150,8 +147,6 @@ def finalize_evaluation_endpoint(
 ):
     """US-18: Finalize an evaluation - cannot be modified after.
     If this is a final evaluation, the internship is also marked as completed."""
-    from sqlalchemy.orm import joinedload
-
     evaluation = (
         db.query(Evaluation)
         .options(joinedload(Evaluation.internship))
@@ -164,7 +159,6 @@ def finalize_evaluation_endpoint(
     # finalize_evaluation_svc returns (Evaluation, dict) tuple
     finalized_eval, score_data = finalize_evaluation_svc(db, evaluation, current_user)
 
-    # Auto-complete internship when final evaluation is finalized
     if finalized_eval.eval_type == "final":
         lifecycle = InternshipLifecycle(
             db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
@@ -175,9 +169,6 @@ def finalize_evaluation_endpoint(
         )
 
     db.commit()
-
-    # ── Notify the student that their evaluation has been finalized ──
-    from app.services.notifications import notify
 
     evaluator_name = (
         f"{current_user.first_name} {current_user.last_name}"

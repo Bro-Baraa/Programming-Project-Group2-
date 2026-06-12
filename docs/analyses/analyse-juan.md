@@ -1,6 +1,6 @@
 # Stage Monitoring Tool - Analyse
 
-Analyse document - Juan Benjumea  
+Analyse document - Juan Benjumea
 Projectanalyse - 14/03/2026
 
 ## 1. Projectkader

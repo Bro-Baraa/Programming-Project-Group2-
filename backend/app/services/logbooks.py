@@ -39,13 +39,22 @@ def create_logbook(
     if data.entry_date:
         entry_date = data.entry_date
     elif data.week_number:
-        entry_date = internship.start_date + timedelta(days=(data.week_number - 1) * 7) if internship.start_date else None
+        entry_date = (
+            internship.start_date + timedelta(days=(data.week_number - 1) * 7)
+            if internship.start_date
+            else None
+        )
     else:
-        raise HTTPException(status_code=400, detail="entry_date or week_number is required")
+        raise HTTPException(
+            status_code=400, detail="entry_date or week_number is required"
+        )
 
     if entry_date and internship.start_date and internship.end_date:
         if entry_date < internship.start_date or entry_date > internship.end_date:
-            raise HTTPException(status_code=400, detail="Logbook date must be within the internship period")
+            raise HTTPException(
+                status_code=400,
+                detail="Logbook date must be within the internship period",
+            )
 
     existing = (
         db.query(Logbook)
@@ -108,18 +117,16 @@ def update_logbook(
             )
         if update.mentor_validated is not None:
             logbook.mentor_validated = update.mentor_validated
-            # ── Notify the student when the mentor validates their logbook ──
             if update.mentor_validated and internship.student_id:
                 notify(
                     db,
                     user_id=internship.student_id,
                     message=f"Je logboek van {_log_label(logbook)} is goedgekeurd door je mentor.",
                     internship_id=internship.id,
-                    link_view="logboek",  # sends student to their logbook view
+                    link_view="logboek",
                 )
         if update.mentor_feedback is not None:
             logbook.mentor_feedback = update.mentor_feedback
-            # ── Notify the student when the mentor gives feedback on their logbook ──
             if internship.student_id:
                 notify(
                     db,

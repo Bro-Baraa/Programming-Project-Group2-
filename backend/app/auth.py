@@ -5,13 +5,12 @@ from typing import Optional
 from dotenv import load_dotenv
 from jose import JWTError, jwt, ExpiredSignatureError
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 
-# Load .env if present (development convenience)
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ if not SECRET_KEY:
         "Create backend/.env from .env.example or set it manually."
     )
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -104,8 +103,6 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: User = Depends(get_current_user),
 ) -> User:
-    if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
 
