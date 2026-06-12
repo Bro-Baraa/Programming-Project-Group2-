@@ -1,6 +1,9 @@
+from typing import Literal
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 from datetime import datetime
+
+VALID_ROLES = Literal["student", "teacher", "mentor", "committee", "admin"]
 
 
 class UserBase(BaseModel):
@@ -9,7 +12,7 @@ class UserBase(BaseModel):
     )
     first_name: str = Field(..., description="Voornaam van de gebruiker")
     last_name: str = Field(..., description="Achternaam van de gebruiker")
-    role: str = Field(
+    role: VALID_ROLES = Field(
         ...,
         description="Rol van de gebruiker (bijv. student, teacher, mentor, committee, of admin)",
     )
@@ -23,7 +26,7 @@ class UserUpdate(BaseModel):
     email: EmailStr | None = None
     first_name: str | None = None
     last_name: str | None = None
-    role: str | None = None
+    role: VALID_ROLES | None = None
     is_active: bool | None = None
 
 
