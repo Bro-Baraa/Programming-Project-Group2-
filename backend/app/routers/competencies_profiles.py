@@ -45,7 +45,7 @@ def create_profile(
         name=data.name,
         version=data.version,
         academic_year=data.academic_year,
-        active=True,
+        active=data.active,
     )
 
     if profile.active:

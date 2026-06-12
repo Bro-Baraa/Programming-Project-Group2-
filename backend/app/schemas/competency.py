@@ -22,7 +22,7 @@ class CompetencyProfileBase(BaseModel):
 
 
 class CompetencyProfileCreate(CompetencyProfileBase):
-    pass
+    active: bool = True
 
 
 class CompetencyProfileUpdate(BaseModel):
