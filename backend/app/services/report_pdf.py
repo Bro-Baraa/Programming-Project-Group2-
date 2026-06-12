@@ -68,7 +68,7 @@ def generate_final_report_pdf(
     pdf.ln(1)
 
     pdf.set_font("Helvetica", "", 10)
-    pdf.cell(0, 6, f"Totaal aantal weken: {report.total_weeks}", ln=True)
+    pdf.cell(0, 6, f"Totaal aantal dagen: {report.total_days}", ln=True)
     pdf.cell(0, 6, f"Ingediende logboeken: {report.submitted_logbooks}", ln=True)
     pdf.cell(0, 6, f"Ontbrekende logboeken: {report.missing_logbooks}", ln=True)
     pdf.ln(4)

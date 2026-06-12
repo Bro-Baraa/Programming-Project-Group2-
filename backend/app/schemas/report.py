@@ -46,7 +46,7 @@ class FinalReportItem(BaseModel):
     agreement_uploaded_at: Optional[datetime] = None
 
     # Logbook summary
-    total_weeks: int
+    total_days: int
     submitted_logbooks: int
     missing_logbooks: int
 

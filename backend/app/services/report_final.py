@@ -22,10 +22,9 @@ def get_final_report(db: Session, current_user, internship_id: int) -> FinalRepo
 
     ensure_internship_access(current_user, internship)
 
-    total_weeks = 0
+    total_days = 0
     if internship.start_date and internship.end_date:
-        total_days = (internship.end_date - internship.start_date).days
-        total_weeks = (total_days // 7) + 1
+        total_days = (internship.end_date - internship.start_date).days + 1
 
     submitted_logbooks = (
         db.query(Logbook)
@@ -81,9 +80,9 @@ def get_final_report(db: Session, current_user, internship_id: int) -> FinalRepo
         agreement_uploaded_at=(
             internship.agreement.uploaded_at if internship.agreement else None
         ),
-        total_weeks=total_weeks,
+        total_days=total_days,
         submitted_logbooks=submitted_logbooks,
-        missing_logbooks=max(0, total_weeks - submitted_logbooks),
+        missing_logbooks=max(0, total_days - submitted_logbooks),
         final_evaluation=final_eval_response,
         weighted_final_score=weighted_score,
     )
