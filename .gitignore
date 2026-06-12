@@ -37,6 +37,7 @@ uploads/
 Thumbs.db 
 .pi/
 .kilo/
+.claude/
 
 # Node / Frontend
 node_modules/
