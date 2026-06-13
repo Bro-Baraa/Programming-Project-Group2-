@@ -735,7 +735,7 @@ async function renderStudentDashboard() {
           cell.dataset.dayOffset = dayOffset;
           cell.dataset.date = dateStr;
           cell.title = `${dayDate.getDate()}/${dayDate.getMonth() + 1}: ${lb ? (lb.status === 'submitted' ? 'Ingediend' : 'Concept') : 'Ontbrekend'}`;
-          cell.style.cssText = 'flex:1; min-width:32px; text-align:center; padding:0.25rem 0; border-radius:6px; cursor:pointer; font-size:0.75rem; border:1px solid var(--border);';
+          cell.style.cssText = 'flex:1; min-width:44px; text-align:center; padding:0.5rem 0; border-radius:6px; cursor:pointer; font-size:0.75rem; border:1px solid var(--border);';
           cell.innerHTML = `<div style="font-weight:700;">${dayDate.getDate()}</div><div style="font-size:0.65rem;">${statusLabel}</div>`;
           cell.addEventListener('click', () => openDay(dayOffset, dateStr));
           weekRow.appendChild(cell);
