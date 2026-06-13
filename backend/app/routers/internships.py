@@ -24,6 +24,7 @@ from app.auth import (
 from app.services.common import ensure_internship_access
 from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
 from app.services.audit import log_event
+from app.services.notifications import notify
 from app.dependencies import pagination, search_query
 
 router = APIRouter(prefix="/internships", tags=["internships"])
@@ -216,20 +217,76 @@ def update_internship(
         current_user, internship, "Not authorized to update this internship"
     )
 
+    # Naam van de student opbouwen voor leesbare notificaties/auditmeldingen.
+    student_name = (
+        f"{internship.student.first_name} {internship.student.last_name}"
+        if internship.student
+        else "een student"
+    )
+
     if update.teacher_id is not None:
         teacher = db.query(User).filter(User.id == update.teacher_id).first()
         if not teacher:
             raise HTTPException(status_code=400, detail="Docent niet gevonden")
         if teacher.role != "teacher":
             raise HTTPException(status_code=400, detail="Gebruiker is geen docent")
+
+        # Oude waarde onthouden zodat we alleen bij een echte wijziging reageren.
+        old_teacher_id = internship.teacher_id
         internship.teacher_id = update.teacher_id
+
+        # Alleen notificeren + loggen als de docent effectief verandert
+        # (anders krijgt dezelfde persoon onnodig een melding bij elke save).
+        if old_teacher_id != update.teacher_id:
+            # Notificatie naar de NIEUWE docent (de oude wordt bewust niet verwittigd).
+            notify(
+                db,
+                user_id=teacher.id,
+                message=f"Je bent aangeduid als docent-begeleider voor de stage van {student_name}.",
+                internship_id=internship.id,
+                link_view="logboek",
+            )
+            # Auditlog: wijziging van docent vastleggen (oude -> nieuwe id).
+            log_event(
+                db,
+                "internship.reassign_teacher",
+                user=current_user,
+                entity_type="internship",
+                entity_id=internship.id,
+                detail=f"Docent gewijzigd van id {old_teacher_id} naar {teacher.id} ({teacher.first_name} {teacher.last_name})",
+            )
+
     if update.mentor_id is not None:
         mentor = db.query(User).filter(User.id == update.mentor_id).first()
         if not mentor:
             raise HTTPException(status_code=400, detail="Mentor niet gevonden")
         if mentor.role != "mentor":
             raise HTTPException(status_code=400, detail="Gebruiker is geen mentor")
+
+        # Oude waarde onthouden zodat we alleen bij een echte wijziging reageren.
+        old_mentor_id = internship.mentor_id
         internship.mentor_id = update.mentor_id
+
+        # Alleen notificeren + loggen als de mentor effectief verandert.
+        if old_mentor_id != update.mentor_id:
+            # Notificatie naar de NIEUWE mentor.
+            notify(
+                db,
+                user_id=mentor.id,
+                message=f"Je bent aangeduid als mentor voor de stage van {student_name}.",
+                internship_id=internship.id,
+                link_view="logboek",
+            )
+            # Auditlog: wijziging van mentor vastleggen.
+            log_event(
+                db,
+                "internship.reassign_mentor",
+                user=current_user,
+                entity_type="internship",
+                entity_id=internship.id,
+                detail=f"Mentor gewijzigd van id {old_mentor_id} naar {mentor.id} ({mentor.first_name} {mentor.last_name})",
+            )
+
     if update.company_id is not None:
         internship.company_id = update.company_id
     if update.start_date is not None:

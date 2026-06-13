@@ -838,7 +838,91 @@ function showAdminAgreementDetail(internshipId) {
       : '';
   }
 
+  // Admin kan docent/mentor (her)toewijzen — in elke fase van de stage.
+  _renderAdminReassignSection(internshipId);
+
   if (detailPanel) detailPanel.style.display = 'block';
+}
+
+// Vult een <select> met gebruikers van een rol en selecteert eventueel de huidige persoon.
+// (Eigen helper voor de admin-view, zodat dit bestand niet afhangt van andere view-bestanden.)
+function _adminLoadSelect(id, role, emptyLabel, selectedId) {
+  UsersAPI.list(role).then(users => {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.innerHTML = `<option value="">${emptyLabel}</option>` +
+      users.map(u => {
+        const selected = (selectedId && u.id === selectedId) ? ' selected' : '';
+        return `<option value="${u.id}"${selected}>${u.first_name} ${u.last_name}</option>`;
+      }).join('');
+  }).catch(() => {
+    const select = document.getElementById(id);
+    if (select) select.innerHTML = `<option value="">Kon ${role}s niet laden</option>`;
+  });
+}
+
+// Toont in het admin-detailpaneel een blok om docent/mentor (her)toe te wijzen.
+// De overzichtslijst bevat geen docent/mentor, dus we halen de volledige stage op
+// om de huidige toewijzing te kunnen voorselecteren.
+function _renderAdminReassignSection(internshipId) {
+  const actions = document.getElementById('admin-agreement-actions');
+  if (!actions) return;
+
+  // Reassign-blok onderaan de bestaande acties toevoegen (we overschrijven niets).
+  const section = document.createElement('div');
+  section.className = 'reassign-form';
+  section.style.marginTop = '1.5rem';
+  section.style.paddingTop = '1rem';
+  section.style.borderTop = '1px solid var(--border, #ddd)';
+  section.innerHTML = `
+    <h4 style="margin-bottom: 0.75rem;">${iconHtml('users', 16)} Begeleiding wijzigen</h4>
+    <div class="row full" style="margin-bottom: 0.75rem;">
+      <label>Docent</label>
+      <select id="admin-reassign-teacher-select"><option value="">Laden...</option></select>
+    </div>
+    <div class="row full" style="margin-bottom: 0.75rem;">
+      <label>Mentor</label>
+      <select id="admin-reassign-mentor-select"><option value="">-- Geen mentor --</option></select>
+    </div>
+    <button id="btn-admin-reassign" class="btn">${iconHtml('check-circle', 14)} Wijzigingen opslaan</button>
+  `;
+  actions.appendChild(section);
+
+  // Volledige stage ophalen om de huidige docent/mentor voor te selecteren.
+  InternshipsAPI.get(internshipId).then(full => {
+    _adminLoadSelect('admin-reassign-teacher-select', 'teacher', '-- Geen docent --', full.teacher?.id);
+    _adminLoadSelect('admin-reassign-mentor-select', 'mentor', '-- Geen mentor --', full.mentor?.id);
+  }).catch(() => {
+    // Lukt het ophalen niet, dan tonen we de dropdowns zonder voorselectie.
+    _adminLoadSelect('admin-reassign-teacher-select', 'teacher', '-- Geen docent --', null);
+    _adminLoadSelect('admin-reassign-mentor-select', 'mentor', '-- Geen mentor --', null);
+  });
+
+  document.getElementById('btn-admin-reassign')?.addEventListener('click', () => adminReassignSupervisors(internshipId));
+}
+
+async function adminReassignSupervisors(internshipId) {
+  const teacherVal = document.getElementById('admin-reassign-teacher-select')?.value || '';
+  const mentorVal = document.getElementById('admin-reassign-mentor-select')?.value || '';
+
+  // Lege keuze = 'niet wijzigen'; we sturen enkel velden mee die een waarde hebben.
+  const data = {};
+  if (teacherVal) data.teacher_id = parseInt(teacherVal);
+  if (mentorVal) data.mentor_id = parseInt(mentorVal);
+
+  if (Object.keys(data).length === 0) {
+    showToast('Kies een docent of mentor om te wijzigen', 'warning');
+    return;
+  }
+
+  try {
+    await InternshipsAPI.update(internshipId, data);
+    showToast('Begeleiding bijgewerkt!', 'success');
+    // Detailpaneel opnieuw openen zodat de nieuwe toewijzing wordt voorgeselecteerd.
+    showAdminAgreementDetail(internshipId);
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
 }
 
 // Blootstellen aan window voor template onclick-handlers
