@@ -249,6 +249,24 @@ const InternshipsAPI = {
     const filename = `stage_rapport_${(studentName || 'student').replace(/\s+/g, '_').toLowerCase()}_${internshipId}.pdf`;
     return downloadFile(url, filename);
   },
+  // Wijzig stagegegevens (o.a. docent/mentor opnieuw toewijzen). Gebruikt PATCH /internships/{id}.
+  // De backend valideert dat de nieuwe gebruiker de juiste rol heeft. Status wordt hier niet gewijzigd.
+  update(id, data) {
+    return apiRequest(`/internships/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
+  // Zet een stage vroegtijdig stop (commissie/admin). Een reden is verplicht.
+  // Gebruikt POST /internships/{id}/terminate.
+  terminate(id, reason) {
+    return apiRequest(`/internships/${id}/terminate`, {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    });
+  },
+
   submitLogbook(logbookId) {
     return apiRequest(`/internships/logbooks/${logbookId}/submit`, {
       method: 'POST'

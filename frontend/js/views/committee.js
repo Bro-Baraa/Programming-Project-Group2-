@@ -86,7 +86,8 @@ function _renderReviewActions(internship) {
       const mentorId = document.getElementById('approve-mentor-select')?.value || null;
       doReview(internship.id, 'Goedgekeurd', teacherId, mentorId ? parseInt(mentorId) : null);
     });
-    document.getElementById('btn-reject')?.addEventListener('click', () => doReview(internship.id, 'Afkeurd'));
+    // 'Afgekeurd' moet exact overeenkomen met de backend-statusovergang (lifecycle.py).
+    document.getElementById('btn-reject')?.addEventListener('click', () => doReview(internship.id, 'Afgekeurd'));
     document.getElementById('btn-changes')?.addEventListener('click', () => doReview(internship.id, 'Aanpassingen Vereist'));
     return;
   }
@@ -207,6 +208,114 @@ async function renderCommitteeAgreements() {
   }
 }
 
+// Vult een <select> met gebruikers van een bepaalde rol en selecteert eventueel de huidige persoon.
+// Variant op _loadSelect die ook een reeds toegewezen waarde kan voorselecteren.
+function _loadSelectWithCurrent(id, role, emptyLabel, selectedId) {
+  UsersAPI.list(role).then(users => {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.innerHTML = `<option value="">${emptyLabel}</option>` +
+      users.map(u => {
+        const selected = (selectedId && u.id === selectedId) ? ' selected' : '';
+        return `<option value="${u.id}"${selected}>${u.first_name} ${u.last_name}</option>`;
+      }).join('');
+  }).catch(() => {
+    const select = document.getElementById(id);
+    if (select) select.innerHTML = `<option value="">Kon ${role}s niet laden</option>`;
+  });
+}
+
+// Toont het paneel om docent/mentor opnieuw toe te wijzen (US: wendbaarheid — opvolging kan wijzigen).
+// Alleen zichtbaar voor commissie en admin. Werkt in elke fase, ook bij een lopende stage.
+function _renderReassignSection(internship) {
+  const role = AuthAPI.getRole();
+  if (role !== 'committee' && role !== 'admin') return;
+
+  const container = document.getElementById('agreement-detail-content');
+  if (!container) return;
+
+  // Eigen blok toevoegen onderaan het detailpaneel (we raken de bestaande inhoud niet aan).
+  const section = document.createElement('div');
+  section.className = 'reassign-form';
+  section.style.marginTop = '1.5rem';
+  section.style.paddingTop = '1rem';
+  section.style.borderTop = '1px solid var(--border, #ddd)';
+  // Een stage stopzetten kan enkel als ze nog niet in een eindstatus zit.
+  const canTerminate = !['Afgerond', 'Stopgezet', 'Afgekeurd'].includes(internship.status);
+  const terminateHtml = canTerminate
+    ? `<button id="btn-terminate" class="btn danger" style="margin-top: 0.75rem;">${iconHtml('x-circle', 14)} Stage stopzetten</button>`
+    : '';
+
+  section.innerHTML = `
+    <h4 style="margin-bottom: 0.75rem;">${iconHtml('users', 16)} Begeleiding wijzigen</h4>
+    <div class="row full" style="margin-bottom: 0.75rem;">
+      <label>Docent</label>
+      <select id="reassign-teacher-select"><option value="">Laden...</option></select>
+    </div>
+    <div class="row full" style="margin-bottom: 0.75rem;">
+      <label>Mentor</label>
+      <select id="reassign-mentor-select"><option value="">-- Geen mentor --</option></select>
+    </div>
+    <button id="btn-reassign" class="btn">${iconHtml('check-circle', 14)} Wijzigingen opslaan</button>
+    ${terminateHtml}
+  `;
+  container.appendChild(section);
+
+  // Dropdowns vullen en huidige toewijzing voorselecteren.
+  _loadSelectWithCurrent('reassign-teacher-select', 'teacher', '-- Geen docent --', internship.teacher?.id);
+  _loadSelectWithCurrent('reassign-mentor-select', 'mentor', '-- Geen mentor --', internship.mentor?.id);
+
+  document.getElementById('btn-reassign')?.addEventListener('click', () => reassignSupervisors(internship.id));
+  document.getElementById('btn-terminate')?.addEventListener('click', () => terminateInternship(internship.id));
+}
+
+async function reassignSupervisors(internshipId) {
+  const teacherVal = document.getElementById('reassign-teacher-select')?.value || '';
+  const mentorVal = document.getElementById('reassign-mentor-select')?.value || '';
+
+  // Lege keuze betekent 'niet wijzigen' — we sturen alleen velden mee die een waarde hebben.
+  const data = {};
+  if (teacherVal) data.teacher_id = parseInt(teacherVal);
+  if (mentorVal) data.mentor_id = parseInt(mentorVal);
+
+  if (Object.keys(data).length === 0) {
+    showToast('Kies een docent of mentor om te wijzigen', 'warning');
+    return;
+  }
+
+  try {
+    await InternshipsAPI.update(internshipId, data);
+    showToast('Begeleiding bijgewerkt!', 'success');
+    // Data verversen zodat de nieuwe toewijzing overal klopt.
+    allInternships = await loadAllInternships();
+    showAgreementDetailPanel(internshipId);
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// Zet een stage vroegtijdig stop. Vraagt eerst een reden (verplicht).
+async function terminateInternship(internshipId) {
+  // prompt() dient meteen als bevestiging én als invoer van de reden.
+  // Annuleren (null) of een lege reden stopt de actie.
+  const reason = window.prompt('Reden om deze stage stop te zetten (verplicht):');
+  if (reason === null) return; // gebruiker annuleerde
+  if (!reason.trim()) {
+    showToast('Een reden is verplicht om de stage stop te zetten', 'warning');
+    return;
+  }
+
+  try {
+    await InternshipsAPI.terminate(internshipId, reason.trim());
+    showToast('Stage stopgezet', 'info');
+    // Data verversen (status wordt Stopgezet) en detail opnieuw tonen.
+    allInternships = await loadAllInternships();
+    showAgreementDetailPanel(internshipId);
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
 function showAgreementDetailPanel(internshipId) {
   const internship = allInternships.find(i => i.id === internshipId);
   if (!internship) return;
@@ -245,6 +354,9 @@ function showAgreementDetailPanel(internshipId) {
       showValidation: true,
     });
     attachAgreementDownload(internship.id);
+
+    // Begeleiding-wijzigen paneel toevoegen (alleen commissie/admin, in elke fase).
+    _renderReassignSection(internship);
 
     const actionsDiv = document.getElementById('agreement-actions');
     if (actionsDiv) {

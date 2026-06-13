@@ -33,6 +33,7 @@ function getStatusClass(status) {
     'approved': 'status-good',
     'afgekeurd': 'status-bad',
     'rejected': 'status-bad',
+    'stopgezet': 'status-bad',
     'onvolledig': 'status-warn',
     'niet-ingediend': 'status-warn',
   };
