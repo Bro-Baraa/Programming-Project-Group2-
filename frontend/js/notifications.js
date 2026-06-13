@@ -12,6 +12,7 @@ const NotificationsAPI = {
 
 let _pollInterval = null;
 let _dropdownOpen = false;
+let _isVisible = true;
 
 function initNotifications() {
   const wrapper = document.getElementById('notif-wrapper');
@@ -62,10 +63,22 @@ function initNotifications() {
         items[prev]?.focus();
       }
     });
+
+    // Pause polling when tab is hidden (P1 fix)
+    document.addEventListener('visibilitychange', () => {
+      _isVisible = !document.hidden;
+      if (_isVisible) {
+        fetchAndRender();
+      }
+    });
   }
 
   fetchAndRender();
-  _pollInterval = setInterval(fetchAndRender, 30_000);
+  _pollInterval = setInterval(() => {
+    if (_isVisible) {
+      fetchAndRender();
+    }
+  }, 30_000);
 }
 
 function destroyNotifications() {
