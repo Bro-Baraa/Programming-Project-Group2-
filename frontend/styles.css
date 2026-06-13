@@ -2112,7 +2112,7 @@ body.login-active {
   }
 
   .nav-stage-selector select {
-    background: rgba(30, 30, 46, 0.6);
+    background-color: rgba(30, 30, 46, 0.6);
     border-color: rgba(255, 255, 255, 0.1);
     color: #e0e0e0;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
@@ -2313,10 +2313,14 @@ body.login-active {
   }
 
   /* Status pills */
-  .status-info { background: rgba(0, 121, 140, 0.2); }
-  .status-warn { background: rgba(224, 159, 62, 0.2); }
-  .status-good { background: rgba(60, 157, 120, 0.2); }
-  .status-bad { background: rgba(214, 40, 57, 0.2); }
+  .status-info { background: rgba(0, 121, 140, 0.25); color: #5ec4e0; }
+  .status-warn { background: rgba(224, 159, 62, 0.25); color: #f0c060; }
+  .status-good { background: rgba(60, 157, 120, 0.25); color: #6ed4a8; }
+  .status-bad { background: rgba(214, 40, 57, 0.25); color: #f08080; }
+  .table-card .status-info { background: rgba(0, 121, 140, 0.25); color: #5ec4e0; }
+  .table-card .status-warn { background: rgba(224, 159, 62, 0.25); color: #f0c060; }
+  .table-card .status-good { background: rgba(60, 157, 120, 0.25); color: #6ed4a8; }
+  .table-card .status-bad { background: rgba(214, 40, 57, 0.25); color: #f08080; }
 
   /* Readonly inputs */
   textarea[readonly],
