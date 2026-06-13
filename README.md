@@ -100,6 +100,7 @@ API_PORT=8001
 | Auth | `POST /auth/login`, `GET /auth/me` |
 | Internships | `GET /internships`, `POST /internships` |
 | Proposals | `PATCH /internships/{id}/proposal`, `POST /internships/{id}/resubmit` |
+| Internship beheer | `PATCH /internships/{id}` (docent/mentor herToewijzen), `POST /internships/{id}/terminate` (stage stopzetten) |
 | Agreements | `POST /internships/{id}/agreement`, `PATCH /internships/{id}/agreement` |
 | Logbooks | `GET /internships/{id}/logbooks`, `POST /internships/{id}/logbooks` |
 | Evaluations | `GET /internships/{id}/evaluations`, `POST /internships/{id}/evaluations` |

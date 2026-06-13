@@ -72,6 +72,8 @@ Datum: 2026-06-06
 | US-25 | Administratie beheert competenties en gewichten | OK | Volledige CRUD: CompetencyProfile + Competency endpoints. Gewichten-validatie (som = 100%). Actief/inactief toggelen. `Internship.competency_profile_id` kopieert actief profiel bij aanmaak. | Admin competentiebeheer: toevoegen, verwijderen, gewichten zien, score simulator. | Profiel wordt gekopieerd naar stage bij aanmaak; historische stages ongewijzigd bij profielwijziging. Evaluaties gebruiken stage-profiel. |
 | US-27 | Administratie beheert gebruikers | OK | Volledige CRUD: `GET /users`, `GET /users/{id}`, `POST /users`, `PATCH /users/{id}`, `DELETE /users/{id}`. Alleen admin toegang. | Admin UI bestaat (`admin-gebruikers-template`); `renderUserManager()` in `admin.js` implementeert volledige CRUD met zoeken, paginatie, en formulier. | - |
 | US-28 | Administratie exporteert rapportages | OK | `GET /internships/reports/export/csv` endpoint retourneert CSV met stage-overzicht. Geen extra dependencies nodig. | Admin overeenkomsten-view heeft "Exporteer CSV" knop. Downloadt UTF-8 CSV met student, bedrijf, status, docent, mentor, voorstel- en overeenkomst-status. | CSV is minimale viable export; voldoet aan requirement voor eerstejaarsproject. |
+| US-30 | Commissie/admin wijzigt de toegewezen docent of mentor van een stage | OK | `PATCH /internships/{id}` valideert de rol van de nieuwe persoon, notificeert hem/haar en logt `internship.reassign_teacher` / `internship.reassign_mentor` (enkel bij echte wijziging). | "Begeleiding wijzigen"-paneel met voorgeselecteerde huidige docent/mentor in `committee.js` en `admin.js`. | Wendbaarheid: opvolging kan wijzigen, ook tijdens een lopende stage. |
+| US-31 | Commissie/admin zet een stage vroegtijdig stop | OK | `POST /internships/{id}/terminate` + `terminate_internship()` in `lifecycle.py`. Nieuwe eindstatus `Stopgezet`, verplichte reden, auditlog `internship.terminate`, notificaties naar student/mentor/docent. | "Stage stopzetten"-knop met redenprompt in `committee.js` en `admin.js`; rode `Stopgezet` status-pill. | Wendbaarheid: stage kan abrupt anders verlopen. Eindstatus, niet omkeerbaar via de UI. |
 
 ## Overkoepelend
 
@@ -85,7 +87,7 @@ Datum: 2026-06-06
 
 | Status | Aantal |
 |--------|--------|
-| OK | 29 |
+| OK | 31 |
 | BE-OK | 0 |
 | PART | 0 |
 | BUG | 0 |

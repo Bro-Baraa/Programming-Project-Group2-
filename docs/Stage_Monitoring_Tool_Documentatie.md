@@ -163,6 +163,9 @@ toegangsmogelijkheden. Een gebruiker heeft altijd precies één rol.
 
 - Voegt feedback toe bij de beslissing.
 
+- Kan de toegewezen docent of mentor van een stage wijzigen en een stage
+  vroegtijdig stopzetten (gedeeld met de admin).
+
 ## 2.3 Docent
 
 > *Rol: teacher --- Begeleidt studenten tijdens hun stage en voert
@@ -203,7 +206,11 @@ toegangsmogelijkheden. Een gebruiker heeft altijd precies één rol.
 
 - Beheert competentieprofielen en competenties
 
-- Koppelt studenten aan docenten en mentors
+- Koppelt studenten aan docenten en mentors, en kan de toegewezen docent of
+  mentor van een lopende stage wijzigen wanneer de begeleiding verandert
+
+- Kan een stage vroegtijdig stopzetten (met verplichte reden) wanneer ze
+  abrupt anders verloopt
 
 - Bekijkt de audit-log (wie deed wat, en wanneer)
 
@@ -348,6 +355,29 @@ Alle acties in het systeem worden bijgehouden in een auditlog: wie deed
 wat, op welk tijdstip, en vanuit welk IP-adres. Dit is enkel
 toegankelijk voor de admin en dient als beveiliging en traceerbaarheid.
 
+## 3.12 Wendbaarheid: begeleiding wijzigen en stage stopzetten
+
+De opleiding moet snel kunnen inspelen op veranderingen tijdens een
+stage. De applicatie ondersteunt hiervoor twee acties, beide enkel
+beschikbaar voor de stagecommissie en de admin:
+
+- **Begeleiding wijzigen:** de toegewezen docent of mentor van een stage
+  kan op elk moment worden aangepast, ook wanneer de stage al loopt
+  (bijvoorbeeld wanneer een docent wegvalt of een mentor binnen het
+  bedrijf verandert). De nieuw toegewezen persoon krijgt automatisch een
+  notificatie en de wijziging wordt vastgelegd in de auditlog. De vorige
+  begeleider wordt niet verwittigd.
+
+- **Stage vroegtijdig stopzetten:** wanneer een stage abrupt anders
+  verloopt (student stopt, bedrijf trekt zich terug, ...) kan de stage
+  worden stopgezet. Een reden is hierbij verplicht. De stage krijgt de
+  eindstatus "Stopgezet", de student, mentor en docent ontvangen een
+  notificatie, en de actie wordt met reden in de auditlog bewaard. Een
+  stopgezette stage is een eindstatus en kan niet verder doorlopen.
+
+Beide acties gebeuren via het detailpaneel van een stage in het
+Overeenkomsten-overzicht van de commissie en de admin.
+
 # 4. Database
 
 De applicatie gebruikt SQLite als standaard database. De structuur wordt
@@ -436,6 +466,8 @@ Hieronder een overzicht van de mogelijke statuswaarden per entiteit:
 - Afgekeurd: voorstel definitief afgekeurd
 
 - Afgerond: stage volledig afgerond
+
+- Stopgezet: stage vroegtijdig stopgezet (eindstatus, met reden in de auditlog)
 
 **Stagevoorstel (proposal.status)**
 
@@ -725,6 +757,12 @@ de Authorization-header is verplicht, tenzij anders vermeld.
 
   PATCH         /internships/{id}/agreement     Overeenkomst valideren (teacher)
 
+  PATCH         /internships/{id}               Stagegegevens wijzigen, o.a. docent/
+                                                mentor (her)toewijzen (commissie/admin)
+
+  POST          /internships/{id}/terminate     Stage vroegtijdig stopzetten met reden
+                                                (commissie/admin)
+
   GET           /internships/{id}/logbooks      Logboeken ophalen
 
   POST          /internships/{id}/logbooks      Nieuw logboek aanmaken (student)
@@ -757,7 +795,10 @@ logboeken, competentiegerichte evaluaties, notificaties en rapportage.
 De applicatie is modulair opgebouwd en kan later uitgebreid worden.
 Vooral het flexibele competentiesysteem is belangrijk, omdat de
 opleiding evaluatiecriteria kan aanpassen zonder de evaluatiestructuur
-hard te coderen.
+hard te coderen. Daarnaast kan de opleiding ook tijdens een lopende
+stage ingrijpen: de begeleiding (docent/mentor) kan worden gewijzigd en
+een stage kan vroegtijdig worden stopgezet wanneer ze abrupt anders
+verloopt. Beide acties worden genotificeerd en in de auditlog bewaard.
 
 De belangrijkste aandachtspunten voor verdere ontwikkeling zijn betere
 export naar PDF/Excel, cloudopslag voor documenten, e-mailnotificaties

@@ -135,9 +135,24 @@ Jury-boodschap: *"Wendbaar: competenties wijzigen zonder codewijziging. Audit tr
 
 ---
 
+## Stap 11: Admin - Begeleiding wijzigen + stage stopzetten
+
+**Actie:** Blijf ingelogd als "Systeem Beheerder (admin)" (of gebruik commissie).
+**Wat te tonen:**
+- Tab "Overeenkomsten" → klik "Bekijken" bij een lopende stage
+- Onderaan: paneel "Begeleiding wijzigen" met de huidige docent/mentor al voorgeselecteerd
+- Wissel de mentor (of docent) → "Wijzigingen opslaan" → toast bevestigt, de nieuwe begeleider krijgt een notificatie
+- Klik daarna "Stage stopzetten" → vul een reden in (bv. "Student stopt met de opleiding") → bevestig
+- Status wordt rood "Stopgezet"; student, mentor en docent krijgen een melding
+- Tab "Audit Log" → toon de events `internship.reassign_mentor` en `internship.terminate` met reden
+
+Jury-boodschap: *"De opleiding kan tijdens een lopende stage ingrijpen wanneer de opvolging wijzigt of de stage abrupt anders verloopt — alles getraceerd en met notificaties."*
+
+---
+
 ## Slot - Samenvatting
 
-"Dit is een volledig end-to-end stage monitoring tool. Van voorstel tot evaluatie, met 5 rollen, audit logging, notificaties, en configureerbare competenties. Alle 29 user stories zijn geïmplementeerd."
+"Dit is een volledig end-to-end stage monitoring tool. Van voorstel tot evaluatie, met 5 rollen, audit logging, notificaties, en configureerbare competenties. Alle user stories zijn geïmplementeerd, inclusief het wendbaar wijzigen van de begeleiding en het vroegtijdig stopzetten van een stage."
 
 ---
 

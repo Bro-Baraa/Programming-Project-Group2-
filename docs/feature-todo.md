@@ -18,6 +18,8 @@ Dit document bevat de features die nog moeten worden geïmplementeerd om de requ
 | **Notificatiesysteem** | ✅ Volledig | `models.py`: `Notification`. `services/notifications.py`: `notify()`. `routers/notifications.py`: CRUD. Frontend: `notifications.js` bell-icoontje + dropdown. Triggers in `lifecycle.py` |
 | **Competentieprofiel koppelen aan Stage** | ✅ Volledig | `models.py`: `Internship.competency_profile_id`. `lifecycle.py`: kopieert actief profiel bij stage-aanmaak. `evaluations.py`: gebruikt stage-profiel, niet systeem-default. Historische stages ongewijzigd bij profielwijziging |
 | **"Ontbrekend" status Logboeken (frontend)** | ✅ Volledig | Frontend: `student.js`, `mentor.js`, `teacher.js` renderen `missing`-weeks met `status-warn` / `status-missing` CSS. `index.html` legenda aanwezig |
+| **Begeleiding wijzigen (docent/mentor herToewijzen)** | ✅ Volledig | Backend: `PATCH /internships/{id}` in `internships.py` valideert rol, notificeert de nieuwe begeleider en logt `internship.reassign_teacher` / `internship.reassign_mentor` (enkel bij echte wijziging). Frontend: "Begeleiding wijzigen"-paneel in `committee.js` en `admin.js`, werkt in elke fase incl. lopende stage. |
+| **Stage vroegtijdig stopzetten** | ✅ Volledig | Backend: `POST /internships/{id}/terminate` + `terminate_internship()` in `lifecycle.py`, nieuwe eindstatus `Stopgezet` in `_TRANSITIONS`, verplichte reden, auditlog `internship.terminate`, notificaties naar student/mentor/docent. Frontend: "Stage stopzetten"-knop met redenprompt in `committee.js` en `admin.js`; `Stopgezet` als rode status-pill in `ui-helpers.js`. |
 
 ### Echt nog ontbrekend
 
