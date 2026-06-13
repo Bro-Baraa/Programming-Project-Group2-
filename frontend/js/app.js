@@ -348,6 +348,13 @@ async function renderView() {
     tab.setAttribute('tabindex', isActive ? '0' : '-1');
   });
 
+  // Announce tab change for screen readers (A5 fix)
+  const announcer = document.getElementById('tab-announcer');
+  if (announcer) {
+    const viewName = view.charAt(0).toUpperCase() + view.slice(1);
+    announcer.textContent = `Navigatie: ${viewName} tab geactiveerd`;
+  }
+
   const loadingOverlay = document.createElement('div');
   loadingOverlay.className = 'loading-overlay';
   const spinner = document.createElement('span');

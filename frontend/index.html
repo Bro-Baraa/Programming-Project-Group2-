@@ -30,7 +30,7 @@
       <div class="notif-wrapper" id="notif-wrapper" style="display:none;">
         <button class="notif-bell" id="notif-bell" aria-label="Notificaties" aria-expanded="false" aria-controls="notif-dropdown">
           <img src="icons/bell.svg" alt="" width="20" height="20" />
-          <span class="notif-dot" id="notif-dot" style="display:none;"></span>
+          <span class="notif-dot" id="notif-dot" style="display:none;" aria-label="Nieuwe notificatie"></span>
         </button>
         <div class="notif-dropdown" id="notif-dropdown" style="display:none;">
           <div class="notif-header">
@@ -47,6 +47,7 @@
   </header>
 
   <nav class="nav-bar" id="nav-panel" style="display: none;">
+    <div id="tab-announcer" aria-live="polite" aria-atomic="true" class="sr-only"></div>
     <ul class="nav-tabs" id="view-tabs"></ul>
     <div class="nav-stage-selector" id="internship-selector-wrapper" style="display: none;">
       <label for="internship-select">Stage</label>
@@ -74,15 +75,17 @@
             <label for="login-email">E-mailadres</label>
             <div class="input-with-icon">
               <img src="icons/user.svg" alt="" width="16" height="16" class="icon-img" />
-              <input type="email" id="login-email" required placeholder="naam@school.be" autocomplete="email" aria-describedby="login-error" />
+              <input type="email" id="login-email" required placeholder="naam@school.be" autocomplete="email" aria-describedby="login-email-error" />
             </div>
+            <p class="field-error" id="login-email-error" role="alert" aria-live="polite"></p>
           </div>
           <div class="field-group">
             <label for="login-password">Wachtwoord</label>
             <div class="input-with-icon">
               <img src="icons/lock.svg" alt="" width="16" height="16" class="icon-img" />
-              <input type="password" id="login-password" required placeholder="••••••" autocomplete="current-password" aria-describedby="login-error" minlength="8" />
+              <input type="password" id="login-password" required placeholder="••••••" autocomplete="current-password" aria-describedby="login-password-error" minlength="8" />
             </div>
+            <p class="field-error" id="login-password-error" role="alert" aria-live="polite"></p>
           </div>
           <button type="submit" class="login-btn"><img src="icons/lock.svg" alt="" width="16" height="16" class="icon-img" /> Inloggen</button>
           <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
@@ -124,6 +127,7 @@
       <article class="panel card">
         <h2>Logboeken Overzicht (Laatste 14 dagen)</h2>
         <table>
+          <caption>Logboeken overzicht van de laatste 14 dagen</caption>
           <thead>
             <tr>
               <th>Dag</th>
@@ -223,9 +227,9 @@
       <p class="hint">Klik op een dag om het logboek te bewerken of in te vullen. Groen = ingediend, oranje = concept.</p>
       <div id="logbook-day-grid" class="day-grid"></div>
       <div id="logbook-legend" style="margin-top: 0.75rem; display: flex; gap: 1rem; font-size: 0.8rem;">
-        <span><span class="dot" style="background:var(--good);"></span> Ingediend</span>
-        <span><span class="dot" style="background:var(--warn);"></span> Concept</span>
-        <span><span class="dot" style="background:var(--ink-soft);"></span> Ontbrekend</span>
+        <span><span class="dot" style="background:var(--good);" aria-label="Groen: ingediend"></span> Ingediend</span>
+        <span><span class="dot" style="background:var(--warn);" aria-label="Oranje: concept"></span> Concept</span>
+        <span><span class="dot" style="background:var(--ink-soft);" aria-label="Grijs: ontbrekend"></span> Ontbrekend</span>
       </div>
     </div>
 
@@ -262,6 +266,7 @@
     <div class="panel card">
       <h2>Mijn Evaluaties</h2>
       <table>
+        <caption>Overzicht van evaluaties</caption>
         <thead>
           <tr>
             <th>Type</th>
@@ -320,6 +325,7 @@
       <h2>Stagevoorstellen Beoordelen</h2>
       <p class="hint">Klik op een rij om een voorstel te selecteren en te beoordelen. Je kan goedkeuren, afkeuren of aanpassingen vragen.</p>
       <table id="proposals-table">
+        <caption>Overzicht van stagevoorstellen ter beoordeling</caption>
         <thead>
           <tr>
             <th>Student</th>
@@ -362,6 +368,7 @@
       <h2>Overeenkomsten Beoordelen</h2>
       <p class="hint">Controleer of de overeenkomst is opgeladen en markeer de verzekering als in orde. Alleen studenten met een goedgekeurd voorstel kunnen een overeenkomst uploaden.</p>
       <table id="agreements-table">
+        <caption>Overzicht van stageovereenkomsten ter beoordeling</caption>
         <thead>
           <tr>
             <th>Student</th>
@@ -397,6 +404,7 @@
     <div class="panel card">
       <h2>Alle Stages - Overzicht</h2>
       <table id="committee-overview-table">
+        <caption>Overzicht van alle stages</caption>
         <thead>
           <tr>
             <th>Student</th>
@@ -437,6 +445,7 @@
       <h2>Logboeken Opvolging</h2>
       <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te bekijken.</p>
       <table id="teacher-logbooks-table">
+        <caption>Overzicht van logboeken voor opvolging</caption>
         <thead>
           <tr>
             <th>Week</th>
@@ -510,6 +519,7 @@
       <h2>Wekelijkse Validatie</h2>
       <p class="hint">Selecteer een stage via het navigatiemenu om logboeken te valideren.</p>
       <table id="mentor-logbooks-table">
+        <caption>Overzicht van logboeken voor validatie</caption>
         <thead>
           <tr>
             <th>Week</th>
@@ -639,6 +649,7 @@
       </div>
       <p class="hint">Overzicht van alle studenten en hun overeenkomststatus. Alleen studenten met een goedgekeurd voorstel worden getoond.</p>
       <table id="admin-agreements-table">
+        <caption>Overzicht van alle stageovereenkomsten</caption>
         <thead>
           <tr>
             <th>Student</th>
@@ -691,6 +702,7 @@
       </div>
 
       <table id="audit-table">
+        <caption>Audit log overzicht van alle systeemacties</caption>
         <thead>
           <tr>
             <th>Tijdstip</th>
@@ -735,6 +747,7 @@
 
       <div id="user-list-container">
         <table id="users-table">
+          <caption>Overzicht van alle gebruikers</caption>
           <thead>
             <tr>
               <th>Naam</th>
