@@ -41,6 +41,8 @@ jobs:
           flake8 backend/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Run pytest
+        env:
+          SECRET_KEY: ${{ secrets.SECRET_KEY || 'ci-dev-secret-key-change-me-in-production' }}
         run: |
           cd backend
           pytest
