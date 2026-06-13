@@ -62,7 +62,7 @@ def decode_token(token: str) -> Optional[dict]:
 async def get_current_user(
     request: Request,
     token: Optional[str] = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

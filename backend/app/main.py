@@ -48,6 +48,7 @@ app.add_middleware(
     max_age=600,
 )
 
+
 # Security headers middleware
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
@@ -69,6 +70,7 @@ async def security_headers(request: Request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
+
 
 _rate_limit = {}
 

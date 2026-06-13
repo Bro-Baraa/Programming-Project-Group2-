@@ -256,7 +256,7 @@ def get_week_overview(
         if not week_num and lb.entry_date:
             days_diff = (lb.entry_date - internship.start_date).days
             week_num = (days_diff // 7) + 1
-        
+
         if week_num:
             logbook_map[week_num] = lb
 
@@ -285,4 +285,3 @@ def get_week_overview(
             )
 
     return result
-

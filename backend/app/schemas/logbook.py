@@ -41,7 +41,6 @@ class LogbookWeekStatus(BaseModel):
     mentor_feedback: Optional[str] = None
 
 
-
 class LogbookResponse(LogbookBase):
     model_config = ConfigDict(from_attributes=True)
 

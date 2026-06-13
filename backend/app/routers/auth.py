@@ -44,7 +44,8 @@ def _load_seed_emails() -> set:
 @router.post("/login", response_model=Token)
 def login(
     response: Response,
-    form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user:
@@ -140,8 +141,7 @@ class DemoLoginRequest(BaseModel):
 
 @router.post("/demo-login", response_model=Token)
 def demo_login(
-    response: Response,
-    request: DemoLoginRequest, db: Session = Depends(get_db)
+    response: Response, request: DemoLoginRequest, db: Session = Depends(get_db)
 ):
     """
     One-click login for demo accounts. No password required.
