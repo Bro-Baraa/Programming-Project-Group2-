@@ -120,7 +120,11 @@ async function handleLogin(e) {
     const data = await AuthAPI.login(email, password);
     hideLoading(submitBtn);
     showToast(`Welkom, ${data.user.first_name}!`, 'success');
-    window.location.href = 'index.html';
+    // SPA navigation instead of full page reload (U1 fix)
+    const url = new URL(window.location.href);
+    url.searchParams.delete('view');
+    window.history.replaceState({}, '', url);
+    renderMainApp();
   } catch (error) {
     console.error('[DEBUG] Login error in handleLogin:', error.message);
     hideLoading(submitBtn);
@@ -139,7 +143,11 @@ function handleLogout() {
   destroyNotifications();
   AuthAPI.logout();
   showToast('Uitgelogd', 'info');
-  window.location.href = 'index.html?view=login';
+  // SPA navigation instead of full page reload (U1 fix)
+  const url = new URL(window.location.href);
+  url.searchParams.set('view', 'login');
+  window.history.replaceState({}, '', url);
+  renderLogin();
 }
 
 function renderLogin() {
@@ -361,7 +369,18 @@ async function renderView() {
   spinner.className = 'loading-spinner';
   loadingOverlay.appendChild(spinner);
   loadingOverlay.appendChild(document.createTextNode(' Laden...'));
+  // Timeout message for loading (U2 fix)
+  const timeoutMsg = document.createElement('p');
+  timeoutMsg.className = 'loading-timeout';
+  timeoutMsg.style.cssText = 'margin-top: 1rem; color: var(--ink-soft); font-size: 0.9rem; display: none;';
+  timeoutMsg.textContent = 'Dit duurt langer dan verwacht. Controleer je internetverbinding of probeer het later opnieuw.';
+  loadingOverlay.appendChild(timeoutMsg);
   content.replaceChildren(loadingOverlay);
+
+  // Show timeout message after 10 seconds
+  const loadingTimeout = setTimeout(() => {
+    if (timeoutMsg) timeoutMsg.style.display = 'block';
+  }, 10000);
 
   const key = view ? `${role}-${view}` : role;
   const templateId = templates[key] || templates[role];
@@ -413,6 +432,7 @@ async function renderView() {
 
     if (gen !== _renderGeneration) return;
 
+    clearTimeout(loadingTimeout);
     content.textContent = '';
     const tpl = document.getElementById(templateId);
     if (tpl) {

@@ -344,8 +344,10 @@ label {
   outline-offset: 3px;
 }
 .hero {
-  border: 1px solid var(--border);
-  background: #ffffff;
+  border: 2px solid var(--accent-2);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(0, 121, 140, 0.08) 100%);
+  box-shadow: 0 4px 12px rgba(0, 121, 140, 0.15);
+  padding: 1.5rem;
 }
 
 .task-card { border: 1px solid var(--border); }

@@ -2,18 +2,22 @@
 
 Tests the complete end-to-end flow: proposal → review → agreement → logbook → evaluation → final report.
 
-Run with:
-  python3 /Users/juanbenjumea/.agents/skills/webapp-testing/scripts/with_server.py \
-    --server "cd /Users/juanbenjumea/coding/projects/Programming-Project-Group2- && cd backend && uv run uvicorn app.main:app --port 8001" \
-    --port 8001 --timeout 20 \
-    -- uv run python e2e_full_flow.py
+Requires a running server that serves both the API and the frontend.
+Override the target with E2E_BASE_URL (default http://localhost:8001):
+
+  # start the server from the backend dir, with a seeded database
+  SECRET_KEY=... uvicorn app.main:app --port 8001
+
+  # then run the flow
+  E2E_BASE_URL=http://localhost:8001 python e2e_full_flow.py
 """
 
+import os
 import sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 
-BASE_URL = "http://localhost:8001"
+BASE_URL = os.environ.get("E2E_BASE_URL", "http://localhost:8001")
 
 # Helper: create a tiny dummy PDF for file upload
 DUMMY_PDF = b"%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n/Pages 2 0 R\n>>\nendobj\n2 0 obj\n<<\n/Type /Pages\n/Kids [3 0 R]\n/Count 1\n>>\nendobj\n3 0 obj\n<<\n/Type /Page\n/Parent 2 0 R\n/MediaBox [0 0 612 792]\n>>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\ntrailer\n<<\n/Size 4\n/Root 1 0 R\n>>\nstartxref\n174\n%%EOF\n"
@@ -87,14 +91,15 @@ def test_us01_us02_us10_us11_student_submits_proposal_committee_reviews():
                     page.wait_for_timeout(1000)
                     break
 
-            # Check detail panel
-            panel = page.locator("#proposal-detail-panel")
-            if panel.count() > 0 and panel.is_visible():
-                content = panel.inner_text()
+            # Review surface is a modal (UB3) with a panel fallback for older UIs
+            review = page.locator("#proposal-review-modal")
+            if review.count() == 0:
+                review = page.locator("#proposal-detail-panel")
+
+            if review.count() > 0 and review.is_visible():
+                content = review.inner_text()
                 assert (
-                    "Beoordeling" in content
-                    or "Beoordeling" in content
-                    or "Student" in content
+                    "Beoordeling" in content or "Student" in content
                 ), "Proposal detail not shown"
 
                 # Check review buttons exist
@@ -104,6 +109,14 @@ def test_us01_us02_us10_us11_student_submits_proposal_committee_reviews():
                     print("✓ US-11: Committee can review (approve/reject)")
                 else:
                     print("⚠ US-11: No review buttons found (already reviewed?)")
+
+                # If it's the modal, the close control should dismiss it cleanly
+                close_btn = page.locator("#btn-close-review")
+                if close_btn.count() > 0:
+                    close_btn.click()
+                    page.wait_for_timeout(400)
+                    assert not review.is_visible(), "Review modal did not close"
+                    print("✓ UB3: Review modal opens and closes")
             else:
                 print("⚠ US-11: No selectable proposal found")
         else:

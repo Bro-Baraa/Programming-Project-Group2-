@@ -343,22 +343,27 @@
       </table>
     </div>
 
-    <div id="proposal-detail-panel" class="panel card" style="display: none;">
-      <h2>Beoordeling: <span id="selected-student-name">Student</span></h2>
-      <p><strong>Bedrijf:</strong> <span id="selected-company">-</span></p>
-      <p><strong>Status:</strong> <span id="selected-status">-</span></p>
-      <p><strong>Omschrijving:</strong></p>
-      <div id="selected-description" style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">-</div>
+    <!-- Proposal Review Modal (UB3 fix) -->
+    <div id="proposal-review-modal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="proposal-review-title">
+      <div class="modal-overlay"></div>
+      <div class="modal-card">
+        <h2 id="proposal-review-title">Beoordeling: <span id="selected-student-name">Student</span></h2>
+        <p><strong>Bedrijf:</strong> <span id="selected-company">-</span></p>
+        <p><strong>Status:</strong> <span id="selected-status">-</span></p>
+        <p><strong>Omschrijving:</strong></p>
+        <div id="selected-description" style="background: rgba(0,0,0,0.03); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">-</div>
 
-      <div class="btn-group" id="review-actions" style="margin-bottom: 1rem;">
-        <button id="btn-approve" class="btn success"><img src="icons/check-circle.svg" alt="" width="14" height="14" class="icon-img" /> Goedkeuren</button>
-        <button id="btn-reject" class="btn danger"><img src="icons/x-circle.svg" alt="" width="14" height="14" class="icon-img" /> Afkeuren</button>
-        <button id="btn-changes" class="btn secondary"><img src="icons/alert-circle.svg" alt="" width="14" height="14" class="icon-img" /> Aanpassingen Vereist</button>
-      </div>
+        <div class="btn-group" id="review-actions" style="margin-bottom: 1rem;">
+          <button id="btn-approve" class="btn success"><img src="icons/check-circle.svg" alt="" width="14" height="14" class="icon-img" /> Goedkeuren</button>
+          <button id="btn-reject" class="btn danger"><img src="icons/x-circle.svg" alt="" width="14" height="14" class="icon-img" /> Afkeuren</button>
+          <button id="btn-changes" class="btn secondary"><img src="icons/alert-circle.svg" alt="" width="14" height="14" class="icon-img" /> Aanpassingen Vereist</button>
+        </div>
 
-      <div id="feedback-section">
-        <label>Feedback voor student</label>
-        <textarea id="feedback-box" rows="4" placeholder="Voer hier je feedback in..."></textarea>
+        <div id="feedback-section">
+          <label>Feedback voor student</label>
+          <textarea id="feedback-box" rows="4" placeholder="Voer hier je feedback in..."></textarea>
+        </div>
+        <button id="btn-close-review" class="btn secondary" style="margin-top: 1rem;"><img src="icons/x-circle.svg" alt="" width="14" height="14" class="icon-img" /> Sluiten</button>
       </div>
     </div>
   </template>

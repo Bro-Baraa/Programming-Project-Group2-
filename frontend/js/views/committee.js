@@ -108,8 +108,12 @@ function selectProposalForReview(internshipId) {
     r.style.background = r.dataset.id == internshipId ? 'rgba(0, 121, 140, 0.1)' : '';
   });
 
-  const panel = document.getElementById('proposal-detail-panel');
-  if (panel) panel.style.display = 'block';
+  const modal = document.getElementById('proposal-review-modal');
+  if (modal) {
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    wireReviewModalClose(modal);
+  }
 
   _setText('selected-student-name', `${internship.student?.first_name || ''} ${internship.student?.last_name || ''}`);
   _setText('selected-company', internship.company?.name || 'Onbekend');
@@ -125,6 +129,17 @@ function selectProposalForReview(internshipId) {
   });
 
   _renderReviewActions(internship);
+}
+
+function wireReviewModalClose(modal) {
+  if (modal.dataset.closeWired) return;
+  modal.dataset.closeWired = '1';
+  const close = () => {
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  };
+  document.getElementById('btn-close-review')?.addEventListener('click', close);
+  modal.querySelector('.modal-overlay')?.addEventListener('click', close);
 }
 
 async function doReview(internshipId, decision, teacherId = null, mentorId = null) {
