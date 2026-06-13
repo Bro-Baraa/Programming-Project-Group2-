@@ -5,6 +5,7 @@ These endpoints allow the frontend to populate dropdowns
 and to resolve user IDs to names across the app.
 """
 
+import os
 from typing import List, Optional, Annotated
 from pathlib import Path
 
@@ -20,6 +21,10 @@ from app.dependencies import pagination
 from app.services.audit import log_event
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+# Quick-login dropdown is a demo convenience; disable it in production by
+# setting ENABLE_SEED_LOGIN=false.
+SEED_LOGIN_ENABLED = os.getenv("ENABLE_SEED_LOGIN", "true").lower() == "true"
 
 
 def _load_seed_users() -> list[dict]:
@@ -47,7 +52,9 @@ def _load_seed_users() -> list[dict]:
 
 @router.get("/seed", response_model=list[SeedUser])
 def get_seed_users():
-    """Return test accounts from seed_data.yaml for the quick-login dropdown."""
+    """Return demo test accounts for the quick-login dropdown."""
+    if not SEED_LOGIN_ENABLED:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     return _load_seed_users()
 
 

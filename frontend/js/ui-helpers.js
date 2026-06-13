@@ -131,18 +131,24 @@ function showToast(message, type = "success", duration = 3000) {
   const toast = document.createElement("div");
   toast.className = `toast-notification toast-${type}`;
   toast.setAttribute('role', 'status');
-  const icons = {
-    success: iconHtml('check-circle', 16),
-    error: iconHtml('x-circle', 16),
-    warning: iconHtml('alert-circle', 16),
-    info: iconHtml('alert-circle', 16)
-  };
 
-  toast.innerHTML = `
-    <span class="toast-icon">${icons[type] || "•"}</span>
-    <span class="toast-message">${escapeHtml(message)}</span>
-    <button class="toast-close" onclick="this.parentElement.remove()">${iconHtml('x-circle', 14)}</button>
-  `;
+  const iconSpan = document.createElement('span');
+  iconSpan.className = 'toast-icon';
+  const iconNames = { success: 'check-circle', error: 'x-circle', warning: 'alert-circle', info: 'alert-circle' };
+  iconSpan.innerHTML = iconHtml(iconNames[type] || 'alert-circle', 16);
+
+  const messageSpan = document.createElement('span');
+  messageSpan.className = 'toast-message';
+  messageSpan.textContent = message;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'toast-close';
+  closeBtn.innerHTML = iconHtml('x-circle', 14);
+  closeBtn.addEventListener('click', () => toast.remove());
+
+  toast.appendChild(iconSpan);
+  toast.appendChild(messageSpan);
+  toast.appendChild(closeBtn);
 
   toastRegion.appendChild(toast);
   requestAnimationFrame(() => toast.classList.add("show"));

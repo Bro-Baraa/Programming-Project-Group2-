@@ -1,44 +1,25 @@
 const API_BASE_URL = '/api';
 
-function safeStorage(key, value = undefined) {
-  try {
-    if (value === undefined) {
-      return localStorage.getItem(key);
-    }
-    if (value === null) {
-      localStorage.removeItem(key);
-    } else {
-      localStorage.setItem(key, value);
-    }
-  } catch {
-    return null;
-  }
-}
-
-function getToken() {
-  return safeStorage('stageMonitoringToken');
-}
-
-function setToken(token) {
-  safeStorage('stageMonitoringToken', token || null);
-}
-
-function getCurrentUser() {
-  const json = safeStorage('stageMonitoringUser');
-  if (!json) return null;
-  try {
-    return JSON.parse(json);
-  } catch {
-    safeStorage('stageMonitoringUser', null);
-    return null;
-  }
-}
-
-function setCurrentUser(user) {
-  safeStorage('stageMonitoringUser', user ? JSON.stringify(user) : null);
-}
-
+// User data in sessionStorage - cleared when browser closes (safer than localStorage)
+const _SESSION_KEY = 'stageUser';
 let _redirectingToLogin = false;
+
+function _getUser() {
+  try {
+    const json = sessionStorage.getItem(_SESSION_KEY);
+    return json ? JSON.parse(json) : null;
+  } catch {
+    return null;
+  }
+}
+
+function _setUser(user) {
+  if (user) {
+    sessionStorage.setItem(_SESSION_KEY, JSON.stringify(user));
+  } else {
+    sessionStorage.removeItem(_SESSION_KEY);
+  }
+}
 
 function formatError(error) {
   if (Array.isArray(error.detail)) {
@@ -55,17 +36,13 @@ async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
 
   const config = {
+    credentials: 'include', // Send cookies with every request
     headers: {
       'Content-Type': 'application/json',
       ...options.headers
     },
     ...options
   };
-
-  const token = getToken();
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
-  }
 
   if (options.body instanceof FormData) {
     delete config.headers['Content-Type'];
@@ -84,8 +61,7 @@ async function apiRequest(endpoint, options = {}) {
     if (response.status === 401) {
       if (!_redirectingToLogin) {
         _redirectingToLogin = true;
-        setToken(null);
-        setCurrentUser(null);
+        _setUser(null);
         window.location.href = 'index.html?view=login';
       }
       throw new Error('Sessie verlopen, opnieuw inloggen...');
@@ -104,7 +80,12 @@ async function apiRequest(endpoint, options = {}) {
 async function _postAuth(url, body, headers) {
   let response;
   try {
-    response = await fetch(url, { method: 'POST', headers, body });
+    response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      body
+    });
   } catch {
     throw new Error('Kan geen verbinding maken met de server. Is de backend gestart?');
   }
@@ -120,8 +101,7 @@ async function _postAuth(url, body, headers) {
   }
 
   const data = await response.json();
-  setToken(data.access_token);
-  setCurrentUser(data.user);
+  _setUser(data.user);
   return data;
 }
 
@@ -153,20 +133,28 @@ const AuthAPI = {
   },
 
   logout() {
-    setToken(null);
-    setCurrentUser(null);
+    _setUser(null);
+    // Call backend to clear cookie
+    fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    }).catch(() => {});
   },
 
   isLoggedIn() {
-    return !!getToken();
+    return !!_getUser();
   },
 
   getUser() {
-    return getCurrentUser();
+    return _getUser();
+  },
+
+  setUser(user) {
+    _setUser(user);
   },
 
   getRole() {
-    const user = getCurrentUser();
+    const user = _getUser();
     return user ? user.role : null;
   }
 };
@@ -399,7 +387,7 @@ const EvaluationRulesAPI = {
 
 async function downloadFile(url, fallbackFilename = null) {
   const response = await fetch(url, {
-    headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {}
+    credentials: 'include'
   });
   if (!response.ok) {
     throw new Error(`Download failed: ${response.status}`);

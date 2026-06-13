@@ -1,5 +1,6 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+import os
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -21,6 +22,10 @@ from app.services.audit import log_event
 router = APIRouter(prefix="/auth", tags=["auth"])
 logger = logging.getLogger(__name__)
 
+# Cookies are sent only over HTTPS by default. Set COOKIE_SECURE=false to test
+# the cookie flow over plain http (e.g. local dev / e2e on localhost).
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() == "true"
+
 
 def _load_seed_emails() -> set:
     """Load seed user emails from seed_data.yaml for demo-login validation."""
@@ -38,6 +43,7 @@ def _load_seed_emails() -> set:
 
 @router.post("/login", response_model=Token)
 def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)
 ):
     user = db.query(User).filter(User.email == form_data.username).first()
@@ -85,6 +91,16 @@ def login(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+        max_age=int(access_token_expires.total_seconds()),
+        path="/",
+    )
+
     return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 
@@ -123,7 +139,10 @@ class DemoLoginRequest(BaseModel):
 
 
 @router.post("/demo-login", response_model=Token)
-def demo_login(request: DemoLoginRequest, db: Session = Depends(get_db)):
+def demo_login(
+    response: Response,
+    request: DemoLoginRequest, db: Session = Depends(get_db)
+):
     """
     One-click login for demo accounts. No password required.
     Restricted to pre-seeded demo users.
@@ -171,9 +190,32 @@ def demo_login(request: DemoLoginRequest, db: Session = Depends(get_db)):
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+        max_age=int(access_token_expires.total_seconds()),
+        path="/",
+    )
+
     return {"access_token": access_token, "token_type": "bearer", "user": user}
 
 
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_active_user)):
     return current_user
+
+
+@router.post("/logout")
+def logout(response: Response):
+    """Clear the httpOnly cookie on logout."""
+    response.delete_cookie(
+        key="access_token",
+        path="/",
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+    )
+    return {"message": "Uitgelogd"}

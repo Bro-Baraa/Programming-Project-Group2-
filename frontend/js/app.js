@@ -657,15 +657,30 @@ function formatReportRows(rules) {
   }).join('');
 }
 
-function init() {
+async function init() {
   const urlParams = new URLSearchParams(window.location.search);
   const view = urlParams.get('view');
 
-  if (view === 'login' || !AuthAPI.isLoggedIn()) {
+  if (view === 'login') {
     renderLogin();
-  } else {
+  } else if (AuthAPI.isLoggedIn()) {
+    // User data in sessionStorage, render immediately
     updateUIForUser(AuthAPI.getUser());
     renderMainApp();
+  } else {
+    // Check if we have a valid cookie session
+    try {
+      const user = await AuthAPI.getMe();
+      if (user) {
+        AuthAPI.setUser(user); // Store in sessionStorage
+        updateUIForUser(user);
+        renderMainApp();
+      } else {
+        renderLogin();
+      }
+    } catch {
+      renderLogin();
+    }
   }
 
   document.getElementById('internship-select')?.addEventListener('change', handleInternshipChange);
