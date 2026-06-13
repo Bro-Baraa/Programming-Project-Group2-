@@ -270,6 +270,15 @@ const InternshipsAPI = {
     });
   },
 
+  // Zet een stage vroegtijdig stop (commissie/admin). Een reden is verplicht.
+  // Gebruikt POST /internships/{id}/terminate.
+  terminate(id, reason) {
+    return apiRequest(`/internships/${id}/terminate`, {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    });
+  },
+
   submitLogbook(logbookId) {
     return apiRequest(`/internships/logbooks/${logbookId}/submit`, {
       method: 'POST'

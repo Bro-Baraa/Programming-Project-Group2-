@@ -73,7 +73,7 @@ def get_dashboard_stats(db: Session, current_user) -> DashboardStats:
 def get_agreement_status_report(db: Session, current_user) -> List[AgreementStatusItem]:
     query = db.query(Internship).filter(
         Internship.status.in_(
-            ["Goedgekeurd", "Overeenkomst Ingediend", "Lopend", "Afgerond"]
+            ["Goedgekeurd", "Overeenkomst Ingediend", "Lopend", "Afgerond", "Stopgezet"]
         )
     )
     query = _apply_role_filter(query, current_user)

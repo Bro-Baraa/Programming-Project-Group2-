@@ -839,7 +839,7 @@ function showAdminAgreementDetail(internshipId) {
   }
 
   // Admin kan docent/mentor (her)toewijzen — in elke fase van de stage.
-  _renderAdminReassignSection(internshipId);
+  _renderAdminReassignSection(internshipId, item.status);
 
   if (detailPanel) detailPanel.style.display = 'block';
 }
@@ -864,7 +864,7 @@ function _adminLoadSelect(id, role, emptyLabel, selectedId) {
 // Toont in het admin-detailpaneel een blok om docent/mentor (her)toe te wijzen.
 // De overzichtslijst bevat geen docent/mentor, dus we halen de volledige stage op
 // om de huidige toewijzing te kunnen voorselecteren.
-function _renderAdminReassignSection(internshipId) {
+function _renderAdminReassignSection(internshipId, currentStatus) {
   const actions = document.getElementById('admin-agreement-actions');
   if (!actions) return;
 
@@ -874,6 +874,13 @@ function _renderAdminReassignSection(internshipId) {
   section.style.marginTop = '1.5rem';
   section.style.paddingTop = '1rem';
   section.style.borderTop = '1px solid var(--border, #ddd)';
+
+  // Een stage stopzetten kan enkel als ze nog niet in een eindstatus zit.
+  const canTerminate = !['Afgerond', 'Stopgezet', 'Afgekeurd'].includes(currentStatus);
+  const terminateHtml = canTerminate
+    ? `<button id="btn-admin-terminate" class="btn danger" style="margin-top: 0.75rem;">${iconHtml('x-circle', 14)} Stage stopzetten</button>`
+    : '';
+
   section.innerHTML = `
     <h4 style="margin-bottom: 0.75rem;">${iconHtml('users', 16)} Begeleiding wijzigen</h4>
     <div class="row full" style="margin-bottom: 0.75rem;">
@@ -885,6 +892,7 @@ function _renderAdminReassignSection(internshipId) {
       <select id="admin-reassign-mentor-select"><option value="">-- Geen mentor --</option></select>
     </div>
     <button id="btn-admin-reassign" class="btn">${iconHtml('check-circle', 14)} Wijzigingen opslaan</button>
+    ${terminateHtml}
   `;
   actions.appendChild(section);
 
@@ -899,6 +907,7 @@ function _renderAdminReassignSection(internshipId) {
   });
 
   document.getElementById('btn-admin-reassign')?.addEventListener('click', () => adminReassignSupervisors(internshipId));
+  document.getElementById('btn-admin-terminate')?.addEventListener('click', () => adminTerminateInternship(internshipId));
 }
 
 async function adminReassignSupervisors(internshipId) {
@@ -919,6 +928,30 @@ async function adminReassignSupervisors(internshipId) {
     await InternshipsAPI.update(internshipId, data);
     showToast('Begeleiding bijgewerkt!', 'success');
     // Detailpaneel opnieuw openen zodat de nieuwe toewijzing wordt voorgeselecteerd.
+    showAdminAgreementDetail(internshipId);
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// Zet een stage vroegtijdig stop. Vraagt eerst een reden (verplicht).
+async function adminTerminateInternship(internshipId) {
+  // prompt() dient meteen als bevestiging én als invoer van de reden.
+  // Annuleren (null) of een lege reden stopt de actie.
+  const reason = window.prompt(
+    'Reden om deze stage stop te zetten (verplicht):'
+  );
+  if (reason === null) return; // gebruiker annuleerde
+  if (!reason.trim()) {
+    showToast('Een reden is verplicht om de stage stop te zetten', 'warning');
+    return;
+  }
+
+  try {
+    await InternshipsAPI.terminate(internshipId, reason.trim());
+    showToast('Stage stopgezet', 'info');
+    // Lijst verversen (status verandert naar Stopgezet) en detail opnieuw tonen.
+    await renderAdminAgreements();
     showAdminAgreementDetail(internshipId);
   } catch (error) {
     showToast(error.message, 'error');

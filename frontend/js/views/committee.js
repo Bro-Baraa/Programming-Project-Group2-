@@ -225,6 +225,12 @@ function _renderReassignSection(internship) {
   section.style.marginTop = '1.5rem';
   section.style.paddingTop = '1rem';
   section.style.borderTop = '1px solid var(--border, #ddd)';
+  // Een stage stopzetten kan enkel als ze nog niet in een eindstatus zit.
+  const canTerminate = !['Afgerond', 'Stopgezet', 'Afgekeurd'].includes(internship.status);
+  const terminateHtml = canTerminate
+    ? `<button id="btn-terminate" class="btn danger" style="margin-top: 0.75rem;">${iconHtml('x-circle', 14)} Stage stopzetten</button>`
+    : '';
+
   section.innerHTML = `
     <h4 style="margin-bottom: 0.75rem;">${iconHtml('users', 16)} Begeleiding wijzigen</h4>
     <div class="row full" style="margin-bottom: 0.75rem;">
@@ -236,6 +242,7 @@ function _renderReassignSection(internship) {
       <select id="reassign-mentor-select"><option value="">-- Geen mentor --</option></select>
     </div>
     <button id="btn-reassign" class="btn">${iconHtml('check-circle', 14)} Wijzigingen opslaan</button>
+    ${terminateHtml}
   `;
   container.appendChild(section);
 
@@ -244,6 +251,7 @@ function _renderReassignSection(internship) {
   _loadSelectWithCurrent('reassign-mentor-select', 'mentor', '-- Geen mentor --', internship.mentor?.id);
 
   document.getElementById('btn-reassign')?.addEventListener('click', () => reassignSupervisors(internship.id));
+  document.getElementById('btn-terminate')?.addEventListener('click', () => terminateInternship(internship.id));
 }
 
 async function reassignSupervisors(internshipId) {
@@ -264,6 +272,28 @@ async function reassignSupervisors(internshipId) {
     await InternshipsAPI.update(internshipId, data);
     showToast('Begeleiding bijgewerkt!', 'success');
     // Data verversen zodat de nieuwe toewijzing overal klopt.
+    allInternships = await loadAllInternships();
+    showAgreementDetailPanel(internshipId);
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// Zet een stage vroegtijdig stop. Vraagt eerst een reden (verplicht).
+async function terminateInternship(internshipId) {
+  // prompt() dient meteen als bevestiging én als invoer van de reden.
+  // Annuleren (null) of een lege reden stopt de actie.
+  const reason = window.prompt('Reden om deze stage stop te zetten (verplicht):');
+  if (reason === null) return; // gebruiker annuleerde
+  if (!reason.trim()) {
+    showToast('Een reden is verplicht om de stage stop te zetten', 'warning');
+    return;
+  }
+
+  try {
+    await InternshipsAPI.terminate(internshipId, reason.trim());
+    showToast('Stage stopgezet', 'info');
+    // Data verversen (status wordt Stopgezet) en detail opnieuw tonen.
     allInternships = await loadAllInternships();
     showAgreementDetailPanel(internshipId);
   } catch (error) {

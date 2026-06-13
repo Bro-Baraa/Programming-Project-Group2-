@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_
 
@@ -41,6 +42,7 @@ VALID_STATUSES = {
     "Overeenkomst Ingediend",
     "Lopend",
     "Afgerond",
+    "Stopgezet",
 }
 
 _EAGER_LOADS = [
@@ -51,6 +53,14 @@ _EAGER_LOADS = [
     joinedload(Internship.proposal),
     joinedload(Internship.agreement),
 ]
+
+
+class TerminateRequest(BaseModel):
+    """Body voor het vroegtijdig stopzetten van een stage. Reden is verplicht."""
+
+    reason: str = Field(
+        ..., min_length=1, description="Reden waarom de stage wordt stopgezet"
+    )
 
 
 @router.get("", response_model=List[InternshipListResponse])
@@ -298,3 +308,23 @@ def update_internship(
     db.commit()
     db.refresh(internship)
     return internship
+
+
+@router.post("/{internship_id}/terminate", response_model=InternshipResponse)
+def terminate_internship(
+    internship_id: int,
+    data: TerminateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_any_staff),
+):
+    """Zet een stage vroegtijdig stop (commissie/admin). Reden is verplicht.
+
+    De lifecycle-service controleert de rol, de toegestane statusovergang,
+    logt de actie in de auditlog en verwittigt de betrokkenen.
+    """
+    lifecycle = InternshipLifecycle(db, _CONFIG)
+    return lifecycle.terminate_internship(
+        internship_id=internship_id,
+        actor=current_user,
+        reason=data.reason,
+    )

@@ -27,10 +27,11 @@ _TRANSITIONS: dict[str, set[str]] = {
     "Ingediend": {"In Beoordeling"},
     "In Beoordeling": {"Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist"},
     "Aanpassingen Vereist": {"In Beoordeling"},
-    "Goedgekeurd": {"Overeenkomst Ingediend"},
-    "Overeenkomst Ingediend": {"Lopend", "Overeenkomst Ingediend"},
-    "Lopend": {"Afgerond", "Overeenkomst Ingediend"},
+    "Goedgekeurd": {"Overeenkomst Ingediend", "Stopgezet"},
+    "Overeenkomst Ingediend": {"Lopend", "Overeenkomst Ingediend", "Stopgezet"},
+    "Lopend": {"Afgerond", "Overeenkomst Ingediend", "Stopgezet"},
     "Afgerond": set(),  # terminal state
+    "Stopgezet": set(),  # terminal state — stage vroegtijdig beëindigd
 }
 
 
@@ -667,6 +668,79 @@ class InternshipLifecycle:
                 message="De stage is afgerond.",
                 internship_id=internship.id,
                 link_view="logboek",
+            )
+
+        self.db.commit()
+        self.db.refresh(internship)
+        return internship
+
+    def terminate_internship(
+        self,
+        *,
+        internship_id: int,
+        actor: User,
+        reason: str,
+    ) -> Internship:
+        """Zet een stage vroegtijdig stop (bv. student stopt, bedrijf trekt zich terug).
+
+        Alleen commissie en admin mogen dit. Een reden is verplicht en wordt
+        vastgelegd in de auditlog. De betrokkenen (student, mentor, docent)
+        krijgen een notificatie. 'Stopgezet' is een eindstatus.
+        """
+        self._assert_role(actor, {"committee", "admin"})
+
+        internship = self._get_internship_or_404(internship_id)
+        self._assert_access(actor, internship)
+
+        # Reden is verplicht — zonder reden mag een stage niet stopgezet worden.
+        if not reason or not reason.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Een reden is verplicht om een stage stop te zetten",
+            )
+
+        # Controleer of de overgang naar 'Stopgezet' is toegestaan vanuit de huidige status
+        # (kan vanuit Goedgekeurd, Overeenkomst Ingediend of Lopend).
+        self._assert_transition(internship.status, "Stopgezet")
+        internship.status = "Stopgezet"
+
+        # Auditlog: leg vast wie de stage stopzette en waarom.
+        from app.services.audit import log_event
+
+        log_event(
+            self.db,
+            "internship.terminate",
+            user=actor,
+            entity_type="internship",
+            entity_id=internship.id,
+            detail=f"Stage vroegtijdig stopgezet. Reden: {reason.strip()}",
+        )
+
+        # Notificatie naar de student (met de opgegeven reden).
+        notify(
+            self.db,
+            user_id=internship.student_id,
+            message=f"Je stage is vroegtijdig stopgezet. Reden: {reason.strip()}",
+            internship_id=internship.id,
+            link_view="dashboard",
+        )
+        # Notificatie naar de mentor, indien toegewezen.
+        if internship.mentor_id:
+            notify(
+                self.db,
+                user_id=internship.mentor_id,
+                message="De stage is vroegtijdig stopgezet door de opleiding.",
+                internship_id=internship.id,
+                link_view="logboek",
+            )
+        # Notificatie naar de docent-begeleider, indien toegewezen.
+        if internship.teacher_id:
+            notify(
+                self.db,
+                user_id=internship.teacher_id,
+                message="De stage is vroegtijdig stopgezet door de opleiding.",
+                internship_id=internship.id,
+                link_view="opvolging",
             )
 
         self.db.commit()
