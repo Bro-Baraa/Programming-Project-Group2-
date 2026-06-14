@@ -135,6 +135,8 @@ Een stage doorloopt verschillende fasen:
 5. **Lopend** → Stage is actief
 6. **Afgerond** → Stage is klaar, evaluaties definitief
 
+> Daarnaast kan een stage vanuit **Goedgekeurd**, **Overeenkomst Ingediend** of **Lopend** vroegtijdig **Stopgezet** worden door de commissie of admin. Dit is een eindstatus en vereist een verplichte reden (zie de gebruikersdocumentatie §3.12).
+
 ### Kernentiteit: de Stage
 
 De Stage is het middelpunt. Alles hangt eraan vast:

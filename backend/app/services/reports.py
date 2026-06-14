@@ -38,6 +38,7 @@ def get_dashboard_stats(db: Session, current_user) -> DashboardStats:
     rejected = base_query.filter(Internship.status == "Afgekeurd").count()
     ongoing = base_query.filter(Internship.status == "Lopend").count()
     completed = base_query.filter(Internship.status == "Afgerond").count()
+    terminated = base_query.filter(Internship.status == "Stopgezet").count()
 
     internship_ids = [i.id for i in base_query.all()]
     if internship_ids:
@@ -65,6 +66,7 @@ def get_dashboard_stats(db: Session, current_user) -> DashboardStats:
         rejected=rejected,
         ongoing=ongoing,
         completed=completed,
+        terminated=terminated,
         agreements_received=agreements_received,
         agreements_pending=agreements_received - agreements_validated,
     )

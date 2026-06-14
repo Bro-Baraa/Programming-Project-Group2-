@@ -167,7 +167,7 @@ async function renderCommitteeAgreements() {
     const tbody = document.querySelector('#agreements-table tbody');
 
     if (tbody) {
-      const agreementStatuses = ['Goedgekeurd', 'Overeenkomst Ingediend', 'Lopend', 'Afgerond'];
+      const agreementStatuses = ['Goedgekeurd', 'Overeenkomst Ingediend', 'Lopend', 'Afgerond', 'Stopgezet'];
       const stagesWithAgreements = allInternships.filter(
         i => agreementStatuses.includes(i.status) || i.agreement_uploaded
       );
@@ -410,6 +410,7 @@ async function renderCommitteeOverview() {
         <li>Goedgekeurd: ${stats.approved}</li>
         <li>In behandeling: ${stats.pending_approval}</li>
         <li>Afgekeurd: ${stats.rejected}</li>
+        <li>Stopgezet: ${stats.terminated ?? 0}</li>
       `;
     }
     if (statElements[1]) {

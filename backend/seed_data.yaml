@@ -159,6 +159,27 @@ users:
     role: student
     is_active: true
 
+  - email: student9@school.be
+    password: demo123
+    first_name: Nora
+    last_name: El Idrissi
+    role: student
+    is_active: true
+
+  - email: student10@school.be
+    password: demo123
+    first_name: Daan
+    last_name: Vermeulen
+    role: student
+    is_active: true
+
+  - email: student11@school.be
+    password: demo123
+    first_name: Yasmine
+    last_name: Bogaert
+    role: student
+    is_active: true
+
   # --- Student (inactive) ---
   - email: student6@school.be
     password: demo123
@@ -718,9 +739,9 @@ internships:
     company: MobileFirst
     teacher: docent2@school.be
     mentor: d.ongena@mobilefirst.be
-    status: Lopend
-    start_date: -20
-    end_date: +70
+    status: Overeenkomst Ingediend
+    start_date: +10
+    end_date: +100
     proposal:
       status: Goedgekeurd
       feedback: "Mooi project rond React Native. Zorg ervoor dat state management goed beschreven staat in je technisch dossier."
@@ -730,17 +751,6 @@ internships:
       insurance: false
       file_path: uploads/agreements/student8_mobilefirst.pdf
       uploaded_at: -22
-    logbooks:
-      count: 3
-      all_submitted: false
-      all_validated: false
-    evaluations:
-      - type: tussentijds
-        status: concept
-        finalized: false
-        score: null
-        comments: "Zelfevaluatie in voorbereiding."
-        evaluator: student8@school.be
     feedback:
       - from: docent2@school.be
         to: student8@school.be
@@ -751,3 +761,86 @@ internships:
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student8_mobilefirst.pdf
+
+  # ==========================================================================
+  # STUDENT 9: Nora El Idrissi (Stage vroegtijdig stopgezet)
+  # ==========================================================================
+  - student: student9@school.be
+    company: E-Com Solutions
+    teacher: docent2@school.be
+    mentor: mentor1@school.be
+    status: Stopgezet
+    start_date: -30
+    end_date: +60
+    proposal:
+      status: Goedgekeurd
+      feedback: "Boeiend e-commerce project met een Shopify-integratie. Goedgekeurd, succes!"
+      revision_count: 0
+    agreement:
+      status: Gevalideerd
+      insurance: true
+      file_path: uploads/agreements/student9_ecom.pdf
+      uploaded_at: -35
+      validated_at: -32
+    logbooks:
+      count: 3
+      all_submitted: true
+      all_validated: true
+    evaluations: []
+    feedback:
+      - from: docent2@school.be
+        to: student9@school.be
+        message: "Nora, jammer dat je stage vroegtijdig stopgezet werd. Neem zeker contact op met de stagecoördinator om de verdere stappen te bespreken."
+    documents:
+      - doc_type: agreement
+        file_path: uploads/agreements/student9_ecom.pdf
+
+  # ==========================================================================
+  # STUDENT 10: Daan Vermeulen (Voorstel in beoordeling)
+  # ==========================================================================
+  - student: student10@school.be
+    company: CloudScale NV
+    teacher: null
+    mentor: null
+    status: In Beoordeling
+    start_date: +20
+    end_date: +110
+    proposal:
+      status: In Beoordeling
+      feedback: null
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: commissie1@school.be
+        to: student10@school.be
+        message: "Dag Daan, we hebben je voorstel rond cloud infrastructuur in behandeling genomen. Je hoort binnenkort van ons."
+    documents: []
+
+  # ==========================================================================
+  # STUDENT 11: Yasmine Bogaert (Voorstel vraagt aanpassingen)
+  # ==========================================================================
+  - student: student11@school.be
+    company: DevOps Masters
+    teacher: null
+    mentor: null
+    status: Aanpassingen Vereist
+    start_date: +25
+    end_date: +115
+    proposal:
+      status: Aanpassingen Vereist
+      feedback: "Het onderwerp is goed gekozen, maar de scope is momenteel te breed. Baken de CI/CD-doelstellingen concreter af en herwerk het tijdsplan voordat je opnieuw indient."
+      revision_count: 1
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: commissie1@school.be
+        to: student11@school.be
+        message: "Dag Yasmine, je voorstel werd nagekeken. Bekijk de feedback en dien een aangepaste versie in."
+    documents: []
