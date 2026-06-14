@@ -511,7 +511,11 @@ async function renderView() {
       firstHeading.focus({ preventScroll: true });
     }
 
-    if (needsInternshipData && !currentInternship && !content.querySelector('.error-message')) {
+    // NOTE: the 'voorstel' view is intentionally excluded here. wireProposalForm()
+    // already renders the submit form for a student who has no internship yet;
+    // showing the generic empty-state would overwrite that form (and its link just
+    // reloads back to ?view=voorstel, trapping the user in a loop).
+    if (needsInternshipData && view !== 'voorstel' && !currentInternship && !content.querySelector('.error-message')) {
       const emptyDiv = document.createElement('div');
       emptyDiv.className = 'panel card info-message';
       emptyDiv.innerHTML = `
