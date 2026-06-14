@@ -6,6 +6,18 @@ Stagevolgsysteem voor Toegepaste Informatica (Erasmus Hogeschool Brussel).
 
 ---
 
+## Demo
+
+Video's die de applicatie in actie tonen:
+
+| # | Demo | Link |
+|---|------|------|
+| 1 | Installatie & opstarten | [Bekijk video](https://youtu.be/hzRFF7YV1s4) |
+| 2 | Volledige rondleiding | [Bekijk video](https://youtu.be/Ul0cZwO2a4Q) |
+| 3 | Stagevoorstel indienen | [Bekijk video](https://youtu.be/-PMWk7rEaf4) |
+
+---
+
 ## Installatie & opstarten
 
 ### Optie 1 — `start.py` (aanbevolen, Windows & Linux)
