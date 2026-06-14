@@ -111,7 +111,7 @@ function selectProposalForReview(internshipId) {
 
   const modal = document.getElementById('proposal-review-modal');
   if (modal) {
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     wireReviewModalClose(modal);
   }

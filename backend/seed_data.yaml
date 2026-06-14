@@ -179,7 +179,6 @@ users:
     last_name: Bogaert
     role: student
     is_active: true
-
   # --- Student (inactive) ---
   - email: student6@school.be
     password: demo123
@@ -751,6 +750,8 @@ internships:
       insurance: false
       file_path: uploads/agreements/student8_mobilefirst.pdf
       uploaded_at: -22
+    logbooks: null
+    evaluations: []
     feedback:
       - from: docent2@school.be
         to: student8@school.be

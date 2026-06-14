@@ -189,6 +189,7 @@ def get_me_dashboard(db: Session, current_user: User) -> MeDashboardResponse:
         stats.rejected = _count(lambda x: x.internship.status == "Afgekeurd")
         stats.ongoing = _count(lambda x: x.internship.status == "Lopend")
         stats.completed = _count(lambda x: x.internship.status == "Afgerond")
+        stats.stopped = _count(lambda x: x.internship.status == "Stopgezet")
         stats.agreements_received = _count(lambda x: x.agreement_uploaded)
         stats.agreements_pending = _count(
             lambda x: x.internship.status in ("Goedgekeurd", "Overeenkomst Ingediend")

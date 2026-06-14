@@ -470,6 +470,10 @@ Hieronder een overzicht van de mogelijke statuswaarden per entiteit:
 
 - Ingediend: voorstel ingediend, nog niet goedgekeurd
 
+- In Beoordeling: voorstel wordt beoordeeld door de stagecommissie
+
+- Aanpassingen Vereist: voorstel moet aangepast en opnieuw ingediend worden
+
 - Goedgekeurd: voorstel goedgekeurd, wacht op overeenkomst
 
 - Overeenkomst Ingediend: overeenkomst geüpload, wacht op validatie
@@ -485,6 +489,8 @@ Hieronder een overzicht van de mogelijke statuswaarden per entiteit:
 **Stagevoorstel (proposal.status)**
 
 - Ingediend
+
+- In Beoordeling
 
 - Goedgekeurd
 

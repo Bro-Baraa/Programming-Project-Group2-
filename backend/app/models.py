@@ -9,6 +9,7 @@ from sqlalchemy import (
     Text,
     Float,
     CheckConstraint,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -245,6 +246,7 @@ class Competency(Base):
 
     __table_args__ = (
         CheckConstraint("weight > 0", name="ck_competency_weight_positive"),
+        UniqueConstraint("profile_id", "name", name="uq_competency_profile_name"),
     )
 
     id = Column(Integer, primary_key=True, index=True)

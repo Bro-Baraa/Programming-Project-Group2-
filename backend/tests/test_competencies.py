@@ -90,6 +90,36 @@ class TestCompetencyCreation:
         assert response.status_code == 400
         assert "already exists" in response.json()["detail"]
 
+    def test_repeated_create_request_does_not_duplicate(
+        self, client, auth_headers_admin, sample_competencies, db
+    ):
+        """Repeated submits should leave only one competency per profile/name."""
+        from app.models import Competency
+
+        profile_id = sample_competencies[0].profile_id
+        competency_data = {
+            "name": "  Planning  ",
+            "weight": 10.0,
+            "profile_id": profile_id,
+        }
+
+        first = client.post(
+            "/api/competencies", json=competency_data, headers=auth_headers_admin
+        )
+        second = client.post(
+            "/api/competencies", json=competency_data, headers=auth_headers_admin
+        )
+
+        assert first.status_code == 201
+        assert first.json()["name"] == "Planning"
+        assert second.status_code == 400
+        assert (
+            db.query(Competency)
+            .filter(Competency.profile_id == profile_id, Competency.name == "Planning")
+            .count()
+            == 1
+        )
+
 
 class TestCompetencyUpdate:
     """Test competency updates (admin only)."""

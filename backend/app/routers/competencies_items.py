@@ -1,10 +1,12 @@
 """Competency item CRUD endpoints."""
 
+from threading import Lock
 from typing import List, Optional, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 from app.auth import get_current_active_user, require_admin
 from app.database import get_db
@@ -20,6 +22,8 @@ from app.dependencies import pagination
 from app.services.audit import log_event
 
 router = APIRouter()
+
+_competency_create_lock = Lock()
 
 
 @router.get("", response_model=List[CompetencyWithProfileResponse])
@@ -78,31 +82,43 @@ def create_competency(
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    existing = (
-        db.query(Competency)
-        .filter(
-            Competency.profile_id == data.profile_id,
-            Competency.name == data.name,
+    name = data.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Competency name is required")
+
+    with _competency_create_lock:
+        existing = (
+            db.query(Competency)
+            .filter(
+                Competency.profile_id == data.profile_id,
+                Competency.name == name,
+            )
+            .first()
         )
-        .first()
-    )
-    if existing:
-        raise HTTPException(
-            status_code=400,
-            detail="Competency with this name already exists in the profile",
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="Competency with this name already exists in the profile",
+            )
+
+        competency = Competency(
+            profile_id=data.profile_id,
+            name=name,
+            description=data.description,
+            weight=data.weight,
+            active=True,
         )
 
-    competency = Competency(
-        profile_id=data.profile_id,
-        name=data.name,
-        description=data.description,
-        weight=data.weight,
-        active=True,
-    )
-
-    db.add(competency)
-    db.commit()
-    db.refresh(competency)
+        db.add(competency)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="Competency with this name already exists in the profile",
+            )
+        db.refresh(competency)
     log_event(
         db,
         "competency.create",
