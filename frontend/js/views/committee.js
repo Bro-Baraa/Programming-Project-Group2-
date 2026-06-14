@@ -110,7 +110,7 @@ function selectProposalForReview(internshipId) {
 
   const modal = document.getElementById('proposal-review-modal');
   if (modal) {
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     wireReviewModalClose(modal);
   }
@@ -298,6 +298,7 @@ async function renderCommitteeOverview() {
         <li>Goedgekeurd: ${stats.approved}</li>
         <li>In behandeling: ${stats.pending_approval}</li>
         <li>Afgekeurd: ${stats.rejected}</li>
+        <li>Stopgezet: ${stats.stopped || 0}</li>
       `;
     }
     if (statElements[1]) {

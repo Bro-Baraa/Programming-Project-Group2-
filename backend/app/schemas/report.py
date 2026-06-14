@@ -14,6 +14,7 @@ class DashboardStats(BaseModel):
     rejected: int
     ongoing: int
     completed: int
+    stopped: int
     agreements_received: int
     agreements_pending: int
 

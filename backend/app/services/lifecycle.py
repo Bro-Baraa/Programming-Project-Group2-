@@ -27,10 +27,11 @@ _TRANSITIONS: dict[str, set[str]] = {
     "Ingediend": {"In Beoordeling"},
     "In Beoordeling": {"Goedgekeurd", "Afgekeurd", "Aanpassingen Vereist"},
     "Aanpassingen Vereist": {"In Beoordeling"},
-    "Goedgekeurd": {"Overeenkomst Ingediend"},
-    "Overeenkomst Ingediend": {"Lopend", "Overeenkomst Ingediend"},
-    "Lopend": {"Afgerond", "Overeenkomst Ingediend"},
+    "Goedgekeurd": {"Overeenkomst Ingediend", "Stopgezet"},
+    "Overeenkomst Ingediend": {"Lopend", "Overeenkomst Ingediend", "Stopgezet"},
+    "Lopend": {"Afgerond", "Overeenkomst Ingediend", "Stopgezet"},
     "Afgerond": set(),  # terminal state
+    "Stopgezet": set(),  # terminal state
 }
 
 

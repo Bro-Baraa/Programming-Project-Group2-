@@ -169,57 +169,72 @@ async function renderCompetencyManager() {
     renderWeightChart();
   });
 
-  // Add form
+  // Add form. renderCompetencyManager() can run again without replacing the
+  // form, so guard against stacking submit listeners and sending duplicates.
   const form = document.getElementById('competency-form');
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('comp-name').value;
-    const description = document.getElementById('comp-desc').value;
-    const weight = parseFloat(document.getElementById('comp-weight').value);
-    const submitBtn = form.querySelector('button[type="submit"]');
+  if (form && !form.dataset.submitWired) {
+    form.dataset.submitWired = 'true';
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (form.dataset.submitting === 'true') return;
 
-    if (!selectedProfileId) {
-      showToast('Selecteer eerst een profiel', 'error');
-      return;
-    }
+      const name = document.getElementById('comp-name').value.trim();
+      const description = document.getElementById('comp-desc').value.trim();
+      const weight = parseFloat(document.getElementById('comp-weight').value);
+      const submitBtn = form.querySelector('button[type="submit"]');
 
-    showLoading(submitBtn, 'Toevoegen...');
+      if (!selectedProfileId) {
+        showToast('Selecteer eerst een profiel', 'error');
+        return;
+      }
 
-    try {
-      const newComp = await CompetenciesAPI.create({
-        name,
-        description: description || null,
-        weight,
-        profile_id: selectedProfileId
-      });
-      currentCompetencies.push(newComp);
-      renderCompetencies();
-      renderScoreSimulator();
-      renderWeightChart();
-      hideLoading(submitBtn);
-      showToast(`Competentie "${name}" toegevoegd`, 'success');
-      form.reset();
-    } catch (error) {
-      hideLoading(submitBtn);
-      showToast(error.message, 'error');
-    }
-  });
+      form.dataset.submitting = 'true';
+      showLoading(submitBtn, 'Toevoegen...');
+
+      try {
+        const newComp = await CompetenciesAPI.create({
+          name,
+          description: description || null,
+          weight,
+          profile_id: selectedProfileId
+        });
+        currentCompetencies = currentCompetencies.filter(c => c.id !== newComp.id);
+        currentCompetencies.push(newComp);
+        renderCompetencies();
+        renderScoreSimulator();
+        renderWeightChart();
+        showToast(`Competentie "${name}" toegevoegd`, 'success');
+        form.reset();
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        form.dataset.submitting = 'false';
+        hideLoading(submitBtn);
+      }
+    });
+  }
 
   // Bulk add toggle
   const bulkToggle = document.getElementById('bulk-add-toggle');
   const bulkPanel = document.getElementById('bulk-add-panel');
-  bulkToggle?.addEventListener('click', () => {
-    const isHidden = bulkPanel.style.display === 'none';
-    bulkPanel.style.display = isHidden ? 'block' : 'none';
-    bulkToggle.innerHTML = isHidden ? '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> − Bulk toevoegen' : '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> + Bulk toevoegen';
-  });
+  if (bulkToggle && !bulkToggle.dataset.clickWired) {
+    bulkToggle.dataset.clickWired = 'true';
+    bulkToggle.addEventListener('click', () => {
+      const isHidden = bulkPanel.style.display === 'none';
+      bulkPanel.style.display = isHidden ? 'block' : 'none';
+      bulkToggle.innerHTML = isHidden ? '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> − Bulk toevoegen' : '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> + Bulk toevoegen';
+    });
+  }
 
   // Bulk add
   const bulkBtn = document.getElementById('bulk-add-btn');
-  bulkBtn?.addEventListener('click', async () => {
-    const textarea = document.getElementById('bulk-add-text');
-    const text = textarea.value.trim();
-    if (!text) return;
+  if (bulkBtn && !bulkBtn.dataset.clickWired) {
+    bulkBtn.dataset.clickWired = 'true';
+    bulkBtn.addEventListener('click', async () => {
+      if (bulkBtn.dataset.submitting === 'true') return;
+      const textarea = document.getElementById('bulk-add-text');
+      const text = textarea.value.trim();
+      if (!text) return;
 
     const lines = text.split('\n').filter(l => l.trim());
     const competencies = [];
@@ -247,26 +262,29 @@ async function renderCompetencyManager() {
       return;
     }
 
-    showLoading(bulkBtn, 'Toevoegen...');
-    try {
-      const created = await CompetenciesAPI.createBulk({
-        profile_id: selectedProfileId,
-        competencies
-      });
-      currentCompetencies.push(...created);
-      renderCompetencies();
-      renderScoreSimulator();
-      renderWeightChart();
-      hideLoading(bulkBtn);
-      showToast(`${created.length} competenties toegevoegd`, 'success');
-      textarea.value = '';
-      bulkPanel.style.display = 'none';
-      bulkToggle.innerHTML = '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> + Bulk toevoegen';
-    } catch (error) {
-      hideLoading(bulkBtn);
-      showToast(error.message, 'error');
-    }
-  });
+      bulkBtn.dataset.submitting = 'true';
+      showLoading(bulkBtn, 'Toevoegen...');
+      try {
+        const created = await CompetenciesAPI.createBulk({
+          profile_id: selectedProfileId,
+          competencies
+        });
+        currentCompetencies.push(...created);
+        renderCompetencies();
+        renderScoreSimulator();
+        renderWeightChart();
+        showToast(`${created.length} competenties toegevoegd`, 'success');
+        textarea.value = '';
+        bulkPanel.style.display = 'none';
+        bulkToggle.innerHTML = '<img src="icons/plus.svg" alt="" width="14" height="14" class="icon-img" /> + Bulk toevoegen';
+      } catch (error) {
+        showToast(error.message, 'error');
+      } finally {
+        bulkBtn.dataset.submitting = 'false';
+        hideLoading(bulkBtn);
+      }
+    });
+  }
 
   // Score calculator
   const calcBtn = document.getElementById('calc-score');
@@ -321,18 +339,28 @@ async function renderCompetencyManager() {
     `).join('');
   }
 
-  manageProfilesBtn?.addEventListener('click', () => {
-    profileModal.style.display = 'block';
-    renderProfileList();
-  });
+  if (manageProfilesBtn && !manageProfilesBtn.dataset.clickWired) {
+    manageProfilesBtn.dataset.clickWired = 'true';
+    manageProfilesBtn.addEventListener('click', () => {
+      profileModal.style.display = 'flex';
+      renderProfileList();
+    });
+  }
 
-  closeProfileModal?.addEventListener('click', () => {
-    profileModal.style.display = 'none';
-  });
+  if (closeProfileModal && !closeProfileModal.dataset.clickWired) {
+    closeProfileModal.dataset.clickWired = 'true';
+    closeProfileModal.addEventListener('click', () => {
+      profileModal.style.display = 'none';
+    });
+  }
 
-  profileModal?.querySelector('.modal-overlay')?.addEventListener('click', () => {
-    profileModal.style.display = 'none';
-  });
+  const profileOverlay = profileModal?.querySelector('.modal-overlay');
+  if (profileOverlay && !profileOverlay.dataset.clickWired) {
+    profileOverlay.dataset.clickWired = 'true';
+    profileOverlay.addEventListener('click', () => {
+      profileModal.style.display = 'none';
+    });
+  }
 
   profileForm?.addEventListener('submit', async (e) => {
     e.preventDefault();

@@ -50,6 +50,7 @@ class UserDashboardStats(BaseModel):
     rejected: int = 0
     ongoing: int = 0
     completed: int = 0
+    stopped: int = 0
     agreements_received: int = 0
     agreements_pending: int = 0
     agreements_validated: int = 0

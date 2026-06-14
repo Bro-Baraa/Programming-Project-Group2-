@@ -159,6 +159,27 @@ users:
     role: student
     is_active: true
 
+  - email: student9@school.be
+    password: demo123
+    first_name: Noor
+    last_name: Martens
+    role: student
+    is_active: true
+
+  - email: student10@school.be
+    password: demo123
+    first_name: Sam
+    last_name: De Clercq
+    role: student
+    is_active: true
+
+  - email: student11@school.be
+    password: demo123
+    first_name: Mila
+    last_name: Aerts
+    role: student
+    is_active: true
+
   # --- Student (inactive) ---
   - email: student6@school.be
     password: demo123
@@ -718,7 +739,7 @@ internships:
     company: MobileFirst
     teacher: docent2@school.be
     mentor: d.ongena@mobilefirst.be
-    status: Lopend
+    status: Overeenkomst Ingediend
     start_date: -20
     end_date: +70
     proposal:
@@ -730,17 +751,8 @@ internships:
       insurance: false
       file_path: uploads/agreements/student8_mobilefirst.pdf
       uploaded_at: -22
-    logbooks:
-      count: 3
-      all_submitted: false
-      all_validated: false
-    evaluations:
-      - type: tussentijds
-        status: concept
-        finalized: false
-        score: null
-        comments: "Zelfevaluatie in voorbereiding."
-        evaluator: student8@school.be
+    logbooks: null
+    evaluations: []
     feedback:
       - from: docent2@school.be
         to: student8@school.be
@@ -751,3 +763,78 @@ internships:
     documents:
       - doc_type: agreement
         file_path: uploads/agreements/student8_mobilefirst.pdf
+
+  # ==========================================================================
+  # STUDENT 9: Noor Martens (Stage op voorhand stopgezet)
+  # ==========================================================================
+  - student: student9@school.be
+    company: WebWise Agency
+    teacher: docent2@school.be
+    mentor: null
+    status: Stopgezet
+    start_date: +20
+    end_date: +110
+    proposal:
+      status: Goedgekeurd
+      feedback: "Voorstel was goedgekeurd, maar de stage werd voor de start stopgezet omdat het project bij het bedrijf werd geannuleerd. Student zoekt een alternatief."
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: docent2@school.be
+        to: student9@school.be
+        message: "Noor, jammer genoeg is deze stage stopgezet voor de start. We bekijken samen een alternatief voorstel."
+    documents: []
+
+  # ==========================================================================
+  # STUDENT 10: Sam De Clercq (Voorstel in beoordeling)
+  # ==========================================================================
+  - student: student10@school.be
+    company: TechCorp BV
+    teacher: docent1@school.be
+    mentor: b.janssens@techcorp.be
+    status: In Beoordeling
+    start_date: +35
+    end_date: +125
+    proposal:
+      status: In Beoordeling
+      feedback: null
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: commissie1@school.be
+        to: student10@school.be
+        message: "Je stagevoorstel is ontvangen en wordt momenteel beoordeeld door de stagecommissie."
+    documents: []
+
+  # ==========================================================================
+  # STUDENT 11: Mila Aerts (Aanpassingen vereist)
+  # ==========================================================================
+  - student: student11@school.be
+    company: SecureNet
+    teacher: docent1@school.be
+    mentor: p.maes@securenet.be
+    status: Aanpassingen Vereist
+    start_date: +40
+    end_date: +130
+    proposal:
+      status: Aanpassingen Vereist
+      feedback: "De opdracht is interessant, maar de scope en concrete deliverables moeten duidelijker beschreven worden voor goedkeuring."
+      revision_count: 0
+    agreement:
+      status: Niet Ingediend
+      insurance: false
+    logbooks: null
+    evaluations: []
+    feedback:
+      - from: commissie1@school.be
+        to: student11@school.be
+        message: "Gelieve je voorstel aan te passen met een concretere planning en deliverables."
+    documents: []

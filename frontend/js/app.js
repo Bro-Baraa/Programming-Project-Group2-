@@ -120,11 +120,12 @@ async function handleLogin(e) {
     const data = await AuthAPI.login(email, password);
     hideLoading(submitBtn);
     showToast(`Welkom, ${data.user.first_name}!`, 'success');
+    updateUIForUser(data.user);
     // SPA navigation instead of full page reload (U1 fix)
     const url = new URL(window.location.href);
     url.searchParams.delete('view');
     window.history.replaceState({}, '', url);
-    renderMainApp();
+    await renderMainApp();
   } catch (error) {
     console.error('[DEBUG] Login error in handleLogin:', error.message);
     hideLoading(submitBtn);
@@ -227,7 +228,11 @@ function renderLogin() {
               try {
                 const data = await AuthAPI.demoLogin(option.value);
                 showToast(`Welkom, ${data.user.first_name}!`, 'success');
-                window.location.href = 'index.html';
+                updateUIForUser(data.user);
+                const url = new URL(window.location.href);
+                url.searchParams.delete('view');
+                window.history.replaceState({}, '', url);
+                await renderMainApp();
               } catch (error) {
                 showToast(error.message, 'error');
               } finally {
@@ -497,9 +502,11 @@ function populateInternshipSelector(role) {
     return;
   }
 
-  const showSelector = allInternships.length > 1 || role !== 'student';
+  const rolesWithStageSelector = new Set(['student', 'teacher', 'mentor']);
+  const showSelector = rolesWithStageSelector.has(role) && (allInternships.length > 1 || role !== 'student');
   if (!showSelector) {
     wrapper.style.display = 'none';
+    select.textContent = '';
     return;
   }
 
@@ -688,12 +695,18 @@ async function init() {
   const urlParams = new URLSearchParams(window.location.search);
   const view = urlParams.get('view');
 
-  if (view === 'login') {
-    renderLogin();
-  } else if (AuthAPI.isLoggedIn()) {
-    // User data in sessionStorage, render immediately
+  if (AuthAPI.isLoggedIn()) {
+    // User data in sessionStorage, render immediately. Do not let a stale
+    // ?view=login keep an authenticated user on the login screen.
+    if (view === 'login') {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('view');
+      window.history.replaceState({}, '', url);
+    }
     updateUIForUser(AuthAPI.getUser());
     renderMainApp();
+  } else if (view === 'login') {
+    renderLogin();
   } else {
     // Check if we have a valid cookie session
     try {

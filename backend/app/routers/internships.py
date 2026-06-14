@@ -40,6 +40,7 @@ VALID_STATUSES = {
     "Overeenkomst Ingediend",
     "Lopend",
     "Afgerond",
+    "Stopgezet",
 }
 
 _EAGER_LOADS = [
