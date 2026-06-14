@@ -508,13 +508,13 @@ Hieronder een overzicht van de mogelijke statuswaarden per entiteit:
 
 - Gevalideerd
 
-**Logboek (logbook.status)**
+**Logboek (logbook.status + mentor_validated)**
 
 - Draft: in opbouw, nog niet ingediend
 
-- Ingediend: ingediend bij mentor
+- Submitted: ingediend bij mentor
 
-- Gevalideerd: goedgekeurd door mentor
+- mentor_validated (boolean): geeft aan of de mentor het logboek goedgekeurd heeft. Dit is een apart veld, geen status-string.
 
 # 5. Installatie Handleiding
 
@@ -752,8 +752,10 @@ ontbreekt in de huidige versie:
   geschikt voor ontwikkeling en kleine groepen, maar voor productie met
   meerdere gelijktijdige gebruikers is PostgreSQL sterk aanbevolen.
 
-- Er is geen paginering op alle overzichten --- bij zeer veel gegevens
-  (honderden stages) kan de interface trager worden.
+- Paginering is geïmplementeerd op de belangrijkste overzichten
+  (`/internships`, `/users`, `/audit`, `/competencies`). De frontend vraagt
+  standaard 50 items per pagina op. Voor productie met honderden stages is
+  PostgreSQL sterk aanbevolen.
 
 # 8. Belangrijkste API-endpoints
 
@@ -765,25 +767,40 @@ de Authorization-header is verplicht, tenzij anders vermeld.
   ------------- ------------------------------- -------------------------------------
   POST          /auth/login                     Inloggen --- geen token vereist
 
+  POST          /auth/demo-login                Snel inloggen (demo-accounts)
+
   GET           /auth/me                        Huidige ingelogde gebruiker ophalen
+
+  POST          /auth/logout                    Uitloggen
 
   GET           /me/dashboard                   Dashboard-data voor de ingelogde
                                                 gebruiker
 
   GET           /internships                    Lijst van stages (gefilterd op rol)
 
-  POST          /internships                    Nieuwe stage aanmaken (admin/teacher)
+  POST          /internships                    Nieuwe stage aanmaken (student)
+
+  GET           /internships/{id}               Stage ophalen
 
   POST          /internships/{id}/proposal      Stagevoorstel indienen (student)
 
   PATCH         /internships/{id}/proposal      Voorstel beoordelen (commissie)
 
+  PATCH         /internships/{id}/proposal/edit Voorstel bewerken vóór beoordeling
+                                                (student)
+
   POST          /internships/{id}/resubmit      Voorstel opnieuw indienen na feedback
                                                 (student)
 
+  GET           /internships/{id}/proposal/
+                versions                        Versiegeschiedenis ophalen
+
   POST          /internships/{id}/agreement     Overeenkomst uploaden (student)
 
-  PATCH         /internships/{id}/agreement     Overeenkomst valideren (teacher)
+  GET           /internships/{id}/agreement     Overeenkomst ophalen
+
+  PATCH         /internships/{id}/agreement     Overeenkomst valideren (commissie/
+                                                admin)
 
   PATCH         /internships/{id}               Stagegegevens wijzigen, o.a. docent/
                                                 mentor (her)toewijzen (commissie/admin)
@@ -795,22 +812,57 @@ de Authorization-header is verplicht, tenzij anders vermeld.
 
   POST          /internships/{id}/logbooks      Nieuw logboek aanmaken (student)
 
+  POST          /internships/logbooks/{id}/
+                submit                          Logboek definitief indienen (student)
+
+  PATCH         /internships/logbooks/{id}      Logboek bijwerken (student/mentor)
+
   GET           /internships/{id}/evaluations   Evaluaties ophalen
 
   POST          /internships/{id}/evaluations   Evaluatie aanmaken
 
-  GET           /internships/{id}/report        Eindrapport ophalen (JSON)
+  POST          /internships/evaluations/{id}/
+                finalize                        Evaluatie afronden (teacher)
 
-  GET           /competencies                   Competentieprofielen ophalen
+  PATCH         /internships/evaluations/{id}/
+                rules/{rule_id}                 Evaluatieregel bijwerken
 
-  GET           /users                          Gebruikersbeheer (admin)
+  GET           /internships/{id}/final-report  Eindrapport ophalen (JSON)
 
-  GET           /notifications                  Notificaties voor de ingelogde
-                                                gebruiker
+  GET           /internships/{id}/final-report/
+                pdf                             Eindrapport downloaden (PDF)
 
-  GET           /audit                          Auditlog (enkel admin)
+  GET           /internships/reports/export/csv Stage-overzicht exporteren (CSV)
 
-  GET           /api/health                     Healthcheck --- geen token vereist
+  GET           /internships/reports/export/
+                excel                           Stage-overzicht exporteren (Excel)
+
+  GET           /competencies/profiles            Competentieprofielen ophalen
+
+  POST          /competencies/profiles            Nieuw competentieprofiel aanmaken
+
+  GET           /competencies                     Competenties ophalen
+
+  POST          /competencies                     Competentie aanmaken
+
+  GET           /companies                        Bedrijven ophalen
+
+  POST          /companies                        Bedrijf aanmaken
+
+  GET           /users                            Gebruikers ophalen (admin)
+
+  POST          /users                            Gebruiker aanmaken (admin)
+
+  GET           /notifications                    Notificaties ophalen
+
+  PATCH         /notifications/{id}/read        Notificatie als gelezen markeren
+
+  PATCH         /notifications/read-all           Alle notificaties als gelezen
+                                                markeren
+
+  GET           /audit                            Auditlog (enkel admin)
+
+  GET           /api/health                       Healthcheck --- geen token vereist
   -----------------------------------------------------------------------------------
 
 #    10. Conclusie

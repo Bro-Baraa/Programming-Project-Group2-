@@ -383,14 +383,6 @@ internships:
       - from: commissie1@school.be
         to: student1@school.be
         message: "Proficiat met het eindresultaat, de jury was zeer onder de indruk van je presentatie."
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student1_techcorp.pdf
-      - doc_type: evaluation
-        file_path: uploads/evaluations/student1_tussentijds.pdf
-      - doc_type: evaluation
-        file_path: uploads/evaluations/student1_final.pdf
-
   - student: student1@school.be
     company: DataFlow Solutions
     teacher: docent1@school.be
@@ -424,8 +416,6 @@ internships:
       - from: docent1@school.be
         to: student1@school.be
         message: "Vergeet niet je logboek van week 4 te laten valideren door je mentor, Jan."
-    documents: []
-
   - student: student1@school.be
     company: WebWise Agency
     teacher: docent2@school.be
@@ -443,8 +433,6 @@ internships:
     logbooks: null
     evaluations: []
     feedback: []
-    documents: []
-
   # ==========================================================================
   # STUDENT 2: Marie Verhoeven (Cybersecurity focus)
   # ==========================================================================
@@ -498,10 +486,6 @@ internships:
       - from: student2@school.be
         to: p.maes@securenet.be
         message: "Bedankt Pieter! Ik heb gisteren ook de patch getest en alles lijkt nu veilig te zijn."
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student2_securenet.pdf
-
   - student: student2@school.be
     company: InnovateLab
     teacher: docent1@school.be
@@ -524,10 +508,6 @@ internships:
       - from: docent1@school.be
         to: student2@school.be
         message: "Ik heb je overeenkomst goed ontvangen, Marie. Ik valideer deze in de loop van de week."
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student2_innovatelab.pdf
-
   # ==========================================================================
   # STUDENT 3: Luc Van den Broeck (Moeizame opstart, afgekeurde voorstellen)
   # ==========================================================================
@@ -554,8 +534,6 @@ internships:
       - from: commissie1@school.be
         to: student3@school.be
         message: "Dit voorstel werd unaniem afgekeurd door de stagecommissie wegens gebrek aan complexiteit."
-    documents: []
-
   - student: student3@school.be
     company: TechCorp BV
     teacher: docent1@school.be
@@ -573,8 +551,6 @@ internships:
     logbooks: null
     evaluations: []
     feedback: []
-    documents: []
-
   # ==========================================================================
   # STUDENT 4: Emma Dubois (Uitstekende game dev stagiaire)
   # ==========================================================================
@@ -628,10 +604,6 @@ internships:
       - from: student4@school.be
         to: r.decock@gamestudiox.be
         message: "Fijn om te horen! Ik ben nu bezig met het refactoren van het AI-gedrag van de NPC's."
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student4_gamestudio.pdf
-
   # ==========================================================================
   # STUDENT 5: Thomas Wouters (Moeilijkheden met planning & communicatie)
   # ==========================================================================
@@ -691,10 +663,6 @@ internships:
       - from: s.devries@dataflow.be
         to: student5@school.be
         message: "Zou je de openstaande pull request van gisteren nog kunnen nakijken? Dit blokkeert momenteel een andere developer."
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student5_dataflow.pdf
-
   # ==========================================================================
   # STUDENT 7: Kevin Hendrickx (Focus op AI, goedgekeurd)
   # ==========================================================================
@@ -727,10 +695,6 @@ internships:
       - from: student7@school.be
         to: n.kowalski@innovatelab.be
         message: "Dank je Nina! Ik ga vandaag kijken hoe we de latency kunnen verlagen door de vector database te optimaliseren."
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student7_innovatelab.pdf
-
   # ==========================================================================
   # STUDENT 8: Lisa Jacobs (Opstartproblemen met onvolledige overeenkomst)
   # ==========================================================================
@@ -759,10 +723,6 @@ internships:
       - from: student8@school.be
         to: docent2@school.be
         message: "Oh excuses, ik bezorg de ondertekende versie ten laatste morgenochtend."
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student8_mobilefirst.pdf
-
   # ==========================================================================
   # STUDENT 9: Nora El Idrissi (Stage vroegtijdig stopgezet)
   # ==========================================================================
@@ -792,10 +752,6 @@ internships:
       - from: docent2@school.be
         to: student9@school.be
         message: "Nora, jammer dat je stage vroegtijdig stopgezet werd. Neem zeker contact op met de stagecoördinator om de verdere stappen te bespreken."
-    documents:
-      - doc_type: agreement
-        file_path: uploads/agreements/student9_ecom.pdf
-
   # ==========================================================================
   # STUDENT 10: Daan Vermeulen (Voorstel in beoordeling)
   # ==========================================================================
@@ -819,8 +775,6 @@ internships:
       - from: commissie1@school.be
         to: student10@school.be
         message: "Dag Daan, we hebben je voorstel rond cloud infrastructuur in behandeling genomen. Je hoort binnenkort van ons."
-    documents: []
-
   # ==========================================================================
   # STUDENT 11: Yasmine Bogaert (Voorstel vraagt aanpassingen)
   # ==========================================================================
@@ -844,4 +798,3 @@ internships:
       - from: commissie1@school.be
         to: student11@school.be
         message: "Dag Yasmine, je voorstel werd nagekeken. Bekijk de feedback en dien een aangepaste versie in."
-    documents: []

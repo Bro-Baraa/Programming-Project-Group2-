@@ -111,9 +111,6 @@ class Internship(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
-    documents = relationship(
-        "Document", back_populates="internship", cascade="all, delete-orphan"
-    )
     logbooks = relationship(
         "Logbook", back_populates="internship", cascade="all, delete-orphan"
     )
@@ -195,18 +192,6 @@ class Agreement(Base):
     validated_at = Column(DateTime(timezone=True), nullable=True)
 
     internship = relationship("Internship", back_populates="agreement")
-
-
-class Document(Base):
-    __tablename__ = "documents"
-
-    id = Column(Integer, primary_key=True, index=True)
-    internship_id = Column(Integer, ForeignKey("internships.id"), nullable=False)
-    doc_type = Column(String, nullable=False)
-    file_path = Column(String, nullable=False)
-    uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    internship = relationship("Internship", back_populates="documents")
 
 
 class Logbook(Base):

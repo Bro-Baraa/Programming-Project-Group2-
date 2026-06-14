@@ -186,25 +186,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_agreements_id"), "agreements", ["id"], unique=False)
     op.create_table(
-        "documents",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("internship_id", sa.Integer(), nullable=False),
-        sa.Column("doc_type", sa.String(), nullable=False),
-        sa.Column("file_path", sa.String(), nullable=False),
-        sa.Column(
-            "uploaded_at",
-            sa.DateTime(timezone=True),
-            server_default=sa.text("(CURRENT_TIMESTAMP)"),
-            nullable=True,
-        ),
-        sa.ForeignKeyConstraint(
-            ["internship_id"],
-            ["internships.id"],
-        ),
-        sa.PrimaryKeyConstraint("id"),
-    )
-    op.create_index(op.f("ix_documents_id"), "documents", ["id"], unique=False)
-    op.create_table(
         "evaluations",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("internship_id", sa.Integer(), nullable=False),
@@ -404,8 +385,6 @@ def downgrade() -> None:
     op.drop_table("feedbacks")
     op.drop_index(op.f("ix_evaluations_id"), table_name="evaluations")
     op.drop_table("evaluations")
-    op.drop_index(op.f("ix_documents_id"), table_name="documents")
-    op.drop_table("documents")
     op.drop_index(op.f("ix_agreements_id"), table_name="agreements")
     op.drop_table("agreements")
     op.drop_index(op.f("ix_internships_id"), table_name="internships")

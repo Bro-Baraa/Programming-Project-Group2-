@@ -33,7 +33,6 @@ from app.models import (
     Feedback,
     CompetencyProfile,
     Competency,
-    Document,
 )
 import bcrypt
 
@@ -338,19 +337,6 @@ def create_feedback(
     return feedback
 
 
-def create_document(db: Session, internship_id: int, data: dict) -> Document:
-    file_path = data.get("file_path")
-    _ensure_fake_file(file_path)
-    doc = Document(
-        internship_id=internship_id,
-        doc_type=data.get("doc_type", "other"),
-        file_path=file_path,
-    )
-    db.add(doc)
-    db.flush()
-    return doc
-
-
 # ---------------------------------------------------------------------------
 # Main seeding
 # ---------------------------------------------------------------------------
@@ -435,13 +421,6 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
             create_agreement(db, internship.id, scenario["agreement"])
             print(f"        Agreement: {scenario['agreement']['status']}")
 
-        # Documents
-        documents = scenario.get("documents", [])
-        for doc_data in documents:
-            create_document(db, internship.id, doc_data)
-        if documents:
-            print(f"        Documents: {len(documents)}")
-
         # Logbooks
         logbook_config = scenario.get("logbooks")
         if logbook_config and internship.start_date and internship.end_date:
@@ -490,7 +469,6 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
         ("Logbooks", Logbook),
         ("Evaluations", Evaluation),
         ("Feedback", Feedback),
-        ("Documents", Document),
     ]
     print(f"\n{'Entity':<25} {'Count':>10}")
     print("-" * 36)
@@ -522,7 +500,6 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
         "Inactive users",
         "Edge cases: no teacher, no mentor",
         "Committee involvement",
-        "Documents model",
     ]
     for s in covered:
         print(f"  OK: {s}")
