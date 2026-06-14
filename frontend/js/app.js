@@ -152,7 +152,14 @@ function handleLogout() {
 
 function renderLogin() {
   app.className = 'login-layout';
-  app.textContent = '';
+  // Keep #content attached so its cached reference stays valid. Clearing
+  // app.textContent here would detach #content and break the next render.
+  if (content.isConnected) {
+    content.textContent = '';
+  } else {
+    app.textContent = '';
+    app.appendChild(content);
+  }
   navPanel.style.display = 'none';
   document.body.classList.add('login-active');
 
@@ -160,7 +167,7 @@ function renderLogin() {
 
   const tpl = document.getElementById('login-template');
   if (tpl) {
-    app.appendChild(tpl.content.cloneNode(true));
+    content.appendChild(tpl.content.cloneNode(true));
 
     const form = document.getElementById('login-form');
     form?.addEventListener('submit', handleLogin);
@@ -227,7 +234,10 @@ function renderLogin() {
               try {
                 const data = await AuthAPI.demoLogin(option.value);
                 showToast(`Welkom, ${data.user.first_name}!`, 'success');
-                window.location.href = 'index.html';
+                const url = new URL(window.location.href);
+                url.searchParams.delete('view');
+                window.history.replaceState({}, '', url);
+                renderMainApp();
               } catch (error) {
                 showToast(error.message, 'error');
               } finally {
@@ -258,6 +268,20 @@ async function renderMainApp() {
   document.body.classList.remove('login-active');
 
   toggleHeaderVisibility(true);
+
+  // renderLogin() wipes #app (and with it #content). Recreate #content if it
+  // was removed, otherwise the cached `content` reference is detached and every
+  // render writes into a node that is not in the DOM (stale login screen stays).
+  if (!content.isConnected) {
+    app.textContent = '';
+    app.appendChild(content);
+  }
+
+  // Refresh the header identity. On an in-app login (handleLogin -> renderMainApp)
+  // init()/updateUIForUser() does NOT run, so without this the name/role keep the
+  // previous account's values until a page refresh.
+  const currentUser = AuthAPI.getUser();
+  if (currentUser) updateUIForUser(currentUser);
 
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
@@ -690,16 +714,12 @@ async function init() {
 
   if (view === 'login') {
     renderLogin();
-  } else if (AuthAPI.isLoggedIn()) {
-    // User data in sessionStorage, render immediately
-    updateUIForUser(AuthAPI.getUser());
-    renderMainApp();
   } else {
-    // Check if we have a valid cookie session
+    // Always verify session via cookie — sessionStorage may be stale (e.g. after switching accounts)
     try {
       const user = await AuthAPI.getMe();
       if (user) {
-        AuthAPI.setUser(user); // Store in sessionStorage
+        AuthAPI.setUser(user);
         updateUIForUser(user);
         renderMainApp();
       } else {

@@ -62,7 +62,14 @@ async function apiRequest(endpoint, options = {}) {
       if (!_redirectingToLogin) {
         _redirectingToLogin = true;
         _setUser(null);
-        window.location.href = 'index.html?view=login';
+        if (typeof renderLogin === 'function') {
+          const url = new URL(window.location.href);
+          url.searchParams.set('view', 'login');
+          window.history.replaceState({}, '', url);
+          renderLogin();
+        } else {
+          window.location.href = 'index.html?view=login';
+        }
       }
       throw new Error('Sessie verlopen, opnieuw inloggen...');
     }
@@ -102,6 +109,7 @@ async function _postAuth(url, body, headers) {
 
   const data = await response.json();
   _setUser(data.user);
+  _redirectingToLogin = false;
   return data;
 }
 
