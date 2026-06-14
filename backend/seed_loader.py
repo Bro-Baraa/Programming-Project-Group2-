@@ -382,7 +382,7 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
     for user_data in data.get("users", []):
         user = create_user(db, user_data)
         user_lookup[user_data["email"]] = user
-        status = "✓" if user_data.get("is_active", True) else "✗ INACTIVE"
+        status = "OK" if user_data.get("is_active", True) else "INACTIVE"
         print(f"   {user.role:<12} | {user.email:<30} | {status}")
     print()
 
@@ -399,7 +399,7 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
     print("3. Creating competency profiles...")
     for profile_data in data.get("competency_profiles", []):
         profile = create_competency_profile(db, profile_data)
-        active = "✓ active" if profile.active else "✗ inactive"
+        active = "active" if profile.active else "inactive"
         print(f"   {profile.name:<35} | {active}")
     print()
 
@@ -525,7 +525,7 @@ def seed_from_yaml(path: str = "seed_data.yaml"):
         "Documents model",
     ]
     for s in covered:
-        print(f"  ✓ {s}")
+        print(f"  OK: {s}")
     print("=" * 70)
     print("\n[START] Next steps:")
     print("  1. Start backend:  uvicorn app.main:app --reload")
