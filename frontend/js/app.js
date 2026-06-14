@@ -69,6 +69,25 @@ let _lastInternshipDataId = null;
 let _lastCompetencyLoad = 0;
 const _CACHE_TTL_MS = 30_000;
 
+// Clear all cached per-session data. Must run on every login and logout:
+// otherwise data fetched under one account (e.g. an admin/committee user who
+// sees ALL internships) survives into the next account's session, because the
+// SPA login flow never reloads the page. Without this, a student can briefly
+// see another user's internships in the selector, and the stale internship IDs
+// trigger "Not authorized" errors when their per-internship data is fetched.
+function resetSessionState() {
+  allInternships = [];
+  selectedInternshipId = null;
+  currentInternship = null;
+  currentCompetencies = [];
+  currentLogbooks = [];
+  currentEvaluations = [];
+  currentFeedback = [];
+  _allInternshipsLoaded = false;
+  _lastInternshipDataId = null;
+  _lastCompetencyLoad = 0;
+}
+
 function getSelectedInternship() {
   return allInternships.find(i => i.id == selectedInternshipId) || allInternships[0] || null;
 }
@@ -119,6 +138,7 @@ async function handleLogin(e) {
   try {
     const data = await AuthAPI.login(email, password);
     hideLoading(submitBtn);
+    resetSessionState(); // Drop any cached data from a previous account
     showToast(`Welkom, ${data.user.first_name}!`, 'success');
     updateUIForUser(data.user);
     // SPA navigation instead of full page reload (U1 fix)
@@ -143,6 +163,7 @@ async function handleLogin(e) {
 function handleLogout() {
   destroyNotifications();
   AuthAPI.logout();
+  resetSessionState(); // Clear cached data so the next account starts fresh
   showToast('Uitgelogd', 'info');
   // SPA navigation instead of full page reload (U1 fix)
   const url = new URL(window.location.href);
@@ -153,7 +174,15 @@ function handleLogout() {
 
 function renderLogin() {
   app.className = 'login-layout';
-  app.textContent = '';
+  // Keep #content attached so its cached reference stays valid. Clearing
+  // app.textContent here would detach #content and break the next render
+  // (renderView writes into the detached node, leaving the login screen visible).
+  if (content.isConnected) {
+    content.textContent = '';
+  } else {
+    app.textContent = '';
+    app.appendChild(content);
+  }
   navPanel.style.display = 'none';
   document.body.classList.add('login-active');
 
@@ -161,7 +190,7 @@ function renderLogin() {
 
   const tpl = document.getElementById('login-template');
   if (tpl) {
-    app.appendChild(tpl.content.cloneNode(true));
+    content.appendChild(tpl.content.cloneNode(true));
 
     const form = document.getElementById('login-form');
     form?.addEventListener('submit', handleLogin);
@@ -227,6 +256,7 @@ function renderLogin() {
               showLoading(btn, 'Inloggen...');
               try {
                 const data = await AuthAPI.demoLogin(option.value);
+                resetSessionState(); // Drop any cached data from a previous account
                 showToast(`Welkom, ${data.user.first_name}!`, 'success');
                 updateUIForUser(data.user);
                 const url = new URL(window.location.href);
@@ -263,6 +293,16 @@ async function renderMainApp() {
   document.body.classList.remove('login-active');
 
   toggleHeaderVisibility(true);
+
+  // renderLogin() appends the login template into #content. Recreate/reattach
+  // #content if it was removed, otherwise the cached `content` reference is
+  // detached and every render writes into a node not in the DOM (stale login
+  // screen stays visible where the dashboard should be).
+  if (!content.isConnected) {
+    app.textContent = '';
+    app.appendChild(content);
+  }
+  content.textContent = '';
 
   const role = AuthAPI.getRole();
   const views = roleViews[role] || [];
