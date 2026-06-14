@@ -312,11 +312,10 @@ def check_dependencies(python_runner: str, use_uv: bool) -> str:
 
 
 def seed_database_if_empty(init_runner: str) -> None:
-    """Check if database is empty and seed with demo data if needed."""
+    """Check if database is empty and run init_admin.py if needed."""
     db_file = PROJECT_DIR / "backend" / "stage_monitoring.db"
 
     base_cmd = init_runner.split()
-    # Use raw-string prefix so Windows backslashes don't trigger unicode escapes
     check_script = (
         f"import sqlite3, sys; "
         f"conn = sqlite3.connect(r'{db_file}'); "
@@ -335,18 +334,18 @@ def seed_database_if_empty(init_runner: str) -> None:
         log("Database OK (users exist)")
         return
 
-    log("Database leeg of niet gevonden. Seeding met demo-data...")
-    seed_script = PROJECT_DIR / "backend" / "seed_loader.py"
-    cmd = base_cmd + [str(seed_script)]
+    log("Database leeg of niet gevonden. Initialiseren met init_admin.py...")
+    init_script = PROJECT_DIR / "backend" / "init_admin.py"
+    cmd = base_cmd + [str(init_script)]
     log_command(cmd, PROJECT_DIR / "backend")
     try:
         result = subprocess.run(cmd, cwd=PROJECT_DIR / "backend", capture_output=True)
         log_result(result)
         if result.returncode != 0:
-            log_fatal_error(f"seed script failed with exit code {result.returncode}")
+            log_fatal_error(f"init_admin script failed with exit code {result.returncode}")
     except Exception as e:
-        log_fatal_error(f"seed script failed: {e}\n{traceback.format_exc()}")
-    log("Database gevuld!")
+        log_fatal_error(f"init_admin script failed: {e}\n{traceback.format_exc()}")
+    log("Database geinitialiseerd!")
     log("")
 
 

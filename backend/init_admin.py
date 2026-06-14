@@ -15,18 +15,18 @@ from app.models import Base, User
 from app.auth import get_password_hash
 
 # Create tables
-print("📦 Creating database tables...")
+print("Creating database tables...")
 Base.metadata.create_all(bind=engine)
-print("✅ Tables created!")
+print("Tables created!")
 
 # Create admin user
 db = SessionLocal()
 
-print("\n👤 Creating admin user...")
+print("\nCreating admin user...")
 
 existing_admin = db.query(User).filter(User.email == "admin@school.be").first()
 if existing_admin:
-    print("ℹ️  Admin user already exists (admin@school.be)")
+    print("Admin user already exists (admin@school.be)")
 else:
     admin = User(
         email="admin@school.be",
@@ -38,7 +38,7 @@ else:
     )
     db.add(admin)
     db.commit()
-    print("✅ Admin user created: admin@school.be / admin123")
+    print("Admin user created: admin@school.be / admin123")
 
 # Create some test users
 test_users = [
@@ -79,11 +79,11 @@ test_users = [
     },
 ]
 
-print("\n👥 Creating test users...")
+print("\nCreating test users...")
 for user_data in test_users:
     existing = db.query(User).filter(User.email == user_data["email"]).first()
     if existing:
-        print(f"ℹ️  User exists: {user_data['email']}")
+        print(f"User exists: {user_data['email']}")
         continue
 
     user = User(
@@ -95,13 +95,13 @@ for user_data in test_users:
         is_active=True,
     )
     db.add(user)
-    print(f"✅ Created: {user_data['email']} ({user_data['role']})")
+    print(f"Created: {user_data['email']} ({user_data['role']})")
 
 db.commit()
 db.close()
 
 print("\n" + "=" * 50)
-print("🎉 Setup complete!")
+print("Setup complete!")
 print("=" * 50)
 print("\nTest credentials:")
 print("  admin@school.be      / admin123      (admin)")
