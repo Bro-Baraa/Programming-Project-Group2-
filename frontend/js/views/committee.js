@@ -410,7 +410,7 @@ async function renderCommitteeOverview() {
         <li>Goedgekeurd: ${stats.approved}</li>
         <li>In behandeling: ${stats.pending_approval}</li>
         <li>Afgekeurd: ${stats.rejected}</li>
-        <li>Stopgezet: ${stats.terminated ?? 0}</li>
+        <li>Stopgezet: ${stats.stopped || 0}</li>
       `;
     }
     if (statElements[1]) {
