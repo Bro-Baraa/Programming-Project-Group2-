@@ -239,12 +239,25 @@ doorloopt de volgende statussen:
   Ingediend             Student heeft het voorstel ingediend en wacht op
                         beoordeling.
 
+  In Beoordeling        De commissie heeft het voorstel in behandeling
+                        genomen.
+
   Goedgekeurd           De stagecommissie heeft het voorstel goedgekeurd.
 
   Afgekeurd             Het voorstel is geweigerd.
 
   Aanpassingen vereist  De student moet het voorstel aanpassen op basis
                         van feedback.
+
+  Overeenkomst          Student heeft de ondertekende stageovereenkomst
+  Ingediend             geüpload; wacht op validatie door de commissie.
+
+  Lopend                Overeenkomst is gevalideerd; de stage is actief.
+
+  Afgerond              De stage is succesvol afgerond (eindstatus).
+
+  Stopgezet             De stage is vroegtijdig beëindigd op initiatief
+                        van de opleiding of het bedrijf (eindstatus).
   -----------------------------------------------------------------------
 
 Van een voorstel kunnen versies worden bijgehouden. Zo blijft zichtbaar
@@ -662,8 +675,17 @@ applicatie te demonstreren:
 
   student7@school.be    demo123          Lopende AI-stage, recent gestart
 
-  student8@school.be    demo123          Lopende stage met onvolledige
-                                         overeenkomst
+  student8@school.be    demo123          Stage met onvolledige overeenkomst
+                                         (status: Overeenkomst Ingediend)
+
+  student9@school.be    demo123          Stage vroegtijdig stopgezet
+                                         (status: Stopgezet)
+
+  student10@school.be   demo123          Voorstel in beoordeling door
+                                         commissie (status: In Beoordeling)
+
+  student11@school.be   demo123          Voorstel vraagt aanpassingen
+                                         (status: Aanpassingen Vereist)
   ------------------------------------------------------------------------
 
 ## 6.3 Mentor accounts per bedrijf
