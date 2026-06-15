@@ -268,15 +268,12 @@ welke aanpassingen eerder zijn gebeurd.
 Na goedkeuring van het voorstel uploadt de student de stageovereenkomst.
 Dit document is belangrijk voor de verzekering en moet door de juiste
 personen ondertekend zijn. De docent kan het document controleren en
-valideren.
+valideren. De overeenkomst doorloopt de volgende statussen:
 
-Niet ingediend
-
-Ingediend
-
-Onvolledig
-
-Gevalideerd
+- Niet ingediend
+- Ingediend
+- Onvolledig
+- Gevalideerd
 
 ## 3.4 Wekelijkse logboeken
 
@@ -455,9 +452,6 @@ verbindingsstring in app/database.py aan te passen.
 |                         | (gelezen/ongelezen), met een optionele koppeling   |
 |                         | naar een stage en een weergavelink.                |
 +-------------------------+----------------------------------------------------+
-| documents               | Extra documenten bij een stage (bestandspad en     |
-|                         | documenttype).                                     |
-+-------------------------+----------------------------------------------------+
 | audit_logs              | Auditlog: elke actie wordt geregistreerd met       |
 |                         | gebruiker, tijdstip, actie, entiteit en IP-adres.  |
 +-------------------------+----------------------------------------------------+
@@ -520,6 +514,15 @@ Hieronder een overzicht van de mogelijke statuswaarden per entiteit:
 
 Hieronder vind je stap voor stap hoe je de applicatie lokaal opstart. Er
 zijn twee manieren: via het start-script of via Docker.
+
+Er zijn twee start-scripts, afhankelijk van wat je nodig hebt:
+
+- `./start.sh` (deze handleiding): draait backend (poort 8001) en de
+  frontend via de Vite dev-server (poort 8080) apart. Aangeraden tijdens
+  ontwikkeling.
+- `python3 start.py` (zie README): draait de backend én de statische
+  frontend op één poort (8001), zonder Node.js. Aangeraden voor een snelle
+  demo.
 
 ## 5.1 Vereisten
 
@@ -754,8 +757,7 @@ ontbreekt in de huidige versie:
 
 - Paginering is geïmplementeerd op de belangrijkste overzichten
   (`/internships`, `/users`, `/audit`, `/competencies`). De frontend vraagt
-  standaard 50 items per pagina op. Voor productie met honderden stages is
-  PostgreSQL sterk aanbevolen.
+  standaard 50 items per pagina op.
 
 # 8. Belangrijkste API-endpoints
 
@@ -849,6 +851,12 @@ de Authorization-header is verplicht, tenzij anders vermeld.
 
   POST          /companies                        Bedrijf aanmaken
 
+  GET           /companies/{company_id}            Bedrijfsdetails ophalen
+
+  PATCH         /companies/{company_id}            Bedrijf bijwerken
+
+  DELETE        /companies/{company_id}            Bedrijf verwijderen (admin)
+
   GET           /users                            Gebruikers ophalen (admin)
 
   POST          /users                            Gebruiker aanmaken (admin)
@@ -864,6 +872,34 @@ de Authorization-header is verplicht, tenzij anders vermeld.
 
   GET           /api/health                       Healthcheck --- geen token vereist
   -----------------------------------------------------------------------------------
+
+#    9. Testverslag en voortgangscontrole
+
+## 9.1 Testverslag
+
+Het testverslag (origineel: `archief/Stage_Monitoring_Tool_Testverslag.pdf`) is opgesteld door **Baraa Alaswad** en bevat een volledige testrapportage met 20 detailtestcases, samenvatting per component, rollencontrole, vereistencheck en aanbevolen acties.
+
+➡️ **[Bekijk het testverslag (Markdown-weergave)](testverslag.md)**
+
+Het testverslag behandelt onder andere:
+- Login met alle rollen (admin, student, commissie, docent, mentor)
+- Stagevoorstel indienen en beoordelen
+- Stageovereenkomst uploaden en valideren
+- Logboeken aanmaken, indienen en controleren
+- Tussentijdse en finale evaluaties
+- Competentiebeheer
+- Rapportexport (CSV, Excel, PDF)
+- Notificaties en auditlog
+
+## 9.2 Voortgangscontrole
+
+Tijdens de ontwikkeling is de voortgang bijgehouden via twee documenten in `docs/progress-tracking/`:
+
+➡️ **[User Stories — status per story](progress-tracking/user-stories-overzicht.md)**
+  Volledig overzicht van alle 31 user stories met backend- en frontend-implementatiebewijs per story.
+
+➡️ **[Feature TODO — status per feature](progress-tracking/feature-todo.md)**
+  Feature-checklist met implementatiebewijs, acceptatiecriteria en prioritering. Alle features zijn afgerond.
 
 #    10. Conclusie
 
