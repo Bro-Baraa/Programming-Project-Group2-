@@ -39,8 +39,7 @@ class TestCORSMiddleware:
         assert response.status_code == 200
         # FastAPI CORS middleware adds these headers
         assert "access-control-allow-origin" in response.headers
-        # In test env FRONTEND_ORIGINS is unset, so CORS defaults to '*' (allow any origin)
-        assert response.headers["access-control-allow-origin"] == "*"
+        assert response.headers["access-control-allow-origin"] == "http://localhost:8080"
 
     def test_cors_preflight(self, client):
         """Test CORS preflight request."""
