@@ -8,6 +8,16 @@ Stagevolgsysteem voor Toegepaste Informatica - Erasmus Hogeschool Brussel.
 
 ---
 
+## Live demo
+
+De applicatie draait live op **https://stage-monitoring-demo.fly.dev**. Log in met een van de testaccounts hieronder om alle functionaliteit uit te proberen.
+
+De demo wordt gehost op [Fly.io](https://fly.io), waar de applicatie als Docker-container draait (regio Londen, `lhr`). De configuratie staat in `fly.toml`. De machine schaalt automatisch naar nul wanneer ze niet gebruikt wordt, dus de eerste request na een periode van inactiviteit kan een paar seconden duren terwijl de container opstart.
+
+> Let op: dit is een gedeelde demo-omgeving met een SQLite-database in de container (geen persistent volume). Data die je aanmaakt is zichtbaar voor andere bezoekers en gaat verloren bij elke herstart of nieuwe deploy.
+
+---
+
 ## Demo
 
 | Demo | Link |
