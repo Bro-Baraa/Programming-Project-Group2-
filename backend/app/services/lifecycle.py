@@ -41,6 +41,10 @@ class LifecycleConfig:
     agreements_dir: Path
 
 
+# Default config used throughout the app — avoids repeating the path.
+DEFAULT_CONFIG = LifecycleConfig(agreements_dir=Path("uploads/agreements"))
+
+
 class InternshipLifecycle:
 
     def __init__(self, db: Session, config: LifecycleConfig) -> None:

@@ -24,7 +24,7 @@ from app.services.evaluations import (
     update_evaluation_rule as update_evaluation_rule_svc,
     finalize_evaluation as finalize_evaluation_svc,
 )
-from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.lifecycle import InternshipLifecycle, DEFAULT_CONFIG
 from app.services.notifications import notify
 from app.services.audit import log_event
 
@@ -160,9 +160,7 @@ def finalize_evaluation_endpoint(
     finalized_eval, score_data = finalize_evaluation_svc(db, evaluation, current_user)
 
     if finalized_eval.eval_type == "final":
-        lifecycle = InternshipLifecycle(
-            db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
-        )
+        lifecycle = InternshipLifecycle(db, DEFAULT_CONFIG)
         lifecycle.complete_internship(
             internship_id=finalized_eval.internship_id,
             actor=current_user,

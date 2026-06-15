@@ -16,15 +16,12 @@ from app.schemas import (
 )
 from app.auth import get_current_active_user, require_committee, require_student
 from app.services.common import ensure_internship_access
-from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.lifecycle import InternshipLifecycle, DEFAULT_CONFIG
 from app.services.audit import log_event
 from app.services.notifications import notify
 from typing import List
 
 router = APIRouter(prefix="/internships", tags=["proposals"])
-
-# Shared configuration
-_LIFECYCLE_CONFIG = LifecycleConfig(agreements_dir=Path("uploads/agreements"))
 
 
 def _notify_committee(
@@ -54,7 +51,7 @@ def _notify_committee(
 
 def _get_lifecycle(db: Session) -> InternshipLifecycle:
     """Return a configured InternshipLifecycle instance."""
-    return InternshipLifecycle(db, _LIFECYCLE_CONFIG)
+    return InternshipLifecycle(db, DEFAULT_CONFIG)
 
 
 @router.post(

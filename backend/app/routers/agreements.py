@@ -14,7 +14,7 @@ from app.auth import (
     require_committee_or_admin,
 )
 from app.services.common import ensure_internship_access
-from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.lifecycle import InternshipLifecycle, DEFAULT_CONFIG
 from app.services.audit import log_event
 
 router = APIRouter(prefix="/internships", tags=["agreements"])
@@ -28,9 +28,7 @@ def upload_agreement_endpoint(
     current_user: User = Depends(require_student),
 ):
 
-    lifecycle = InternshipLifecycle(
-        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
-    )
+    lifecycle = InternshipLifecycle(db, DEFAULT_CONFIG)
     result = lifecycle.upload_agreement(
         internship_id=internship_id,
         actor=current_user,
@@ -109,9 +107,7 @@ def validate_agreement_endpoint(
     current_user: User = Depends(require_committee_or_admin),
 ):
 
-    lifecycle = InternshipLifecycle(
-        db, LifecycleConfig(agreements_dir=Path("uploads/agreements"))
-    )
+    lifecycle = InternshipLifecycle(db, DEFAULT_CONFIG)
     result = lifecycle.validate_agreement(
         internship_id=internship_id,
         actor=current_user,

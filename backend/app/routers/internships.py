@@ -23,14 +23,12 @@ from app.auth import (
     require_any_staff,
 )
 from app.services.common import ensure_internship_access
-from app.services.lifecycle import InternshipLifecycle, LifecycleConfig
+from app.services.lifecycle import InternshipLifecycle, DEFAULT_CONFIG
 from app.services.audit import log_event
 from app.services.notifications import notify
 from app.dependencies import pagination, search_query
 
 router = APIRouter(prefix="/internships", tags=["internships"])
-
-_CONFIG = LifecycleConfig(agreements_dir=Path("uploads/agreements"))
 
 
 VALID_STATUSES = {
@@ -164,7 +162,7 @@ def create_internship(
     current_user: User = Depends(require_student),
 ):
 
-    lifecycle = InternshipLifecycle(db, _CONFIG)
+    lifecycle = InternshipLifecycle(db, DEFAULT_CONFIG)
     result = lifecycle.submit_internship(
         actor=current_user,
         company_name=data.company_name,
@@ -322,7 +320,7 @@ def terminate_internship(
     De lifecycle-service controleert de rol, de toegestane statusovergang,
     logt de actie in de auditlog en verwittigt de betrokkenen.
     """
-    lifecycle = InternshipLifecycle(db, _CONFIG)
+    lifecycle = InternshipLifecycle(db, DEFAULT_CONFIG)
     return lifecycle.terminate_internship(
         internship_id=internship_id,
         actor=current_user,
