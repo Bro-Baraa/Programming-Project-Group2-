@@ -81,4 +81,4 @@ cd backend && pytest
 
 ---
 
-Groep 2 - Juan Benjumea-Moreno, Baraa Alaswad, Yorick Steehout, Samy Bekkaoui, Leila Daif
+Groep 2 - Juan Benjumea-Moreno, Baraa Alaswad, Yorick Steenhoudt, Samy Bekkaoui, Leila Daif
